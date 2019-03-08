@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.jca.cci.object;
 
 import java.sql.SQLException;
+
 import javax.resource.ResourceException;
 import javax.resource.cci.ConnectionFactory;
 import javax.resource.cci.InteractionSpec;
@@ -26,8 +27,6 @@ import javax.resource.cci.RecordFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jca.cci.core.RecordCreator;
 import org.springframework.jca.cci.core.RecordExtractor;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /**
  * EIS operation object that expects mapped input and output objects,
@@ -56,7 +55,7 @@ public abstract class MappingRecordOperation extends EisOperation {
 	/**
 	 * Convenient constructor with ConnectionFactory and specifications
 	 * (connection and interaction).
-	 * @param connectionFactory the ConnectionFactory to use to obtain connections
+	 * @param connectionFactory ConnectionFactory to use to obtain connections
 	 */
 	public MappingRecordOperation(ConnectionFactory connectionFactory, InteractionSpec interactionSpec) {
 		getCciTemplate().setConnectionFactory(connectionFactory);
@@ -87,12 +86,9 @@ public abstract class MappingRecordOperation extends EisOperation {
 	 * @see #createInputRecord
 	 * @see #extractOutputData
 	 */
-	@Nullable
 	public Object execute(Object inputObject) throws DataAccessException {
-		InteractionSpec interactionSpec = getInteractionSpec();
-		Assert.state(interactionSpec != null, "No InteractionSpec set");
 		return getCciTemplate().execute(
-				interactionSpec, new RecordCreatorImpl(inputObject), new RecordExtractorImpl());
+				getInteractionSpec(), new RecordCreatorImpl(inputObject), new RecordExtractorImpl());
 	}
 
 
@@ -133,7 +129,6 @@ public abstract class MappingRecordOperation extends EisOperation {
 			this.inputObject = inObject;
 		}
 
-		@Override
 		public Record createRecord(RecordFactory recordFactory) throws ResourceException, DataAccessException {
 			return createInputRecord(recordFactory, this.inputObject);
 		}
@@ -144,9 +139,8 @@ public abstract class MappingRecordOperation extends EisOperation {
 	 * Implementation of RecordExtractor that calls the enclosing
 	 * class's {@code extractOutputData} method.
 	 */
-	protected class RecordExtractorImpl implements RecordExtractor<Object> {
+	protected class RecordExtractorImpl implements RecordExtractor {
 
-		@Override
 		public Object extractData(Record record) throws ResourceException, SQLException, DataAccessException {
 			return extractOutputData(record);
 		}

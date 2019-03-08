@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpHeaders;
-import org.springframework.lang.Nullable;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -46,15 +45,15 @@ import org.springframework.web.method.support.ModelAndViewContainer;
  */
 public class RequestHeaderMapMethodArgumentResolver implements HandlerMethodArgumentResolver {
 
-	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
 		return (parameter.hasParameterAnnotation(RequestHeader.class) &&
 				Map.class.isAssignableFrom(parameter.getParameterType()));
 	}
 
-	@Override
-	public Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
-			NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+	public Object resolveArgument(
+			MethodParameter parameter, ModelAndViewContainer mavContainer,
+			NativeWebRequest webRequest, WebDataBinderFactory binderFactory)
+			throws Exception {
 
 		Class<?> paramType = parameter.getParameterType();
 		if (MultiValueMap.class.isAssignableFrom(paramType)) {
@@ -63,7 +62,7 @@ public class RequestHeaderMapMethodArgumentResolver implements HandlerMethodArgu
 				result = new HttpHeaders();
 			}
 			else {
-				result = new LinkedMultiValueMap<>();
+				result = new LinkedMultiValueMap<String, String>();
 			}
 			for (Iterator<String> iterator = webRequest.getHeaderNames(); iterator.hasNext();) {
 				String headerName = iterator.next();
@@ -77,7 +76,7 @@ public class RequestHeaderMapMethodArgumentResolver implements HandlerMethodArgu
 			return result;
 		}
 		else {
-			Map<String, String> result = new LinkedHashMap<>();
+			Map<String, String> result = new LinkedHashMap<String, String>();
 			for (Iterator<String> iterator = webRequest.getHeaderNames(); iterator.hasNext();) {
 				String headerName = iterator.next();
 				String headerValue = webRequest.getHeader(headerName);

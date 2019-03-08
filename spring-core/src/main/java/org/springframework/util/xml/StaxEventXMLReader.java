@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.springframework.util.xml;
 
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLEventReader;
@@ -41,7 +43,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.ext.Locator2;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -56,27 +58,28 @@ import org.springframework.util.StringUtils;
  * @see #setEntityResolver(org.xml.sax.EntityResolver)
  * @see #setErrorHandler(org.xml.sax.ErrorHandler)
  */
-@SuppressWarnings("rawtypes")
 class StaxEventXMLReader extends AbstractStaxXMLReader {
 
 	private static final String DEFAULT_XML_VERSION = "1.0";
 
 	private final XMLEventReader reader;
 
+	private final Map<String, String> namespaces = new LinkedHashMap<String, String>();
+
 	private String xmlVersion = DEFAULT_XML_VERSION;
 
-	@Nullable
 	private String encoding;
 
 
 	/**
-	 * Constructs a new instance of the {@code StaxEventXmlReader} that reads from
-	 * the given {@code XMLEventReader}. The supplied event reader must be in
-	 * {@code XMLStreamConstants.START_DOCUMENT} or {@code XMLStreamConstants.START_ELEMENT} state.
+	 * Constructs a new instance of the {@code StaxEventXmlReader} that reads from the given
+	 * {@code XMLEventReader}. The supplied event reader must be in {@code XMLStreamConstants.START_DOCUMENT} or
+	 * {@code XMLStreamConstants.START_ELEMENT} state.
 	 * @param reader the {@code XMLEventReader} to read from
 	 * @throws IllegalStateException if the reader is not at the start of a document or element
 	 */
 	StaxEventXMLReader(XMLEventReader reader) {
+		Assert.notNull(reader, "'reader' must not be null");
 		try {
 			XMLEvent event = reader.peek();
 			if (event != null && !(event.isStartDocument() || event.isStartElement())) {
@@ -165,30 +168,21 @@ class StaxEventXMLReader extends AbstractStaxXMLReader {
 		if (getContentHandler() != null) {
 			final Location location = event.getLocation();
 			getContentHandler().setDocumentLocator(new Locator2() {
-				@Override
 				public int getColumnNumber() {
 					return (location != null ? location.getColumnNumber() : -1);
 				}
-				@Override
 				public int getLineNumber() {
 					return (location != null ? location.getLineNumber() : -1);
 				}
-				@Override
-				@Nullable
 				public String getPublicId() {
 					return (location != null ? location.getPublicId() : null);
 				}
-				@Override
-				@Nullable
 				public String getSystemId() {
 					return (location != null ? location.getSystemId() : null);
 				}
-				@Override
 				public String getXMLVersion() {
 					return xmlVersion;
 				}
-				@Override
-				@Nullable
 				public String getEncoding() {
 					return encoding;
 				}

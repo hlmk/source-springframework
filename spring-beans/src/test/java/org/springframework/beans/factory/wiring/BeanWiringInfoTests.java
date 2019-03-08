@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2006 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,63 +16,76 @@
 
 package org.springframework.beans.factory.wiring;
 
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import junit.framework.TestCase;
 
 /**
  * Unit tests for the BeanWiringInfo class.
  *
  * @author Rick Evans
- * @author Sam Brannen
  */
-public class BeanWiringInfoTests {
+public final class BeanWiringInfoTests extends TestCase {
 
-	@Test(expected = IllegalArgumentException.class)
-	public void ctorWithNullBeanName() throws Exception {
-		new BeanWiringInfo(null);
+	public void testCtorWithNullBeanName() throws Exception {
+		try {
+			new BeanWiringInfo(null);
+			fail("Must have thrown an IllegalArgumentException by this point (null argument).");
+		}
+		catch (IllegalArgumentException ex) {
+		}
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void ctorWithWhitespacedBeanName() throws Exception {
-		new BeanWiringInfo("   \t");
+	public void testCtorWithWhitespacedBeanName() throws Exception {
+		try {
+			new BeanWiringInfo("   \t");
+			fail("Must have thrown an IllegalArgumentException by this point (bean name has only whitespace).");
+		}
+		catch (IllegalArgumentException ex) {
+		}
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void ctorWithEmptyBeanName() throws Exception {
-		new BeanWiringInfo("");
+	public void testCtorWithEmptyBeanName() throws Exception {
+		try {
+			new BeanWiringInfo("");
+			fail("Must have thrown an IllegalArgumentException by this point (bean name is empty).");
+		}
+		catch (IllegalArgumentException ex) {
+		}
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void ctorWithNegativeIllegalAutowiringValue() throws Exception {
-		new BeanWiringInfo(-1, true);
+	public void testCtorWithNegativeIllegalAutowiringValue() throws Exception {
+		try {
+			new BeanWiringInfo(-1, true);
+			fail("Must have thrown an IllegalArgumentException by this point (out-of-range argument).");
+		}
+		catch (IllegalArgumentException ex) {
+		}
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void ctorWithPositiveOutOfRangeAutowiringValue() throws Exception {
-		new BeanWiringInfo(123871, true);
+	public void testCtorWithPositiveOutOfRangeAutowiringValue() throws Exception {
+		try {
+			new BeanWiringInfo(123871, true);
+			fail("Must have thrown an IllegalArgumentException by this point (out-of-range argument).");
+		}
+		catch (IllegalArgumentException ex) {
+		}
 	}
 
-	@Test
-	public void usingAutowireCtorIndicatesAutowiring() throws Exception {
+	public void testUsingAutowireCtorIndicatesAutowiring() throws Exception {
 		BeanWiringInfo info = new BeanWiringInfo(BeanWiringInfo.AUTOWIRE_BY_NAME, true);
 		assertTrue(info.indicatesAutowiring());
 	}
 
-	@Test
-	public void usingBeanNameCtorDoesNotIndicateAutowiring() throws Exception {
+	public void testUsingBeanNameCtorDoesNotIndicateAutowiring() throws Exception {
 		BeanWiringInfo info = new BeanWiringInfo("fooService");
 		assertFalse(info.indicatesAutowiring());
 	}
 
-	@Test
-	public void noDependencyCheckValueIsPreserved() throws Exception {
+	public void testNoDependencyCheckValueIsPreserved() throws Exception {
 		BeanWiringInfo info = new BeanWiringInfo(BeanWiringInfo.AUTOWIRE_BY_NAME, true);
 		assertTrue(info.getDependencyCheck());
 	}
 
-	@Test
-	public void dependencyCheckValueIsPreserved() throws Exception {
+	public void testDependencyCheckValueIsPreserved() throws Exception {
 		BeanWiringInfo info = new BeanWiringInfo(BeanWiringInfo.AUTOWIRE_BY_TYPE, false);
 		assertFalse(info.getDependencyCheck());
 	}

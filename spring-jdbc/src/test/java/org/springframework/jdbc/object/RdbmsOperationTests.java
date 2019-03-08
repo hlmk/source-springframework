@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package org.springframework.jdbc.object;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 import javax.sql.DataSource;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import junit.framework.TestCase;
 
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,90 +33,119 @@ import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import static org.hamcrest.CoreMatchers.*;
-
-import static org.junit.Assert.*;
-
 /**
  * @author Trevor Cook
  * @author Juergen Hoeller
- * @author Sam Brannen
  */
-public class RdbmsOperationTests {
+public class RdbmsOperationTests extends TestCase {
 
-	private final TestRdbmsOperation operation = new TestRdbmsOperation();
-
-	@Rule
-	public final ExpectedException exception = ExpectedException.none();
-
-
-	@Test
-	public void emptySql() {
-		exception.expect(InvalidDataAccessApiUsageException.class);
-		operation.compile();
+	public void testEmptySql() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
+		try {
+			operation.compile();
+			fail("Shouldn't allow compiling without sql statement");
+		}
+		catch (InvalidDataAccessApiUsageException idaauex) {
+			// OK
+		}
 	}
 
-	@Test
-	public void setTypeAfterCompile() {
+	public void testSetTypeAfterCompile() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
 		operation.setDataSource(new DriverManagerDataSource());
 		operation.setSql("select * from mytable");
 		operation.compile();
-		exception.expect(InvalidDataAccessApiUsageException.class);
-		operation.setTypes(new int[] { Types.INTEGER });
+		try {
+			operation.setTypes(new int[] {Types.INTEGER });
+			fail("Shouldn't allow setting parameters after compile");
+		}
+		catch (InvalidDataAccessApiUsageException idaauex) {
+			// OK
+		}
 	}
 
-	@Test
-	public void declareParameterAfterCompile() {
+	public void testDeclareParameterAfterCompile() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
 		operation.setDataSource(new DriverManagerDataSource());
 		operation.setSql("select * from mytable");
 		operation.compile();
-		exception.expect(InvalidDataAccessApiUsageException.class);
-		operation.declareParameter(new SqlParameter(Types.INTEGER));
+		try {
+			operation.declareParameter(new SqlParameter(Types.INTEGER));
+			fail("Shouldn't allow setting parameters after compile");
+		}
+		catch (InvalidDataAccessApiUsageException idaauex) {
+			// OK
+		}
 	}
 
-	@Test
-	public void tooFewParameters() {
+	public void testTooFewParameters() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
 		operation.setSql("select * from mytable");
 		operation.setTypes(new int[] { Types.INTEGER });
-		exception.expect(InvalidDataAccessApiUsageException.class);
-		operation.validateParameters((Object[]) null);
+		try {
+			operation.validateParameters((Object[]) null);
+			fail("Shouldn't validate without enough parameters");
+		}
+		catch (InvalidDataAccessApiUsageException idaauex) {
+			// OK
+		}
 	}
 
-	@Test
-	public void tooFewMapParameters() {
+	public void testTooFewMapParameters() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
 		operation.setSql("select * from mytable");
 		operation.setTypes(new int[] { Types.INTEGER });
-		exception.expect(InvalidDataAccessApiUsageException.class);
-		operation.validateNamedParameters((Map<String, String>) null);
+		try {
+			operation.validateNamedParameters((Map) null);
+			fail("Shouldn't validate without enough parameters");
+		}
+		catch (InvalidDataAccessApiUsageException idaauex) {
+			// OK
+		}
 	}
 
-	@Test
-	public void operationConfiguredViaJdbcTemplateMustGetDataSource() throws Exception {
-		operation.setSql("foo");
-
-		exception.expect(InvalidDataAccessApiUsageException.class);
-		exception.expectMessage(containsString("ataSource"));
-		operation.compile();
+	public void testOperationConfiguredViaJdbcTemplateMustGetDataSource() throws Exception {
+		try {
+			TestRdbmsOperation operation = new TestRdbmsOperation();
+			operation.setSql("foo");
+			operation.compile();
+			fail("Can't compile without providing a DataSource for the JdbcTemplate");
+		}
+		catch (InvalidDataAccessApiUsageException ex) {
+			// Check for helpful error message. Omit leading character
+			// so as not to be fussy about case
+			assertTrue(ex.getMessage().indexOf("ataSource") != -1);
+		}
 	}
 
-	@Test
-	public void tooManyParameters() {
+	public void testTooManyParameters() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
 		operation.setSql("select * from mytable");
-		exception.expect(InvalidDataAccessApiUsageException.class);
-		operation.validateParameters(new Object[] { 1, 2 });
+		try {
+			operation.validateParameters(new Object[] {new Integer(1), new Integer(2)});
+			fail("Shouldn't validate with too many parameters");
+		}
+		catch (InvalidDataAccessApiUsageException idaauex) {
+			// OK
+		}
 	}
 
-	@Test
-	public void unspecifiedMapParameters() {
+	public void testUnspecifiedMapParameters() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
 		operation.setSql("select * from mytable");
-		Map<String, String> params = new HashMap<>();
-		params.put("col1", "value");
-		exception.expect(InvalidDataAccessApiUsageException.class);
-		operation.validateNamedParameters(params);
+		try {
+			Map params = new HashMap();
+			params.put("col1", "value");
+			operation.validateNamedParameters(params);
+			fail("Shouldn't validate with unspecified parameters");
+		}
+		catch (InvalidDataAccessApiUsageException idaauex) {
+			// OK
+		}
 	}
 
-	@Test
-	public void compileTwice() {
+	public void testCompileTwice() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
 		operation.setDataSource(new DriverManagerDataSource());
 		operation.setSql("select * from mytable");
 		operation.setTypes(null);
@@ -124,17 +153,22 @@ public class RdbmsOperationTests {
 		operation.compile();
 	}
 
-	@Test
-	public void emptyDataSource() {
-		SqlOperation operation = new SqlOperation() {};
+	public void testEmptyDataSource() {
+		SqlOperation operation = new SqlOperation() {
+		};
 		operation.setSql("select * from mytable");
-		exception.expect(InvalidDataAccessApiUsageException.class);
-		operation.compile();
+		try {
+			operation.compile();
+			fail("Shouldn't allow compiling without data source");
+		}
+		catch (InvalidDataAccessApiUsageException idaauex) {
+			// OK
+		}
 	}
 
-	@Test
-	public void parameterPropagation() {
-		SqlOperation operation = new SqlOperation() {};
+	public void testParameterPropagation() {
+		SqlOperation operation = new SqlOperation() {
+		};
 		DataSource ds = new DriverManagerDataSource();
 		operation.setDataSource(ds);
 		operation.setFetchSize(10);
@@ -145,8 +179,8 @@ public class RdbmsOperationTests {
 		assertEquals(20, jt.getMaxRows());
 	}
 
-	@Test
-	public void validateInOutParameter() {
+	public void testValidateInOutParameter() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
 		operation.setDataSource(new DriverManagerDataSource());
 		operation.setSql("DUMMY_PROC");
 		operation.declareParameter(new SqlOutParameter("DUMMY_OUT_PARAM", Types.VARCHAR));
@@ -154,17 +188,26 @@ public class RdbmsOperationTests {
 		operation.validateParameters(new Object[] {"DUMMY_VALUE1", "DUMMY_VALUE2"});
 	}
 
-	@Test
-	public void parametersSetWithList() {
+	public void testParametersSetWithList() {
+		TestRdbmsOperation operation = new TestRdbmsOperation();
 		DataSource ds = new DriverManagerDataSource();
 		operation.setDataSource(ds);
 		operation.setSql("select * from mytable where one = ? and two = ?");
+		List l = new ArrayList();
+		l.add(new SqlParameter("one", Types.NUMERIC));
+		l.add(new SqlParameter("two", Types.VARCHAR));
 		operation.setParameters(new SqlParameter[] {
 				new SqlParameter("one", Types.NUMERIC),
 				new SqlParameter("two", Types.NUMERIC)});
 		operation.afterPropertiesSet();
-		operation.validateParameters(new Object[] { 1, "2" });
-		assertEquals(2, operation.getDeclaredParameters().size());
+		try {
+			operation.validateParameters(new Object[] {new Integer(1), new String("2")});
+			assertEquals(2, operation.getDeclaredParameters().size());
+			// OK
+		}
+		catch (InvalidDataAccessApiUsageException idaauex) {
+			fail("Should have validated with parameters set using List: " + idaauex.getMessage());
+		}
 	}
 
 

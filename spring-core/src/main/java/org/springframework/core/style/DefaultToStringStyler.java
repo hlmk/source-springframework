@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.core.style;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
@@ -53,7 +52,6 @@ public class DefaultToStringStyler implements ToStringStyler {
 	}
 
 
-	@Override
 	public void styleStart(StringBuilder buffer, Object obj) {
 		if (!obj.getClass().isArray()) {
 			buffer.append('[').append(ClassUtils.getShortName(obj.getClass()));
@@ -72,13 +70,11 @@ public class DefaultToStringStyler implements ToStringStyler {
 		buffer.append(ObjectUtils.getIdentityHexString(obj));
 	}
 
-	@Override
 	public void styleEnd(StringBuilder buffer, Object o) {
 		buffer.append(']');
 	}
 
-	@Override
-	public void styleField(StringBuilder buffer, String fieldName, @Nullable Object value) {
+	public void styleField(StringBuilder buffer, String fieldName, Object value) {
 		styleFieldStart(buffer, fieldName);
 		styleValue(buffer, value);
 		styleFieldEnd(buffer, fieldName);
@@ -91,12 +87,10 @@ public class DefaultToStringStyler implements ToStringStyler {
 	protected void styleFieldEnd(StringBuilder buffer, String fieldName) {
 	}
 
-	@Override
-	public void styleValue(StringBuilder buffer, @Nullable Object value) {
+	public void styleValue(StringBuilder buffer, Object value) {
 		buffer.append(this.valueStyler.style(value));
 	}
 
-	@Override
 	public void styleFieldSeparator(StringBuilder buffer) {
 		buffer.append(',');
 	}

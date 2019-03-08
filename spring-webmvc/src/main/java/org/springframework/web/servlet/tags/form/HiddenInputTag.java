@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,46 +19,13 @@ package org.springframework.web.servlet.tags.form;
 import javax.servlet.jsp.JspException;
 
 /**
- * The {@code <hidden>} tag renders an HTML 'input' tag with type 'hidden' using
- * the bound value.
+ * Data-binding aware JSP tag for rendering a hidden HTML '{@code input}' field
+ * containing the databound value.
  *
  * <p>Example (binding to 'name' property of form backing object):
- * <pre class="code">
+ * <pre class="code>
  * &lt;form:hidden path=&quot;name&quot;/&gt;
  * </pre>
- *
- * <p>
- * <table>
- * <caption>Attribute Summary</caption>
- * <thead>
- * <tr>
- * <th class="colFirst">Attribute</th>
- * <th class="colOne">Required?</th>
- * <th class="colOne">Runtime Expression?</th>
- * <th class="colLast">Description</th>
- * </tr>
- * </thead>
- * <tbody>
- * <tr class="altColor">
- * <td><p>htmlEscape</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>Enable/disable HTML escaping of rendered values.</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>id</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>path</p></td>
- * <td><p>true</p></td>
- * <td><p>true</p></td>
- * <td><p>Path to property for data binding</p></td>
- * </tr>
- * </tbody>
- * </table>
  *
  * @author Rob Harrop
  * @author Juergen Hoeller
@@ -73,24 +40,22 @@ public class HiddenInputTag extends AbstractHtmlElementTag {
 	 */
 	public static final String DISABLED_ATTRIBUTE = "disabled";
 
-	private boolean disabled;
+	private String disabled;
 
+	/**
+	 * Get the value of the '{@code disabled}' attribute.
+	 */
+	public String getDisabled() {
+		return this.disabled;
+	}
 
 	/**
 	 * Set the value of the '{@code disabled}' attribute.
 	 * May be a runtime expression.
 	 */
-	public void setDisabled(boolean disabled) {
+	public void setDisabled(String disabled) {
 		this.disabled = disabled;
 	}
-
-	/**
-	 * Get the value of the '{@code disabled}' attribute.
-	 */
-	public boolean isDisabled() {
-		return this.disabled;
-	}
-
 
 	/**
 	 * Flags "type" as an illegal dynamic attribute.
@@ -118,6 +83,13 @@ public class HiddenInputTag extends AbstractHtmlElementTag {
 		tagWriter.writeAttribute("value", processFieldValue(getName(), value, "hidden"));
 		tagWriter.endTag();
 		return SKIP_BODY;
+	}
+
+	/**
+	 * Is the current HTML tag disabled?
+	 */
+	protected boolean isDisabled() throws JspException {
+		return evaluateBoolean(DISABLED_ATTRIBUTE, getDisabled());
 	}
 
 }

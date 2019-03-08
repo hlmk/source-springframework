@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.springframework.util;
 
-import org.springframework.lang.Nullable;
-
 /**
  * Simple strategy interface for resolving a String value.
  * Used by {@link org.springframework.beans.factory.config.ConfigurableBeanFactory}.
@@ -28,18 +26,13 @@ import org.springframework.lang.Nullable;
  * @see org.springframework.beans.factory.config.BeanDefinitionVisitor#BeanDefinitionVisitor(StringValueResolver)
  * @see org.springframework.beans.factory.config.PropertyPlaceholderConfigurer
  */
-@FunctionalInterface
 public interface StringValueResolver {
 
 	/**
 	 * Resolve the given String value, for example parsing placeholders.
-	 * @param strVal the original String value (never {@code null})
-	 * @return the resolved String value (may be {@code null} when resolved to a null
-	 * value), possibly the original String value itself (in case of no placeholders
-	 * to resolve or when ignoring unresolvable placeholders)
-	 * @throws IllegalArgumentException in case of an unresolvable String value
+	 * @param strVal the original String value
+	 * @return the resolved String value
 	 */
-	@Nullable
 	String resolveStringValue(String strVal);
 
 }

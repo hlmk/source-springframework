@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,25 +19,26 @@ package org.springframework.aop.framework.adapter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.rmi.ConnectException;
 import java.rmi.RemoteException;
+
+import javax.transaction.TransactionRolledbackException;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.junit.Test;
-
 import org.springframework.aop.ThrowsAdvice;
 import org.springframework.tests.aop.advice.MethodCounter;
 
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.*;
 
+
 /**
  * @author Rod Johnson
  * @author Chris Beams
  */
-public class ThrowsAdviceInterceptorTests {
+public final class ThrowsAdviceInterceptorTests {
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected=IllegalArgumentException.class)
 	public void testNoHandlerMethods() {
 		// should require one handler method at least
 		new ThrowsAdviceInterceptor(new Object());
@@ -78,7 +79,7 @@ public class ThrowsAdviceInterceptorTests {
 		ThrowsAdviceInterceptor ti = new ThrowsAdviceInterceptor(th);
 		FileNotFoundException ex = new FileNotFoundException();
 		MethodInvocation mi = mock(MethodInvocation.class);
-		given(mi.getMethod()).willReturn(Object.class.getMethod("hashCode"));
+		given(mi.getMethod()).willReturn(Object.class.getMethod("hashCode", (Class[]) null));
 		given(mi.getThis()).willReturn(new Object());
 		given(mi.proceed()).willThrow(ex);
 		try {
@@ -97,7 +98,7 @@ public class ThrowsAdviceInterceptorTests {
 		MyThrowsHandler th = new MyThrowsHandler();
 		ThrowsAdviceInterceptor ti = new ThrowsAdviceInterceptor(th);
 		// Extends RemoteException
-		ConnectException ex = new ConnectException("");
+		TransactionRolledbackException ex = new TransactionRolledbackException();
 		MethodInvocation mi = mock(MethodInvocation.class);
 		given(mi.proceed()).willThrow(ex);
 		try {
@@ -126,7 +127,7 @@ public class ThrowsAdviceInterceptorTests {
 
 		ThrowsAdviceInterceptor ti = new ThrowsAdviceInterceptor(th);
 		// Extends RemoteException
-		ConnectException ex = new ConnectException("");
+		TransactionRolledbackException ex = new TransactionRolledbackException();
 		MethodInvocation mi = mock(MethodInvocation.class);
 		given(mi.proceed()).willThrow(ex);
 		try {
@@ -140,15 +141,12 @@ public class ThrowsAdviceInterceptorTests {
 		assertEquals(1, th.getCalls("remoteException"));
 	}
 
-
 	@SuppressWarnings("serial")
 	static class MyThrowsHandler extends MethodCounter implements ThrowsAdvice {
-
 		// Full method signature
 		public void afterThrowing(Method m, Object[] args, Object target, IOException ex) {
 			count("ioException");
 		}
-
 		public void afterThrowing(RemoteException ex) throws Throwable {
 			count("remoteException");
 		}

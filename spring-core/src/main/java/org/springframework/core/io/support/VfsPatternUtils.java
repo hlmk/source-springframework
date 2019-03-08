@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.lang.reflect.Proxy;
 import java.net.URL;
 
 import org.springframework.core.io.VfsUtils;
-import org.springframework.lang.Nullable;
 
 /**
  * Artificial class used for accessing the {@link VfsUtils} methods
@@ -33,14 +32,12 @@ import org.springframework.lang.Nullable;
  */
 abstract class VfsPatternUtils extends VfsUtils {
 
-	@Nullable
-	static Object getVisitorAttributes() {
-		return doGetVisitorAttributes();
+	static Object getVisitorAttribute() {
+		return doGetVisitorAttribute();
 	}
 
 	static String getPath(Object resource) {
-		String path = doGetPath(resource);
-		return (path != null ? path : "");
+		return doGetPath(resource);
 	}
 
 	static Object findRoot(URL url) throws IOException {
@@ -48,9 +45,8 @@ abstract class VfsPatternUtils extends VfsUtils {
 	}
 
 	static void visit(Object resource, InvocationHandler visitor) throws IOException {
-		Object visitorProxy = Proxy.newProxyInstance(
-				VIRTUAL_FILE_VISITOR_INTERFACE.getClassLoader(),
-				new Class<?>[] {VIRTUAL_FILE_VISITOR_INTERFACE}, visitor);
+		Object visitorProxy = Proxy.newProxyInstance(VIRTUAL_FILE_VISITOR_INTERFACE.getClassLoader(),
+				new Class<?>[] { VIRTUAL_FILE_VISITOR_INTERFACE }, visitor);
 		invokeVfsMethod(VIRTUAL_FILE_METHOD_VISIT, resource, visitorProxy);
 	}
 

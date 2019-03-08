@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.jmx.export.metadata.JmxAttributeSource;
 import org.springframework.jmx.export.metadata.ManagedResource;
 import org.springframework.jmx.support.ObjectNameManager;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -52,10 +51,8 @@ public class MetadataNamingStrategy implements ObjectNamingStrategy, Initializin
 	/**
 	 * The {@code JmxAttributeSource} implementation to use for reading metadata.
 	 */
-	@Nullable
 	private JmxAttributeSource attributeSource;
 
-	@Nullable
 	private String defaultDomain;
 
 
@@ -97,7 +94,6 @@ public class MetadataNamingStrategy implements ObjectNamingStrategy, Initializin
 		this.defaultDomain = defaultDomain;
 	}
 
-	@Override
 	public void afterPropertiesSet() {
 		if (this.attributeSource == null) {
 			throw new IllegalArgumentException("Property 'attributeSource' is required");
@@ -109,10 +105,8 @@ public class MetadataNamingStrategy implements ObjectNamingStrategy, Initializin
 	 * Reads the {@code ObjectName} from the source-level metadata associated
 	 * with the managed resource's {@code Class}.
 	 */
-	@Override
-	public ObjectName getObjectName(Object managedBean, @Nullable String beanKey) throws MalformedObjectNameException {
-		Assert.state(this.attributeSource != null, "No JmxAttributeSource set");
-		Class<?> managedClass = AopUtils.getTargetClass(managedBean);
+	public ObjectName getObjectName(Object managedBean, String beanKey) throws MalformedObjectNameException {
+		Class managedClass = AopUtils.getTargetClass(managedBean);
 		ManagedResource mr = this.attributeSource.getManagedResource(managedClass);
 
 		// Check that an object name has been specified.
@@ -120,7 +114,6 @@ public class MetadataNamingStrategy implements ObjectNamingStrategy, Initializin
 			return ObjectNameManager.getInstance(mr.getObjectName());
 		}
 		else {
-			Assert.state(beanKey != null, "No ManagedResource attribute and no bean key specified");
 			try {
 				return ObjectNameManager.getInstance(beanKey);
 			}
@@ -129,7 +122,7 @@ public class MetadataNamingStrategy implements ObjectNamingStrategy, Initializin
 				if (domain == null) {
 					domain = ClassUtils.getPackageName(managedClass);
 				}
-				Hashtable<String, String> properties = new Hashtable<>();
+				Hashtable<String, String> properties = new Hashtable<String, String>();
 				properties.put("type", ClassUtils.getShortName(managedClass));
 				properties.put("name", beanKey);
 				return ObjectNameManager.getInstance(domain, properties);

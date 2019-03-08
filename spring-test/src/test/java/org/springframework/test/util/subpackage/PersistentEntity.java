@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2016 the original author or authors.
+ * Copyright 2007-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,11 @@ public abstract class PersistentEntity {
 	private long id;
 
 
-	public long getId() {
+	public final long getId() {
 		return this.id;
 	}
 
-	protected void setId(long id) {
+	protected final void setId(long id) {
 		this.id = id;
 	}
-
 }

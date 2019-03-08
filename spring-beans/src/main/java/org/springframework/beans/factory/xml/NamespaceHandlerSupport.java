@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.w3c.dom.Node;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.lang.Nullable;
 
 /**
  * Support class for implementing custom {@link NamespaceHandler NamespaceHandlers}.
@@ -48,37 +47,36 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 	 * Stores the {@link BeanDefinitionParser} implementations keyed by the
 	 * local name of the {@link Element Elements} they handle.
 	 */
-	private final Map<String, BeanDefinitionParser> parsers = new HashMap<>();
+	private final Map<String, BeanDefinitionParser> parsers =
+			new HashMap<String, BeanDefinitionParser>();
 
 	/**
 	 * Stores the {@link BeanDefinitionDecorator} implementations keyed by the
 	 * local name of the {@link Element Elements} they handle.
 	 */
-	private final Map<String, BeanDefinitionDecorator> decorators = new HashMap<>();
+	private final Map<String, BeanDefinitionDecorator> decorators =
+			new HashMap<String, BeanDefinitionDecorator>();
 
 	/**
 	 * Stores the {@link BeanDefinitionDecorator} implementations keyed by the local
 	 * name of the {@link Attr Attrs} they handle.
 	 */
-	private final Map<String, BeanDefinitionDecorator> attributeDecorators = new HashMap<>();
+	private final Map<String, BeanDefinitionDecorator> attributeDecorators =
+			new HashMap<String, BeanDefinitionDecorator>();
 
 
 	/**
 	 * Parses the supplied {@link Element} by delegating to the {@link BeanDefinitionParser} that is
 	 * registered for that {@link Element}.
 	 */
-	@Override
-	@Nullable
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
-		BeanDefinitionParser parser = findParserForElement(element, parserContext);
-		return (parser != null ? parser.parse(element, parserContext) : null);
+		return findParserForElement(element, parserContext).parse(element, parserContext);
 	}
 
 	/**
 	 * Locates the {@link BeanDefinitionParser} from the register implementations using
 	 * the local name of the supplied {@link Element}.
 	 */
-	@Nullable
 	private BeanDefinitionParser findParserForElement(Element element, ParserContext parserContext) {
 		String localName = parserContext.getDelegate().getLocalName(element);
 		BeanDefinitionParser parser = this.parsers.get(localName);
@@ -93,13 +91,10 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 	 * Decorates the supplied {@link Node} by delegating to the {@link BeanDefinitionDecorator} that
 	 * is registered to handle that {@link Node}.
 	 */
-	@Override
-	@Nullable
 	public BeanDefinitionHolder decorate(
 			Node node, BeanDefinitionHolder definition, ParserContext parserContext) {
 
-		BeanDefinitionDecorator decorator = findDecoratorForNode(node, parserContext);
-		return (decorator != null ? decorator.decorate(node, definition, parserContext) : null);
+		return findDecoratorForNode(node, parserContext).decorate(node, definition, parserContext);
 	}
 
 	/**
@@ -107,7 +102,6 @@ public abstract class NamespaceHandlerSupport implements NamespaceHandler {
 	 * the local name of the supplied {@link Node}. Supports both {@link Element Elements}
 	 * and {@link Attr Attrs}.
 	 */
-	@Nullable
 	private BeanDefinitionDecorator findDecoratorForNode(Node node, ParserContext parserContext) {
 		BeanDefinitionDecorator decorator = null;
 		String localName = parserContext.getDelegate().getLocalName(node);

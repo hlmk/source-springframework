@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.lang.Nullable;
 
 /**
  * Standalone XML application context, taking the context definition files
@@ -132,8 +131,7 @@ public class FileSystemXmlApplicationContext extends AbstractXmlApplicationConte
 	 * @throws BeansException if context creation failed
 	 * @see #refresh()
 	 */
-	public FileSystemXmlApplicationContext(
-			String[] configLocations, boolean refresh, @Nullable ApplicationContext parent)
+	public FileSystemXmlApplicationContext(String[] configLocations, boolean refresh, ApplicationContext parent)
 			throws BeansException {
 
 		super(parent);
@@ -150,12 +148,12 @@ public class FileSystemXmlApplicationContext extends AbstractXmlApplicationConte
 	 * interpreted as relative to the current VM working directory.
 	 * This is consistent with the semantics in a Servlet container.
 	 * @param path path to the resource
-	 * @return the Resource handle
+	 * @return Resource handle
 	 * @see org.springframework.web.context.support.XmlWebApplicationContext#getResourceByPath
 	 */
 	@Override
 	protected Resource getResourceByPath(String path) {
-		if (path.startsWith("/")) {
+		if (path != null && path.startsWith("/")) {
 			path = path.substring(1);
 		}
 		return new FileSystemResource(path);

@@ -22,7 +22,6 @@ import javax.persistence.spi.PersistenceUnitInfo;
 
 import org.junit.After;
 import org.junit.Before;
-
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import static org.junit.Assert.*;

@@ -18,9 +18,8 @@ package org.springframework.context.support;
 
 import java.util.List;
 
-import org.junit.Test;
-
 import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * @author Scott Andrews

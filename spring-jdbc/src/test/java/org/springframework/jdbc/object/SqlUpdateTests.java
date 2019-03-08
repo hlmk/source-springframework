@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.sql.DataSource;
 
 import org.junit.After;
@@ -31,7 +32,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
 import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -49,22 +49,16 @@ public class SqlUpdateTests {
 
 	private static final String UPDATE =
 			"update seat_status set booking_id = null";
-
 	private static final String UPDATE_INT =
 			"update seat_status set booking_id = null where performance_id = ?";
-
 	private static final String UPDATE_INT_INT =
 			"update seat_status set booking_id = null where performance_id = ? and price_band_id = ?";
-
 	private static final String UPDATE_NAMED_PARAMETERS =
 			"update seat_status set booking_id = null where performance_id = :perfId and price_band_id = :priceId";
-
 	private static final String UPDATE_STRING =
 			"update seat_status set booking_id = null where name = ?";
-
 	private static final String UPDATE_OBJECTS =
 			"update seat_status set booking_id = null where performance_id = ? and price_band_id = ? and name = ? and confirmed = ?";
-
 	private static final String INSERT_GENERATE_KEYS =
 			"insert into show (name) values(?)";
 
@@ -72,15 +66,10 @@ public class SqlUpdateTests {
 	public ExpectedException thrown = ExpectedException.none();
 
 	private DataSource dataSource;
-
 	private Connection connection;
-
 	private PreparedStatement preparedStatement;
-
 	private ResultSet resultSet;
-
 	private ResultSetMetaData resultSetMetaData;
-
 
 	@Before
 	public void setUp() throws Exception {
@@ -97,7 +86,6 @@ public class SqlUpdateTests {
 		verify(preparedStatement).close();
 		verify(connection).close();
 	}
-
 
 	@Test
 	public void testUpdate() throws SQLException {
@@ -166,7 +154,7 @@ public class SqlUpdateTests {
 			}
 
 			public int run(int performanceId, int type) {
-				Map<String, Integer> params = new HashMap<>();
+				Map<String, Integer> params = new HashMap<String, Integer>();
 				params.put("perfId", performanceId);
 				params.put("priceId", type);
 				return updateByNamedParam(params);
@@ -204,7 +192,7 @@ public class SqlUpdateTests {
 		verify(preparedStatement).setObject(1, 1, Types.NUMERIC);
 		verify(preparedStatement).setObject(2, 1, Types.NUMERIC, 2);
 		verify(preparedStatement).setString(3, "rod");
-		verify(preparedStatement).setBoolean(4, Boolean.TRUE);
+		verify(preparedStatement).setObject(4, Boolean.TRUE, Types.BOOLEAN);
 	}
 
 	@Test
@@ -243,7 +231,7 @@ public class SqlUpdateTests {
 		verify(preparedStatement).setObject(1, 1, Types.NUMERIC);
 		verify(preparedStatement).setObject(2, 1, Types.NUMERIC);
 		verify(preparedStatement).setString(3, "rod");
-		verify(preparedStatement).setBoolean(4, Boolean.TRUE);
+		verify(preparedStatement).setObject(4, Boolean.TRUE, Types.BOOLEAN);
 	}
 
 	@Test
@@ -372,7 +360,10 @@ public class SqlUpdateTests {
 		}
 
 		public int run(int performanceId, int type, String name, boolean confirmed) {
-			return update(performanceId, type, name, confirmed);
+			Object[] params =
+				new Object[] {performanceId, type, name,
+											new Boolean(confirmed)};
+			return update(params);
 		}
 	}
 
@@ -388,7 +379,8 @@ public class SqlUpdateTests {
 		}
 
 		public int run(String name, KeyHolder generatedKeyHolder) {
-			return update(new Object[] {name}, generatedKeyHolder);
+			Object[] params = new Object[] {name};
+			return update(params, generatedKeyHolder);
 		}
 	}
 
@@ -402,7 +394,10 @@ public class SqlUpdateTests {
 		}
 
 		public int run(int performanceId, int type, String name, boolean confirmed) {
-			return update(performanceId, type, name, confirmed);
+			Object[] params =
+				new Object[] {
+					performanceId, type, name, new Boolean(confirmed)};
+			return update(params);
 		}
 	}
 

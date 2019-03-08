@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.BeanReference;
-import org.springframework.lang.Nullable;
 
 /**
  * ComponentDefinition based on a standard BeanDefinition, exposing the given bean
@@ -47,7 +46,8 @@ public class BeanComponentDefinition extends BeanDefinitionHolder implements Com
 	 * @param beanName the name of the bean
 	 */
 	public BeanComponentDefinition(BeanDefinition beanDefinition, String beanName) {
-		this(new BeanDefinitionHolder(beanDefinition, beanName));
+		super(beanDefinition, beanName);
+		findInnerBeanDefinitionsAndBeanReferences(beanDefinition);
 	}
 
 	/**
@@ -56,22 +56,28 @@ public class BeanComponentDefinition extends BeanDefinitionHolder implements Com
 	 * @param beanName the name of the bean
 	 * @param aliases alias names for the bean, or {@code null} if none
 	 */
-	public BeanComponentDefinition(BeanDefinition beanDefinition, String beanName, @Nullable String[] aliases) {
-		this(new BeanDefinitionHolder(beanDefinition, beanName, aliases));
+	public BeanComponentDefinition(BeanDefinition beanDefinition, String beanName, String[] aliases) {
+		super(beanDefinition, beanName, aliases);
+		findInnerBeanDefinitionsAndBeanReferences(beanDefinition);
 	}
 
 	/**
 	 * Create a new BeanComponentDefinition for the given bean.
-	 * @param beanDefinitionHolder the BeanDefinitionHolder encapsulating
-	 * the bean definition as well as the name of the bean
+	 * @param holder the BeanDefinitionHolder encapsulating the
+	 * bean definition as well as the name of the bean
 	 */
-	public BeanComponentDefinition(BeanDefinitionHolder beanDefinitionHolder) {
-		super(beanDefinitionHolder);
+	public BeanComponentDefinition(BeanDefinitionHolder holder) {
+		super(holder);
+		findInnerBeanDefinitionsAndBeanReferences(holder.getBeanDefinition());
+	}
 
-		List<BeanDefinition> innerBeans = new ArrayList<>();
-		List<BeanReference> references = new ArrayList<>();
-		PropertyValues propertyValues = beanDefinitionHolder.getBeanDefinition().getPropertyValues();
-		for (PropertyValue propertyValue : propertyValues.getPropertyValues()) {
+
+	private void findInnerBeanDefinitionsAndBeanReferences(BeanDefinition beanDefinition) {
+		List<BeanDefinition> innerBeans = new ArrayList<BeanDefinition>();
+		List<BeanReference> references = new ArrayList<BeanReference>();
+		PropertyValues propertyValues = beanDefinition.getPropertyValues();
+		for (int i = 0; i < propertyValues.getPropertyValues().length; i++) {
+			PropertyValue propertyValue = propertyValues.getPropertyValues()[i];
 			Object value = propertyValue.getValue();
 			if (value instanceof BeanDefinitionHolder) {
 				innerBeans.add(((BeanDefinitionHolder) value).getBeanDefinition());
@@ -83,32 +89,27 @@ public class BeanComponentDefinition extends BeanDefinitionHolder implements Com
 				references.add((BeanReference) value);
 			}
 		}
-		this.innerBeanDefinitions = innerBeans.toArray(new BeanDefinition[0]);
-		this.beanReferences = references.toArray(new BeanReference[0]);
+		this.innerBeanDefinitions = innerBeans.toArray(new BeanDefinition[innerBeans.size()]);
+		this.beanReferences = references.toArray(new BeanReference[references.size()]);
 	}
 
 
-	@Override
 	public String getName() {
 		return getBeanName();
 	}
 
-	@Override
 	public String getDescription() {
 		return getShortDescription();
 	}
 
-	@Override
 	public BeanDefinition[] getBeanDefinitions() {
 		return new BeanDefinition[] {getBeanDefinition()};
 	}
 
-	@Override
 	public BeanDefinition[] getInnerBeanDefinitions() {
 		return this.innerBeanDefinitions;
 	}
 
-	@Override
 	public BeanReference[] getBeanReferences() {
 		return this.beanReferences;
 	}

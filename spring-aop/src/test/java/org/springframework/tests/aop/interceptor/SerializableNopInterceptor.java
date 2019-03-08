@@ -18,6 +18,7 @@ package org.springframework.tests.aop.interceptor;
 
 import java.io.Serializable;
 
+
 /**
  * Subclass of NopInterceptor that is serializable and
  * can be used to test proxy serialization.

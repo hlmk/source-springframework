@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,29 @@
 
 package org.springframework.aop.aspectj.autoproxy;
 
+import static org.junit.Assert.assertEquals;
+
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Juergen Hoeller
  * @author Chris Beams
  */
-public class AnnotationPointcutTests {
+public final class AnnotationPointcutTests {
 
 	private AnnotatedTestBean testBean;
 
-
 	@Before
-	public void setup() {
+	public void setUp() {
 		ClassPathXmlApplicationContext ctx =
-				new ClassPathXmlApplicationContext(getClass().getSimpleName() + "-context.xml", getClass());
+			new ClassPathXmlApplicationContext(getClass().getSimpleName() + "-context.xml", getClass());
 
 		testBean = (AnnotatedTestBean) ctx.getBean("testBean");
 	}
-
 
 	@Test
 	public void testAnnotationBindingInAroundAdvice() {
@@ -63,3 +60,4 @@ class TestMethodInterceptor implements MethodInterceptor {
 		return "this value";
 	}
 }
+

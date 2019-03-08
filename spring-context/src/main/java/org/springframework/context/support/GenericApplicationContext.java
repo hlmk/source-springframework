@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,19 @@
 package org.springframework.context.support;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.beans.factory.annotation.QualifierAnnotationAutowireCandidateResolver;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.ResourcePatternResolver;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -61,7 +54,7 @@ import org.springframework.util.Assert;
  *
  * <p>Usage example:
  *
- * <pre class="code">
+ * <pre>
  * GenericApplicationContext ctx = new GenericApplicationContext();
  * XmlBeanDefinitionReader xmlReader = new XmlBeanDefinitionReader(ctx);
  * xmlReader.loadBeanDefinitions(new ClassPathResource("applicationContext.xml"));
@@ -83,37 +76,6 @@ import org.springframework.util.Assert;
  * special bean definition formats in a refreshable manner, consider deriving
  * from the {@link AbstractRefreshableApplicationContext} base class.
  *
- *
- *
- * 译文：
- *
- * 通用ApplicationContext实现，它包含单个内部{@link org.springframework.beans.factory.support.DefaultListableBeanFactory}实例，并且不假定特定的bean定义格式。
- * 实现{@link org.springframework.beans.factory.support.BeanDefinitionRegistry}接口，以允许将任何bean定义读取器应用于它
- *
- * <p>典型用法是通过{@link org.springframework.beans.factory.support.BeanDefinitionRegistry}接口注册各种bean定义，
- * 然后调用{@link #refresh（）}以使用应用程序上下文初始化这些bean语义（处理{@link org.springframework.context.ApplicationContextAware}，
- * 自动检测{@link org.springframework.beans.factory.config.BeanFactoryPostProcessor BeanFactoryPostProcessors}等）
- *
- * <p>与为每次刷新创建新的内部BeanFactory实例的其他ApplicationContext实现相比，此上下文的内部BeanFactory从一开始就可用，以便能够在其上注册bean定义。 {@link #refresh（）}只能调用一次。
- *
- * <p>用法示例：
- * <pre class =“code”>
- *  GenericApplicationContext ctx = new GenericApplicationContext（）;
- *   XmlBeanDefinitionReader xmlReader = new XmlBeanDefinitionReader（ctx）;
- *   xmlReader.loadBeanDefinitions（new ClassPathResource（“applicationContext.xml”））;
- *   PropertiesBeanDefinitionReader propReader = new PropertiesBeanDefinitionReader（ctx）;
- *   propReader.loadBeanDefinitions（new ClassPathResource（“otherBeans.properties”））;
- *   ctx.refresh（）;
- *
- * 		MyBean myBean = (MyBean) ctx.getBean("myBean");
- *   ...</pre>
- *
- * 对于XML bean定义的典型情况，只需使用{@link ClassPathXmlApplicationContext}或{@link FileSystemXmlApplicationContext}，它们更容易设置 - 但不太灵活，
- * 因为您可以只使用标准资源位置来进行XML bean定义，而不是 混合任意bean定义格式。 Web环境中的等效项是{@link org.springframework.web.context.support.XmlWebApplicationContext}。
- *
- * <p>对于应该以可刷新的方式读取特殊bean定义格式的自定义应用程序上下文实现，请考虑从{@link AbstractRefreshableApplicationContext}基类派生。
- *
- *
  * @author Juergen Hoeller
  * @author Chris Beams
  * @since 1.1.2
@@ -126,12 +88,9 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 
 	private final DefaultListableBeanFactory beanFactory;
 
-	@Nullable
 	private ResourceLoader resourceLoader;
 
-	private boolean customClassLoader = false;
-
-	private final AtomicBoolean refreshed = new AtomicBoolean();
+	private boolean refreshed = false;
 
 
 	/**
@@ -141,6 +100,7 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 */
 	public GenericApplicationContext() {
 		this.beanFactory = new DefaultListableBeanFactory();
+		this.beanFactory.setAutowireCandidateResolver(new QualifierAnnotationAutowireCandidateResolver());
 	}
 
 	/**
@@ -160,7 +120,7 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 * @see #registerBeanDefinition
 	 * @see #refresh
 	 */
-	public GenericApplicationContext(@Nullable ApplicationContext parent) {
+	public GenericApplicationContext(ApplicationContext parent) {
 		this();
 		setParent(parent);
 	}
@@ -184,16 +144,20 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 * @see org.springframework.beans.factory.config.ConfigurableBeanFactory#setParentBeanFactory
 	 */
 	@Override
-	public void setParent(@Nullable ApplicationContext parent) {
+	public void setParent(ApplicationContext parent) {
 		super.setParent(parent);
 		this.beanFactory.setParentBeanFactory(getInternalParentBeanFactory());
+	}
+
+	@Override
+	public void setId(String id) {
+		super.setId(id);
 	}
 
 	/**
 	 * Set whether it should be allowed to override bean definitions by registering
 	 * a different definition with the same name, automatically replacing the former.
 	 * If not, an exception will be thrown. Default is "true".
-	 * @since 3.0
 	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#setAllowBeanDefinitionOverriding
 	 */
 	public void setAllowBeanDefinitionOverriding(boolean allowBeanDefinitionOverriding) {
@@ -205,7 +169,6 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 * try to resolve them.
 	 * <p>Default is "true". Turn this off to throw an exception when encountering
 	 * a circular reference, disallowing them completely.
-	 * @since 3.0
 	 * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#setAllowCircularReferences
 	 */
 	public void setAllowCircularReferences(boolean allowCircularReferences) {
@@ -235,10 +198,6 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	}
 
 
-	//---------------------------------------------------------------------
-	// ResourceLoader / ResourcePatternResolver override if necessary
-	//---------------------------------------------------------------------
-
 	/**
 	 * This implementation delegates to this context's ResourceLoader if set,
 	 * falling back to the default superclass behavior else.
@@ -266,21 +225,6 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 		return super.getResources(locationPattern);
 	}
 
-	@Override
-	public void setClassLoader(@Nullable ClassLoader classLoader) {
-		super.setClassLoader(classLoader);
-		this.customClassLoader = true;
-	}
-
-	@Override
-	@Nullable
-	public ClassLoader getClassLoader() {
-		if (this.resourceLoader != null && !this.customClassLoader) {
-			return this.resourceLoader.getClassLoader();
-		}
-		return super.getClassLoader();
-	}
-
 
 	//---------------------------------------------------------------------
 	// Implementations of AbstractApplicationContext's template methods
@@ -293,11 +237,12 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws IllegalStateException {
-		if (!this.refreshed.compareAndSet(false, true)) {
+		if (this.refreshed) {
 			throw new IllegalStateException(
 					"GenericApplicationContext does not support multiple refresh attempts: just call 'refresh' once");
 		}
 		this.beanFactory.setSerializationId(getId());
+		this.refreshed = true;
 	}
 
 	@Override
@@ -336,176 +281,39 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 		return this.beanFactory;
 	}
 
-	@Override
-	public AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
-		assertBeanFactoryActive();
-		return this.beanFactory;
-	}
-
 
 	//---------------------------------------------------------------------
 	// Implementation of BeanDefinitionRegistry
 	//---------------------------------------------------------------------
 
-	@Override
 	public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
 			throws BeanDefinitionStoreException {
 
 		this.beanFactory.registerBeanDefinition(beanName, beanDefinition);
 	}
 
-	@Override
 	public void removeBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
 		this.beanFactory.removeBeanDefinition(beanName);
 	}
 
-	@Override
 	public BeanDefinition getBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
 		return this.beanFactory.getBeanDefinition(beanName);
 	}
 
-	@Override
 	public boolean isBeanNameInUse(String beanName) {
 		return this.beanFactory.isBeanNameInUse(beanName);
 	}
 
-	@Override
 	public void registerAlias(String beanName, String alias) {
 		this.beanFactory.registerAlias(beanName, alias);
 	}
 
-	@Override
 	public void removeAlias(String alias) {
 		this.beanFactory.removeAlias(alias);
 	}
 
-	@Override
 	public boolean isAlias(String beanName) {
 		return this.beanFactory.isAlias(beanName);
-	}
-
-
-	//---------------------------------------------------------------------
-	// Convenient methods for registering individual beans
-	//---------------------------------------------------------------------
-
-	/**
-	 * Register a bean from the given bean class, optionally customizing its
-	 * bean definition metadata (typically declared as a lambda expression
-	 * or method reference).
-	 * @param beanClass the class of the bean (resolving a public constructor
-	 * to be autowired, possibly simply the default constructor)
-	 * @param customizers one or more callbacks for customizing the factory's
-	 * {@link BeanDefinition}, e.g. setting a lazy-init or primary flag
-	 * @since 5.0
-	 * @see #registerBean(String, Class, Supplier, BeanDefinitionCustomizer...)
-	 */
-	public final <T> void registerBean(Class<T> beanClass, BeanDefinitionCustomizer... customizers) {
-		registerBean(null, beanClass, null, customizers);
-	}
-
-	/**
-	 * Register a bean from the given bean class, using the given supplier for
-	 * obtaining a new instance (typically declared as a lambda expression or
-	 * method reference), optionally customizing its bean definition metadata
-	 * (again typically declared as a lambda expression or method reference).
-	 * @param beanName the name of the bean (may be {@code null})
-	 * @param beanClass the class of the bean (resolving a public constructor
-	 * to be autowired, possibly simply the default constructor)
-	 * @param customizers one or more callbacks for customizing the factory's
-	 * {@link BeanDefinition}, e.g. setting a lazy-init or primary flag
-	 * @since 5.0
-	 * @see #registerBean(String, Class, Supplier, BeanDefinitionCustomizer...)
-	 */
-	public final <T> void registerBean(
-			@Nullable String beanName, Class<T> beanClass, BeanDefinitionCustomizer... customizers) {
-
-		registerBean(beanName, beanClass, null, customizers);
-	}
-
-	/**
-	 * Register a bean from the given bean class, using the given supplier for
-	 * obtaining a new instance (typically declared as a lambda expression or
-	 * method reference), optionally customizing its bean definition metadata
-	 * (again typically declared as a lambda expression or method reference).
-	 * @param beanClass the class of the bean
-	 * @param supplier a callback for creating an instance of the bean
-	 * @param customizers one or more callbacks for customizing the factory's
-	 * {@link BeanDefinition}, e.g. setting a lazy-init or primary flag
-	 * @since 5.0
-	 * @see #registerBean(String, Class, Supplier, BeanDefinitionCustomizer...)
-	 */
-	public final <T> void registerBean(
-			Class<T> beanClass, Supplier<T> supplier, BeanDefinitionCustomizer... customizers) {
-
-		registerBean(null, beanClass, supplier, customizers);
-	}
-
-	/**
-	 * Register a bean from the given bean class, using the given supplier for
-	 * obtaining a new instance (typically declared as a lambda expression or
-	 * method reference), optionally customizing its bean definition metadata
-	 * (again typically declared as a lambda expression or method reference).
-	 * <p>This method can be overridden to adapt the registration mechanism for
-	 * all {@code registerBean} methods (since they all delegate to this one).
-	 * @param beanName the name of the bean (may be {@code null})
-	 * @param beanClass the class of the bean
-	 * @param supplier a callback for creating an instance of the bean (in case
-	 * of {@code null}, resolving a public constructor to be autowired instead)
-	 * @param customizers one or more callbacks for customizing the factory's
-	 * {@link BeanDefinition}, e.g. setting a lazy-init or primary flag
-	 * @since 5.0
-	 */
-	public <T> void registerBean(@Nullable String beanName, Class<T> beanClass,
-			@Nullable Supplier<T> supplier, BeanDefinitionCustomizer... customizers) {
-
-		ClassDerivedBeanDefinition beanDefinition = new ClassDerivedBeanDefinition(beanClass);
-		if (supplier != null) {
-			beanDefinition.setInstanceSupplier(supplier);
-		}
-		for (BeanDefinitionCustomizer customizer : customizers) {
-			customizer.customize(beanDefinition);
-		}
-
-		String nameToUse = (beanName != null ? beanName : beanClass.getName());
-		registerBeanDefinition(nameToUse, beanDefinition);
-	}
-
-
-	/**
-	 * {@link RootBeanDefinition} marker subclass for {@code #registerBean} based
-	 * registrations with flexible autowiring for public constructors.
-	 */
-	@SuppressWarnings("serial")
-	private static class ClassDerivedBeanDefinition extends RootBeanDefinition {
-
-		public ClassDerivedBeanDefinition(Class<?> beanClass) {
-			super(beanClass);
-		}
-
-		public ClassDerivedBeanDefinition(ClassDerivedBeanDefinition original) {
-			super(original);
-		}
-
-		@Override
-		@Nullable
-		public Constructor<?>[] getPreferredConstructors() {
-			Class<?> clazz = getBeanClass();
-			Constructor<?> primaryCtor = BeanUtils.findPrimaryConstructor(clazz);
-			if (primaryCtor != null) {
-				return new Constructor<?>[] {primaryCtor};
-			}
-			Constructor<?>[] publicCtors = clazz.getConstructors();
-			if (publicCtors.length > 0) {
-				return publicCtors;
-			}
-			return null;
-		}
-
-		@Override
-		public RootBeanDefinition cloneBeanDefinition() {
-			return new ClassDerivedBeanDefinition(this);
-		}
 	}
 
 }

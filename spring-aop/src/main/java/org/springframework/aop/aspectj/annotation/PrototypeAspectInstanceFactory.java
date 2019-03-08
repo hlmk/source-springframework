@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 
 package org.springframework.aop.aspectj.annotation;
 
-import java.io.Serializable;
-
 import org.springframework.beans.factory.BeanFactory;
 
 /**
- * {@link org.springframework.aop.aspectj.AspectInstanceFactory} backed by a
- * {@link BeanFactory}-provided prototype, enforcing prototype semantics.
+ * AspectInstanceFactory backed by a BeanFactory-provided prototype,
+ * enforcing prototype semantics.
  *
  * <p>Note that this may instantiate multiple times, which probably won't give the
  * semantics you expect. Use a {@link LazySingletonAspectInstanceFactoryDecorator}
@@ -34,8 +32,7 @@ import org.springframework.beans.factory.BeanFactory;
  * @see org.springframework.beans.factory.BeanFactory
  * @see LazySingletonAspectInstanceFactoryDecorator
  */
-@SuppressWarnings("serial")
-public class PrototypeAspectInstanceFactory extends BeanFactoryAspectInstanceFactory implements Serializable {
+public class PrototypeAspectInstanceFactory extends BeanFactoryAspectInstanceFactory {
 
 	/**
 	 * Create a PrototypeAspectInstanceFactory. AspectJ will be called to

@@ -19,11 +19,10 @@ package org.springframework.web.servlet.tags.form;
 import java.beans.PropertyEditor;
 import java.util.Collection;
 import java.util.Map;
-import javax.servlet.jsp.JspException;
 
+import javax.servlet.jsp.JspException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.servlet.support.BindStatus;
@@ -93,17 +92,15 @@ class OptionWriter {
 
 	private final BindStatus bindStatus;
 
-	@Nullable
 	private final String valueProperty;
 
-	@Nullable
 	private final String labelProperty;
 
 	private final boolean htmlEscape;
 
 
 	/**
-	 * Create a new {@code OptionWriter} for the supplied {@code objectSource}.
+	 * Creates a new {@code OptionWriter} for the supplied {@code objectSource}.
 	 * @param optionSource the source of the {@code options} (never {@code null})
 	 * @param bindStatus the {@link BindStatus} for the bound value (never {@code null})
 	 * @param valueProperty the name of the property used to render {@code option} values
@@ -111,8 +108,8 @@ class OptionWriter {
 	 * @param labelProperty the name of the property used to render {@code option} labels
 	 * (optional)
 	 */
-	public OptionWriter(Object optionSource, BindStatus bindStatus,
-			@Nullable String valueProperty, @Nullable String labelProperty, boolean htmlEscape) {
+	public OptionWriter(
+			Object optionSource, BindStatus bindStatus, String valueProperty, String labelProperty, boolean htmlEscape) {
 
 		Assert.notNull(optionSource, "'optionSource' must not be null");
 		Assert.notNull(bindStatus, "'bindStatus' must not be null");
@@ -138,7 +135,7 @@ class OptionWriter {
 		else if (this.optionSource instanceof Map) {
 			renderFromMap(tagWriter);
 		}
-		else if (this.optionSource instanceof Class && ((Class<?>) this.optionSource).isEnum()) {
+		else if (this.optionSource instanceof Class && ((Class) this.optionSource).isEnum()) {
 			renderFromEnum(tagWriter);
 		}
 		else {
@@ -148,7 +145,7 @@ class OptionWriter {
 	}
 
 	/**
-	 * Render the inner '{@code option}' tags using the {@link #optionSource}.
+	 * Renders the inner '{@code option}' tags using the {@link #optionSource}.
 	 * @see #doRenderFromCollection(java.util.Collection, TagWriter)
 	 */
 	private void renderFromArray(TagWriter tagWriter) throws JspException {
@@ -156,13 +153,13 @@ class OptionWriter {
 	}
 
 	/**
-	 * Render the inner '{@code option}' tags using the supplied
+	 * Renders the inner '{@code option}' tags using the supplied
 	 * {@link Map} as the source.
 	 * @see #renderOption(TagWriter, Object, Object, Object)
 	 */
 	private void renderFromMap(TagWriter tagWriter) throws JspException {
-		Map<?, ?> optionMap = (Map<?, ?>) this.optionSource;
-		for (Map.Entry<?, ?> entry : optionMap.entrySet()) {
+		Map<?, ?> optionMap = (Map) this.optionSource;
+		for (Map.Entry entry : optionMap.entrySet()) {
 			Object mapKey = entry.getKey();
 			Object mapValue = entry.getValue();
 			Object renderValue = (this.valueProperty != null ?
@@ -176,28 +173,28 @@ class OptionWriter {
 	}
 
 	/**
-	 * Render the inner '{@code option}' tags using the {@link #optionSource}.
+	 * Renders the inner '{@code option}' tags using the {@link #optionSource}.
 	 * @see #doRenderFromCollection(java.util.Collection, TagWriter)
 	 */
 	private void renderFromCollection(TagWriter tagWriter) throws JspException {
-		doRenderFromCollection((Collection<?>) this.optionSource, tagWriter);
+		doRenderFromCollection((Collection) this.optionSource, tagWriter);
 	}
 
 	/**
-	 * Render the inner '{@code option}' tags using the {@link #optionSource}.
+	 * Renders the inner '{@code option}' tags using the {@link #optionSource}.
 	 * @see #doRenderFromCollection(java.util.Collection, TagWriter)
 	 */
 	private void renderFromEnum(TagWriter tagWriter) throws JspException {
-		doRenderFromCollection(CollectionUtils.arrayToList(((Class<?>) this.optionSource).getEnumConstants()), tagWriter);
+		doRenderFromCollection(CollectionUtils.arrayToList(((Class) this.optionSource).getEnumConstants()), tagWriter);
 	}
 
 	/**
-	 * Render the inner '{@code option}' tags using the supplied {@link Collection} of
+	 * Renders the inner '{@code option}' tags using the supplied {@link Collection} of
 	 * objects as the source. The value of the {@link #valueProperty} field is used
 	 * when rendering the '{@code value}' of the '{@code option}' and the value of the
 	 * {@link #labelProperty} property is used when rendering the label.
 	 */
-	private void doRenderFromCollection(Collection<?> optionCollection, TagWriter tagWriter) throws JspException {
+	private void doRenderFromCollection(Collection optionCollection, TagWriter tagWriter) throws JspException {
 		for (Object item : optionCollection) {
 			BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(item);
 			Object value;
@@ -216,12 +213,10 @@ class OptionWriter {
 	}
 
 	/**
-	 * Render an HTML '{@code option}' with the supplied value and label. Marks the
+	 * Renders an HTML '{@code option}' with the supplied value and label. Marks the
 	 * value as 'selected' if either the item itself or its value match the bound value.
 	 */
-	private void renderOption(TagWriter tagWriter, Object item, @Nullable Object value, @Nullable Object label)
-			throws JspException {
-
+	private void renderOption(TagWriter tagWriter, Object item, Object value, Object label) throws JspException {
 		tagWriter.startTag("option");
 		writeCommonAttributes(tagWriter);
 
@@ -244,17 +239,17 @@ class OptionWriter {
 	}
 
 	/**
-	 * Determine the display value of the supplied {@code Object},
+	 * Determines the display value of the supplied {@code Object},
 	 * HTML-escaped as required.
 	 */
-	private String getDisplayString(@Nullable Object value) {
+	private String getDisplayString(Object value) {
 		PropertyEditor editor = (value != null ? this.bindStatus.findEditor(value.getClass()) : null);
 		return ValueFormatter.getDisplayString(value, editor, this.htmlEscape);
 	}
 
 	/**
 	 * Process the option value before it is written.
-	 * <p>The default implementation simply returns the same value unchanged.
+	 * The default implementation simply returns the same value unchanged.
 	 */
 	protected String processOptionValue(String resolvedValue) {
 		return resolvedValue;
@@ -262,9 +257,9 @@ class OptionWriter {
 
 	/**
 	 * Determine whether the supplied values matched the selected value.
-	 * <p>Delegates to {@link SelectedValueComparator#isSelected}.
+	 * Delegates to {@link SelectedValueComparator#isSelected}.
 	 */
-	private boolean isOptionSelected(@Nullable Object resolvedValue) {
+	private boolean isOptionSelected(Object resolvedValue) {
 		return SelectedValueComparator.isSelected(this.bindStatus, resolvedValue);
 	}
 
@@ -276,7 +271,7 @@ class OptionWriter {
 	}
 
 	/**
-	 * Write default attributes configured to the supplied {@link TagWriter}.
+	 * Writes default attributes configured to the supplied {@link TagWriter}.
 	 */
 	protected void writeCommonAttributes(TagWriter tagWriter) throws JspException {
 	}

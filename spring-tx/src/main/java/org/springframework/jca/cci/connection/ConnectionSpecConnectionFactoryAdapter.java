@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,9 @@ package org.springframework.jca.cci.connection;
 
 import javax.resource.ResourceException;
 import javax.resource.cci.Connection;
-import javax.resource.cci.ConnectionFactory;
 import javax.resource.cci.ConnectionSpec;
 
 import org.springframework.core.NamedThreadLocal;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /**
  * An adapter for a target CCI {@link javax.resource.cci.ConnectionFactory},
@@ -68,11 +65,10 @@ import org.springframework.util.Assert;
 @SuppressWarnings("serial")
 public class ConnectionSpecConnectionFactoryAdapter extends DelegatingConnectionFactory {
 
-	@Nullable
 	private ConnectionSpec connectionSpec;
 
 	private final ThreadLocal<ConnectionSpec> threadBoundSpec =
-			new NamedThreadLocal<>("Current CCI ConnectionSpec");
+			new NamedThreadLocal<ConnectionSpec>("Current CCI ConnectionSpec");
 
 
 	/**
@@ -132,10 +128,16 @@ public class ConnectionSpecConnectionFactoryAdapter extends DelegatingConnection
 	 * @see javax.resource.cci.ConnectionFactory#getConnection(javax.resource.cci.ConnectionSpec)
 	 * @see javax.resource.cci.ConnectionFactory#getConnection()
 	 */
-	protected Connection doGetConnection(@Nullable ConnectionSpec spec) throws ResourceException {
-		ConnectionFactory connectionFactory = getTargetConnectionFactory();
-		Assert.state(connectionFactory != null, "No 'targetConnectionFactory' set");
-		return (spec != null ? connectionFactory.getConnection(spec) : connectionFactory.getConnection());
+	protected Connection doGetConnection(ConnectionSpec spec) throws ResourceException {
+		if (getTargetConnectionFactory() == null) {
+			throw new IllegalStateException("targetConnectionFactory is required");
+		}
+		if (spec != null) {
+			return getTargetConnectionFactory().getConnection(spec);
+		}
+		else {
+			return getTargetConnectionFactory().getConnection();
+		}
 	}
 
 }

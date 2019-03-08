@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,14 +41,6 @@ import org.springframework.core.io.Resource;
  * an {@link XmlBeanDefinitionReader}.</b> The latter allows for reading from multiple XML
  * resources and is highly configurable in its actual XML parsing behavior.
  *
- *
- *
- * XmlBeanFactory 对 DefaultListableBeanFactory 类进行了扩展，主要用于从XML文档中读取 BeanDefinition，对于注册及获取bean
- * 都是使用从父类 DefaultListableBeanFactory 继承的方法去实现，而唯独与父类不同的个性化实现就是增加了 XmlBeanDefinitionReader 类型的
- * reader属性。在 XMLBeanFactory 中主要使用 reader 属性对资源文件进行读取和注册。
- *
- *
- *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Chris Beams
@@ -68,7 +60,7 @@ public class XmlBeanFactory extends DefaultListableBeanFactory {
 	/**
 	 * Create a new XmlBeanFactory with the given resource,
 	 * which must be parsable using DOM.
-	 * @param resource the XML resource to load bean definitions from
+	 * @param resource XML resource to load bean definitions from
 	 * @throws BeansException in case of loading or parsing errors
 	 */
 	public XmlBeanFactory(Resource resource) throws BeansException {
@@ -78,7 +70,7 @@ public class XmlBeanFactory extends DefaultListableBeanFactory {
 	/**
 	 * Create a new XmlBeanFactory with the given input stream,
 	 * which must be parsable using DOM.
-	 * @param resource the XML resource to load bean definitions from
+	 * @param resource XML resource to load bean definitions from
 	 * @param parentBeanFactory parent bean factory
 	 * @throws BeansException in case of loading or parsing errors
 	 */

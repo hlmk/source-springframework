@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.context.annotation;
 
 import org.junit.Test;
-
 import org.springframework.beans.factory.support.DefaultBeanNameGenerator;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.core.type.filter.TypeFilter;
@@ -30,37 +29,33 @@ import org.springframework.core.type.filter.TypeFilter;
  * @see ComponentScanAnnotationIntegrationTests
  */
 public class ComponentScanAnnotationTests {
-
 	@Test
 	public void noop() {
-		// no-op; the @ComponentScan-annotated MyConfig class below simply exercises
+		// no-op; the @ComponentScan-annotated MyConfig class below simply excercises
 		// available attributes of the annotation.
 	}
 }
 
-
-@interface MyAnnotation {
-}
+@interface MyAnnotation { }
 
 @Configuration
 @ComponentScan(
-	basePackageClasses = TestBean.class,
+	basePackageClasses={TestBean.class},
 	nameGenerator = DefaultBeanNameGenerator.class,
 	scopedProxy = ScopedProxyMode.NO,
 	scopeResolver = AnnotationScopeMetadataResolver.class,
-	resourcePattern = "**/*custom.class",
 	useDefaultFilters = false,
+	resourcePattern = "**/*custom.class",
 	includeFilters = {
 		@Filter(type = FilterType.ANNOTATION, value = MyAnnotation.class)
 	},
 	excludeFilters = {
 		@Filter(type = FilterType.CUSTOM, value = TypeFilter.class)
-	},
-	lazyInit = true
+	}
 )
 class MyConfig {
+
 }
 
-@ComponentScan(basePackageClasses = example.scannable.NamedComponent.class)
-class SimpleConfig {
-}
+@ComponentScan(basePackageClasses=example.scannable.NamedComponent.class)
+class SimpleConfig { }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package org.springframework.context.event;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.core.ResolvableType;
-import org.springframework.lang.Nullable;
 
 /**
  * Interface to be implemented by objects that can manage a number of
@@ -31,7 +29,6 @@ import org.springframework.lang.Nullable;
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
- * @author Stephane Nicoll
  */
 public interface ApplicationEventMulticaster {
 
@@ -39,7 +36,7 @@ public interface ApplicationEventMulticaster {
 	 * Add a listener to be notified of all events.
 	 * @param listener the listener to add
 	 */
-	void addApplicationListener(ApplicationListener<?> listener);
+	void addApplicationListener(ApplicationListener listener);
 
 	/**
 	 * Add a listener bean to be notified of all events.
@@ -51,7 +48,7 @@ public interface ApplicationEventMulticaster {
 	 * Remove a listener from the notification list.
 	 * @param listener the listener to remove
 	 */
-	void removeApplicationListener(ApplicationListener<?> listener);
+	void removeApplicationListener(ApplicationListener listener);
 
 	/**
 	 * Remove a listener bean from the notification list.
@@ -68,20 +65,8 @@ public interface ApplicationEventMulticaster {
 
 	/**
 	 * Multicast the given application event to appropriate listeners.
-	 * <p>Consider using {@link #multicastEvent(ApplicationEvent, ResolvableType)}
-	 * if possible as it provides a better support for generics-based events.
 	 * @param event the event to multicast
 	 */
 	void multicastEvent(ApplicationEvent event);
-
-	/**
-	 * Multicast the given application event to appropriate listeners.
-	 * <p>If the {@code eventType} is {@code null}, a default type is built
-	 * based on the {@code event} instance.
-	 * @param event the event to multicast
-	 * @param eventType the type of event (can be null)
-	 * @since 4.2
-	 */
-	void multicastEvent(ApplicationEvent event, @Nullable ResolvableType eventType);
 
 }

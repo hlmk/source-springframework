@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.web.context.request.async;
 
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.web.context.request.NativeWebRequest;
 
 /**
@@ -40,18 +37,10 @@ class CallableInterceptorChain {
 
 	private int preProcessIndex = -1;
 
-	private volatile Future<?> taskFuture;
-
 
 	public CallableInterceptorChain(List<CallableProcessingInterceptor> interceptors) {
 		this.interceptors = interceptors;
 	}
-
-
-	public void setTaskFuture(Future<?> taskFuture) {
-		this.taskFuture = taskFuture;
-	}
-
 
 	public void applyBeforeConcurrentHandling(NativeWebRequest request, Callable<?> task) throws Exception {
 		for (CallableProcessingInterceptor interceptor : this.interceptors) {
@@ -72,15 +61,13 @@ class CallableInterceptorChain {
 			try {
 				this.interceptors.get(i).postProcess(request, task, concurrentResult);
 			}
-			catch (Throwable ex) {
+			catch (Throwable t) {
 				// Save the first exception but invoke all interceptors
 				if (exceptionResult != null) {
-					if (logger.isTraceEnabled()) {
-						logger.trace("Ignoring failure in postProcess method", ex);
-					}
+					logger.error("postProcess error", t);
 				}
 				else {
-					exceptionResult = ex;
+					exceptionResult = t;
 				}
 			}
 		}
@@ -88,7 +75,6 @@ class CallableInterceptorChain {
 	}
 
 	public Object triggerAfterTimeout(NativeWebRequest request, Callable<?> task) {
-		cancelTask();
 		for (CallableProcessingInterceptor interceptor : this.interceptors) {
 			try {
 				Object result = interceptor.handleTimeout(request, task);
@@ -99,39 +85,8 @@ class CallableInterceptorChain {
 					return result;
 				}
 			}
-			catch (Throwable ex) {
-				return ex;
-			}
-		}
-		return CallableProcessingInterceptor.RESULT_NONE;
-	}
-
-	private void cancelTask() {
-		Future<?> future = this.taskFuture;
-		if (future != null) {
-			try {
-				future.cancel(true);
-			}
-			catch (Throwable ex) {
-				// Ignore
-			}
-		}
-	}
-
-	public Object triggerAfterError(NativeWebRequest request, Callable<?> task, Throwable throwable) {
-		cancelTask();
-		for (CallableProcessingInterceptor interceptor : this.interceptors) {
-			try {
-				Object result = interceptor.handleError(request, task, throwable);
-				if (result == CallableProcessingInterceptor.RESPONSE_HANDLED) {
-					break;
-				}
-				else if (result != CallableProcessingInterceptor.RESULT_NONE) {
-					return result;
-				}
-			}
-			catch (Throwable ex) {
-				return ex;
+			catch (Throwable t) {
+				return t;
 			}
 		}
 		return CallableProcessingInterceptor.RESULT_NONE;
@@ -142,10 +97,8 @@ class CallableInterceptorChain {
 			try {
 				this.interceptors.get(i).afterCompletion(request, task);
 			}
-			catch (Throwable ex) {
-				if (logger.isTraceEnabled()) {
-					logger.trace("Ignoring failure in afterCompletion method", ex);
-				}
+			catch (Throwable t) {
+				logger.error("afterCompletion error", t);
 			}
 		}
 	}

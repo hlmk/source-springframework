@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -30,7 +31,6 @@ import org.aspectj.weaver.tools.PointcutParser;
 import org.aspectj.weaver.tools.PointcutPrimitive;
 
 import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -114,7 +114,6 @@ import org.springframework.util.StringUtils;
  * returning {@code null} in the case that the parameter names cannot be discovered.
  *
  * @author Adrian Colyer
- * @author Juergen Hoeller
  * @since 2.0
  */
 public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscoverer {
@@ -132,8 +131,8 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	private static final int STEP_REFERENCE_PCUT_BINDING = 7;
 	private static final int STEP_FINISHED = 8;
 
-	private static final Set<String> singleValuedAnnotationPcds = new HashSet<>();
-	private static final Set<String> nonReferencePointcutTokens = new HashSet<>();
+	private static final Set<String> singleValuedAnnotationPcds = new HashSet<String>();
+	private static final Set<String> nonReferencePointcutTokens = new HashSet<String>();
 
 
 	static {
@@ -143,8 +142,9 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 		singleValuedAnnotationPcds.add("@withincode");
 		singleValuedAnnotationPcds.add("@annotation");
 
-		Set<PointcutPrimitive> pointcutPrimitives = PointcutParser.getAllSupportedPointcutPrimitives();
-		for (PointcutPrimitive primitive : pointcutPrimitives) {
+		Set pointcutPrimitives = PointcutParser.getAllSupportedPointcutPrimitives();
+		for (Iterator iterator = pointcutPrimitives.iterator(); iterator.hasNext();) {
+			PointcutPrimitive primitive = (PointcutPrimitive) iterator.next();
 			nonReferencePointcutTokens.add(primitive.getName());
 		}
 		nonReferencePointcutTokens.add("&&");
@@ -156,35 +156,37 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	}
 
 
-	/** The pointcut expression associated with the advice, as a simple String. */
-	@Nullable
-	private String pointcutExpression;
-
 	private boolean raiseExceptions;
 
-	/** If the advice is afterReturning, and binds the return value, this is the parameter name used. */
-	@Nullable
+	/**
+	 * If the advice is afterReturning, and binds the return value, this is the parameter name used.
+	 */
 	private String returningName;
 
-	/** If the advice is afterThrowing, and binds the thrown value, this is the parameter name used. */
-	@Nullable
+	/**
+	 * If the advice is afterThrowing, and binds the thrown value, this is the parameter name used.
+	 */
 	private String throwingName;
 
-	private Class<?>[] argumentTypes = new Class<?>[0];
+	/**
+	 * The pointcut expression associated with the advice, as a simple String.
+	 */
+	private String pointcutExpression;
 
-	private String[] parameterNameBindings = new String[0];
+	private Class[] argumentTypes;
+
+	private String[] parameterNameBindings;
 
 	private int numberOfRemainingUnboundArguments;
 
 
 	/**
-	 * Create a new discoverer that attempts to discover parameter names.
+	 * Create a new discoverer that attempts to discover parameter names
 	 * from the given pointcut expression.
 	 */
-	public AspectJAdviceParameterNameDiscoverer(@Nullable String pointcutExpression) {
+	public AspectJAdviceParameterNameDiscoverer(String pointcutExpression) {
 		this.pointcutExpression = pointcutExpression;
 	}
-
 
 	/**
 	 * Indicate whether {@link IllegalArgumentException} and {@link AmbiguousBindingException}
@@ -200,7 +202,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * returning variable name must be specified.
 	 * @param returningName the name of the returning variable
 	 */
-	public void setReturningName(@Nullable String returningName) {
+	public void setReturningName(String returningName) {
 		this.returningName = returningName;
 	}
 
@@ -209,10 +211,9 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * throwing variable name must be specified.
 	 * @param throwingName the name of the throwing variable
 	 */
-	public void setThrowingName(@Nullable String throwingName) {
+	public void setThrowingName(String throwingName) {
 		this.throwingName = throwingName;
 	}
-
 
 	/**
 	 * Deduce the parameter names for an advice method.
@@ -221,8 +222,6 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * @param method the target {@link Method}
 	 * @return the parameter names
 	 */
-	@Override
-	@Nullable
 	public String[] getParameterNames(Method method) {
 		this.argumentTypes = method.getParameterTypes();
 		this.numberOfRemainingUnboundArguments = this.argumentTypes.length;
@@ -272,7 +271,15 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 				}
 			}
 		}
-		catch (AmbiguousBindingException | IllegalArgumentException ex) {
+		catch (AmbiguousBindingException ambigEx) {
+			if (this.raiseExceptions) {
+				throw ambigEx;
+			}
+			else {
+				return null;
+			}
+		}
+		catch (IllegalArgumentException ex) {
 			if (this.raiseExceptions) {
 				throw ex;
 			}
@@ -302,9 +309,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * @throws UnsupportedOperationException if
 	 * {@link #setRaiseExceptions(boolean) raiseExceptions} has been set to {@code true}
 	 */
-	@Override
-	@Nullable
-	public String[] getParameterNames(Constructor<?> ctor) {
+	public String[] getParameterNames(Constructor ctor) {
 		if (this.raiseExceptions) {
 			throw new UnsupportedOperationException("An advice method can never be a constructor");
 		}
@@ -409,11 +414,11 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * <p>Some more support from AspectJ in doing this exercise would be nice... :)
 	 */
 	private void maybeBindAnnotationsFromPointcutExpression() {
-		List<String> varNames = new ArrayList<>();
+		List<String> varNames = new ArrayList<String>();
 		String[] tokens = StringUtils.tokenizeToStringArray(this.pointcutExpression, " ");
 		for (int i = 0; i < tokens.length; i++) {
 			String toMatch = tokens[i];
-			int firstParenIndex = toMatch.indexOf('(');
+			int firstParenIndex = toMatch.indexOf("(");
 			if (firstParenIndex != -1) {
 				toMatch = toMatch.substring(0, firstParenIndex);
 			}
@@ -468,9 +473,8 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	/*
 	 * If the token starts meets Java identifier conventions, it's in.
 	 */
-	@Nullable
-	private String maybeExtractVariableName(@Nullable String candidateToken) {
-		if (!StringUtils.hasLength(candidateToken)) {
+	private String maybeExtractVariableName(String candidateToken) {
+		if (candidateToken == null || candidateToken.equals("")) {
 			return null;
 		}
 		if (Character.isJavaIdentifierStart(candidateToken.charAt(0)) &&
@@ -492,7 +496,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * Given an args pointcut body (could be {@code args} or {@code at_args}),
 	 * add any candidate variable names to the given list.
 	 */
-	private void maybeExtractVariableNamesFromArgs(@Nullable String argsSpec, List<String> varNames) {
+	private void maybeExtractVariableNamesFromArgs(String argsSpec, List<String> varNames) {
 		if (argsSpec == null) {
 			return;
 		}
@@ -516,7 +520,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 					+ " unbound args at this(),target(),args() binding stage, with no way to determine between them");
 		}
 
-		List<String> varNames = new ArrayList<>();
+		List<String> varNames = new ArrayList<String>();
 		String[] tokens = StringUtils.tokenizeToStringArray(this.pointcutExpression, " ");
 		for (int i = 0; i < tokens.length; i++) {
 			if (tokens[i].equals("this") ||
@@ -533,7 +537,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 			else if (tokens[i].equals("args") || tokens[i].startsWith("args(")) {
 				PointcutBody body = getPointcutBody(tokens, i);
 				i += body.numTokensConsumed;
-				List<String> candidateVarNames = new ArrayList<>();
+				List<String> candidateVarNames = new ArrayList<String>();
 				maybeExtractVariableNamesFromArgs(body.text, candidateVarNames);
 				// we may have found some var names that were bound in previous primitive args binding step,
 				// filter them out...
@@ -567,14 +571,14 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 					+ " unbound args at reference pointcut binding stage, with no way to determine between them");
 		}
 
-		List<String> varNames = new ArrayList<>();
+		List<String> varNames = new ArrayList<String>();
 		String[] tokens = StringUtils.tokenizeToStringArray(this.pointcutExpression, " ");
 		for (int i = 0; i < tokens.length; i++) {
 			String toMatch = tokens[i];
 			if (toMatch.startsWith("!")) {
 				toMatch = toMatch.substring(1);
 			}
-			int firstParenIndex = toMatch.indexOf('(');
+			int firstParenIndex = toMatch.indexOf("(");
 			if (firstParenIndex != -1) {
 				toMatch = toMatch.substring(0, firstParenIndex);
 			}
@@ -669,7 +673,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	}
 
 	/**
-	 * Match up args against unbound arguments of primitive types.
+	 * Match up args against unbound arguments of primitive types
 	 */
 	private void maybeBindPrimitiveArgsFromPointcutExpression() {
 		int numUnboundPrimitives = countNumberOfUnboundPrimitiveArguments();
@@ -679,7 +683,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 		}
 		if (numUnboundPrimitives == 1) {
 			// Look for arg variable and bind it if we find exactly one...
-			List<String> varNames = new ArrayList<>();
+			List<String> varNames = new ArrayList<String>();
 			String[] tokens = StringUtils.tokenizeToStringArray(this.pointcutExpression, " ");
 			for (int i = 0; i < tokens.length; i++) {
 				if (tokens[i].equals("args") || tokens[i].startsWith("args(")) {
@@ -725,7 +729,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * Return {@code true} if the given argument type is a subclass
 	 * of the given supertype.
 	 */
-	private boolean isSubtypeOf(Class<?> supertype, int argumentNumber) {
+	private boolean isSubtypeOf(Class supertype, int argumentNumber) {
 		return supertype.isAssignableFrom(this.argumentTypes[argumentNumber]);
 	}
 
@@ -753,7 +757,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * Find the argument index with the given type, and bind the given
 	 * {@code varName} in that position.
 	 */
-	private void findAndBind(Class<?> argumentType, String varName) {
+	private void findAndBind(Class argumentType, String varName) {
 		for (int i = 0; i < this.argumentTypes.length; i++) {
 			if (isUnbound(i) && isSubtypeOf(argumentType, i)) {
 				bindParameterName(i, varName);
@@ -773,10 +777,9 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 
 		private int numTokensConsumed;
 
-		@Nullable
 		private String text;
 
-		public PointcutBody(int tokens, @Nullable String text) {
+		public PointcutBody(int tokens, String text) {
 			this.numTokensConsumed = tokens;
 			this.text = text;
 		}

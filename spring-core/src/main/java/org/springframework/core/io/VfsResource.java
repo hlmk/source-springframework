@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,12 @@ import org.springframework.core.NestedIOException;
 import org.springframework.util.Assert;
 
 /**
- * JBoss VFS based {@link Resource} implementation.
- *
- * <p>As of Spring 4.0, this class supports VFS 3.x on JBoss AS 6+
- * (package {@code org.jboss.vfs}) and is in particular compatible with
- * JBoss AS 7 and WildFly 8+.
+ * VFS based {@link Resource} implementation.
+ * Supports the corresponding VFS API versions on JBoss AS 5.x as well as 6.x and 7.x.
  *
  * @author Ales Justin
  * @author Juergen Hoeller
  * @author Costin Leau
- * @author Sam Brannen
  * @since 3.0
  * @see org.jboss.vfs.VirtualFile
  */
@@ -44,18 +40,12 @@ public class VfsResource extends AbstractResource {
 	private final Object resource;
 
 
-	/**
-	 * Create a new {@code VfsResource} wrapping the given resource handle.
-	 * @param resource a {@code org.jboss.vfs.VirtualFile} instance
-	 * (untyped in order to avoid a static dependency on the VFS API)
-	 */
-	public VfsResource(Object resource) {
-		Assert.notNull(resource, "VirtualFile must not be null");
-		this.resource = resource;
+	public VfsResource(Object resources) {
+		Assert.notNull(resources, "VirtualFile must not be null");
+		this.resource = resources;
 	}
 
 
-	@Override
 	public InputStream getInputStream() throws IOException {
 		return VfsUtils.getInputStream(this.resource);
 	}
@@ -124,15 +114,13 @@ public class VfsResource extends AbstractResource {
 		return VfsUtils.getName(this.resource);
 	}
 
-	@Override
 	public String getDescription() {
-		return "VFS resource [" + this.resource + "]";
+		return this.resource.toString();
 	}
 
 	@Override
-	public boolean equals(Object other) {
-		return (this == other || (other instanceof VfsResource &&
-				this.resource.equals(((VfsResource) other).resource)));
+	public boolean equals(Object obj) {
+		return (obj == this || (obj instanceof VfsResource && this.resource.equals(((VfsResource) obj).resource)));
 	}
 
 	@Override

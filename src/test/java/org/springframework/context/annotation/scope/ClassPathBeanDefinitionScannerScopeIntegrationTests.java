@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,50 +17,50 @@
 package org.springframework.context.annotation.scope;
 
 import org.junit.After;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
+import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.annotation.RequestScope;
-import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.context.support.GenericWebApplicationContext;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.context.annotation.ScopedProxyMode.DEFAULT;
-import static org.springframework.context.annotation.ScopedProxyMode.INTERFACES;
-import static org.springframework.context.annotation.ScopedProxyMode.NO;
-import static org.springframework.context.annotation.ScopedProxyMode.TARGET_CLASS;
 
 /**
  * @author Mark Fisher
  * @author Juergen Hoeller
  * @author Chris Beams
- * @author Sam Brannen
  */
 public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 
 	private static final String DEFAULT_NAME = "default";
+
 	private static final String MODIFIED_NAME = "modified";
 
-	private ServletRequestAttributes oldRequestAttributes = new ServletRequestAttributes(new MockHttpServletRequest());
-	private ServletRequestAttributes newRequestAttributes = new ServletRequestAttributes(new MockHttpServletRequest());
+	private ServletRequestAttributes oldRequestAttributes;
+
+	private ServletRequestAttributes newRequestAttributes;
 
 	private ServletRequestAttributes oldRequestAttributesWithSession;
+
 	private ServletRequestAttributes newRequestAttributesWithSession;
 
 
 	@Before
 	public void setUp() {
+		this.oldRequestAttributes = new ServletRequestAttributes(new MockHttpServletRequest());
+		this.newRequestAttributes = new ServletRequestAttributes(new MockHttpServletRequest());
+
 		MockHttpServletRequest oldRequestWithSession = new MockHttpServletRequest();
 		oldRequestWithSession.setSession(new MockHttpSession());
 		this.oldRequestAttributesWithSession = new ServletRequestAttributes(oldRequestWithSession);
@@ -72,14 +72,14 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 
 	@After
 	public void tearDown() throws Exception {
-		RequestContextHolder.resetRequestAttributes();
+		RequestContextHolder.setRequestAttributes(null);
 	}
 
 
 	@Test
-	public void singletonScopeWithNoProxy() {
+	public void testSingletonScopeWithNoProxy() {
 		RequestContextHolder.setRequestAttributes(oldRequestAttributes);
-		ApplicationContext context = createContext(NO);
+		ApplicationContext context = createContext(ScopedProxyMode.NO);
 		ScopedTestBean bean = (ScopedTestBean) context.getBean("singleton");
 
 		// should not be a proxy
@@ -98,9 +98,9 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 	}
 
 	@Test
-	public void singletonScopeIgnoresProxyInterfaces() {
+	public void testSingletonScopeIgnoresProxyInterfaces() {
 		RequestContextHolder.setRequestAttributes(oldRequestAttributes);
-		ApplicationContext context = createContext(INTERFACES);
+		ApplicationContext context = createContext(ScopedProxyMode.INTERFACES);
 		ScopedTestBean bean = (ScopedTestBean) context.getBean("singleton");
 
 		// should not be a proxy
@@ -119,9 +119,9 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 	}
 
 	@Test
-	public void singletonScopeIgnoresProxyTargetClass() {
+	public void testSingletonScopeIgnoresProxyTargetClass() {
 		RequestContextHolder.setRequestAttributes(oldRequestAttributes);
-		ApplicationContext context = createContext(TARGET_CLASS);
+		ApplicationContext context = createContext(ScopedProxyMode.TARGET_CLASS);
 		ScopedTestBean bean = (ScopedTestBean) context.getBean("singleton");
 
 		// should not be a proxy
@@ -140,9 +140,9 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 	}
 
 	@Test
-	public void requestScopeWithNoProxy() {
+	public void testRequestScopeWithNoProxy() {
 		RequestContextHolder.setRequestAttributes(oldRequestAttributes);
-		ApplicationContext context = createContext(NO);
+		ApplicationContext context = createContext(ScopedProxyMode.NO);
 		ScopedTestBean bean = (ScopedTestBean) context.getBean("request");
 
 		// should not be a proxy
@@ -161,9 +161,9 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 	}
 
 	@Test
-	public void requestScopeWithProxiedInterfaces() {
+	public void testRequestScopeWithProxiedInterfaces() {
 		RequestContextHolder.setRequestAttributes(oldRequestAttributes);
-		ApplicationContext context = createContext(INTERFACES);
+		ApplicationContext context = createContext(ScopedProxyMode.INTERFACES);
 		IScopedTestBean bean = (IScopedTestBean) context.getBean("request");
 
 		// should be dynamic proxy, implementing both interfaces
@@ -182,9 +182,9 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 	}
 
 	@Test
-	public void requestScopeWithProxiedTargetClass() {
+	public void testRequestScopeWithProxiedTargetClass() {
 		RequestContextHolder.setRequestAttributes(oldRequestAttributes);
-		ApplicationContext context = createContext(TARGET_CLASS);
+		ApplicationContext context = createContext(ScopedProxyMode.TARGET_CLASS);
 		IScopedTestBean bean = (IScopedTestBean) context.getBean("request");
 
 		// should be a class-based proxy
@@ -203,9 +203,9 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 	}
 
 	@Test
-	public void sessionScopeWithNoProxy() {
+	public void testSessionScopeWithNoProxy() {
 		RequestContextHolder.setRequestAttributes(oldRequestAttributesWithSession);
-		ApplicationContext context = createContext(NO);
+		ApplicationContext context = createContext(ScopedProxyMode.NO);
 		ScopedTestBean bean = (ScopedTestBean) context.getBean("session");
 
 		// should not be a proxy
@@ -224,9 +224,9 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 	}
 
 	@Test
-	public void sessionScopeWithProxiedInterfaces() {
+	public void testSessionScopeWithProxiedInterfaces() {
 		RequestContextHolder.setRequestAttributes(oldRequestAttributesWithSession);
-		ApplicationContext context = createContext(INTERFACES);
+		ApplicationContext context = createContext(ScopedProxyMode.INTERFACES);
 		IScopedTestBean bean = (IScopedTestBean) context.getBean("session");
 
 		// should be dynamic proxy, implementing both interfaces
@@ -251,9 +251,9 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 	}
 
 	@Test
-	public void sessionScopeWithProxiedTargetClass() {
+	public void testSessionScopeWithProxiedTargetClass() {
 		RequestContextHolder.setRequestAttributes(oldRequestAttributesWithSession);
-		ApplicationContext context = createContext(TARGET_CLASS);
+		ApplicationContext context = createContext(ScopedProxyMode.TARGET_CLASS);
 		IScopedTestBean bean = (IScopedTestBean) context.getBean("session");
 
 		// should be a class-based proxy
@@ -283,7 +283,12 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 		GenericWebApplicationContext context = new GenericWebApplicationContext();
 		ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(context);
 		scanner.setIncludeAnnotationConfig(false);
-		scanner.setBeanNameGenerator((definition, registry) -> definition.getScope());
+		scanner.setBeanNameGenerator(new BeanNameGenerator() {
+			@Override
+			public String generateBeanName(BeanDefinition definition, BeanDefinitionRegistry registry) {
+				return definition.getScope();
+			}
+		});
 		scanner.setScopedProxyMode(scopedProxyMode);
 
 		// Scan twice in order to find errors in the bean definition compatibility check.
@@ -295,15 +300,15 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 	}
 
 
-	static interface IScopedTestBean {
+ 	public static interface IScopedTestBean {
 
-		String getName();
+ 		String getName();
 
-		void setName(String name);
-	}
+ 		void setName(String name);
+ 	}
 
 
-	static abstract class ScopedTestBean implements IScopedTestBean {
+	public static abstract class ScopedTestBean implements IScopedTestBean {
 
 		private String name = DEFAULT_NAME;
 
@@ -316,23 +321,23 @@ public class ClassPathBeanDefinitionScannerScopeIntegrationTests {
 
 
 	@Component
-	static class SingletonScopedTestBean extends ScopedTestBean {
+	public static class SingletonScopedTestBean extends ScopedTestBean {
 	}
 
 
-	static interface AnotherScopeTestInterface {
-	}
-
-
-	@Component
-	@RequestScope(proxyMode = DEFAULT)
-	static class RequestScopedTestBean extends ScopedTestBean implements AnotherScopeTestInterface {
+	public static interface AnotherScopeTestInterface {
 	}
 
 
 	@Component
-	@SessionScope(proxyMode = DEFAULT)
-	static class SessionScopedTestBean extends ScopedTestBean implements AnotherScopeTestInterface {
+	@Scope("request")
+	public static class RequestScopedTestBean extends ScopedTestBean implements AnotherScopeTestInterface {
+	}
+
+
+	@Component
+	@Scope("session")
+	public static class SessionScopedTestBean extends ScopedTestBean implements AnotherScopeTestInterface {
 	}
 
 }

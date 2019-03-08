@@ -22,7 +22,6 @@ import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -35,7 +34,6 @@ import org.springframework.util.ClassUtils;
  */
 public class ConfigurableObjectInputStream extends ObjectInputStream {
 
-	@Nullable
 	private final ClassLoader classLoader;
 
 	private final boolean acceptProxyClasses;
@@ -47,7 +45,7 @@ public class ConfigurableObjectInputStream extends ObjectInputStream {
 	 * @param classLoader the ClassLoader to use for loading local classes
 	 * @see java.io.ObjectInputStream#ObjectInputStream(java.io.InputStream)
 	 */
-	public ConfigurableObjectInputStream(InputStream in, @Nullable ClassLoader classLoader) throws IOException {
+	public ConfigurableObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {
 		this(in, classLoader, true);
 	}
 
@@ -60,7 +58,7 @@ public class ConfigurableObjectInputStream extends ObjectInputStream {
 	 * @see java.io.ObjectInputStream#ObjectInputStream(java.io.InputStream)
 	 */
 	public ConfigurableObjectInputStream(
-			InputStream in, @Nullable ClassLoader classLoader, boolean acceptProxyClasses) throws IOException {
+			InputStream in, ClassLoader classLoader, boolean acceptProxyClasses) throws IOException {
 
 		super(in);
 		this.classLoader = classLoader;
@@ -144,7 +142,6 @@ public class ConfigurableObjectInputStream extends ObjectInputStream {
 	 * <p>The default implementation simply returns {@code null}, indicating
 	 * that no specific fallback is available.
 	 */
-	@Nullable
 	protected ClassLoader getFallbackClassLoader() throws IOException {
 		return null;
 	}

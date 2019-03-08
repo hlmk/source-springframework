@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author Juergen Hoeller
- * @author Ruslan Sibgatullin
  */
 @SuppressWarnings("deprecation")
 public class CronSequenceGeneratorTests {
@@ -75,31 +74,6 @@ public class CronSequenceGeneratorTests {
 	@Test
 	public void withSameHourRange() {
 		new CronSequenceGenerator("* * 6-6 * * *").next(new Date(2012, 6, 1, 9, 0));
-	}
-
-	@Test
-	public void validExpression() {
-		assertTrue(CronSequenceGenerator.isValidExpression("0 */2 1-4 * * *"));
-	}
-
-	@Test
-	public void invalidExpressionWithLength() {
-		assertFalse(CronSequenceGenerator.isValidExpression("0 */2 1-4 * * * *"));
-	}
-
-	@Test
-	public void invalidExpressionWithSeconds() {
-		assertFalse(CronSequenceGenerator.isValidExpression("100 */2 1-4 * * *"));
-	}
-
-	@Test
-	public void invalidExpressionWithMonths() {
-		assertFalse(CronSequenceGenerator.isValidExpression("0 */2 1-4 * INVALID *"));
-	}
-
-	@Test
-	public void nullExpression() {
-		assertFalse(CronSequenceGenerator.isValidExpression(null));
 	}
 
 }

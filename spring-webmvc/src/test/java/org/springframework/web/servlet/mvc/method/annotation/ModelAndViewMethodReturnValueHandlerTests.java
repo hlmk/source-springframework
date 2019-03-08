@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class ModelAndViewMethodReturnValueHandlerTests {
 
 
 	@Before
-	public void setup() throws Exception {
+	public void setUp() throws Exception {
 		this.handler = new ModelAndViewMethodReturnValueHandler();
 		this.mavContainer = new ModelAndViewContainer();
 		this.webRequest = new ServletWebRequest(new MockHttpServletRequest());
@@ -103,7 +103,7 @@ public class ModelAndViewMethodReturnValueHandlerTests {
 	}
 
 	@Test
-	public void handleRedirectAttributesWithViewName() throws Exception {
+	public void handleRedirectAttributesWithViewInstance() throws Exception {
 		RedirectAttributesModelMap redirectAttributes  = new RedirectAttributesModelMap();
 		mavContainer.setRedirectModel(redirectAttributes);
 
@@ -113,22 +113,7 @@ public class ModelAndViewMethodReturnValueHandlerTests {
 		ModelMap model = mavContainer.getModel();
 		assertEquals("redirect:viewName", mavContainer.getViewName());
 		assertEquals("attrValue", model.get("attrName"));
-		assertSame(redirectAttributes, model);
-	}
-
-	@Test
-	public void handleRedirectAttributesWithCustomPrefix() throws Exception {
-		RedirectAttributesModelMap redirectAttributes  = new RedirectAttributesModelMap();
-		mavContainer.setRedirectModel(redirectAttributes);
-
-		ModelAndView mav = new ModelAndView("myRedirect:viewName", "attrName", "attrValue");
-		handler.setRedirectPatterns("myRedirect:*");
-		handler.handleReturnValue(mav, returnParamModelAndView, mavContainer, webRequest);
-
-		ModelMap model = mavContainer.getModel();
-		assertEquals("myRedirect:viewName", mavContainer.getViewName());
-		assertEquals("attrValue", model.get("attrName"));
-		assertSame(redirectAttributes, model);
+		assertSame("RedirectAttributes should be used if controller redirects", redirectAttributes, model);
 	}
 
 	@Test

@@ -16,8 +16,8 @@
 
 package example.scannable;
 
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * @author Mark Fisher

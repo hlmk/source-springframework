@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,24 +19,23 @@ package org.springframework.test.context.junit4.statements;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.runners.model.MultipleFailureException;
+import org.junit.internal.runners.model.MultipleFailureException;
 import org.junit.runners.model.Statement;
-
 import org.springframework.test.context.TestContextManager;
 
 /**
- * {@code RunAfterTestClassCallbacks} is a custom JUnit {@link Statement} which allows
- * the <em>Spring TestContext Framework</em> to be plugged into the JUnit execution chain
- * by calling {@link TestContextManager#afterTestClass afterTestClass()} on the supplied
+ * {@code RunAfterTestClassCallbacks} is a custom JUnit 4.5+
+ * {@link Statement} which allows the <em>Spring TestContext Framework</em> to
+ * be plugged into the JUnit execution chain by calling
+ * {@link TestContextManager#afterTestClass() afterTestClass()} on the supplied
  * {@link TestContextManager}.
  *
- * <p><strong>NOTE:</strong> This class requires JUnit 4.9 or higher.
- *
+ * @see #evaluate()
+ * @see RunBeforeTestMethodCallbacks
  * @author Sam Brannen
  * @since 3.0
- * @see #evaluate()
- * @see RunBeforeTestClassCallbacks
  */
+@SuppressWarnings("deprecation")
 public class RunAfterTestClassCallbacks extends Statement {
 
 	private final Statement next;
@@ -45,7 +44,8 @@ public class RunAfterTestClassCallbacks extends Statement {
 
 
 	/**
-	 * Construct a new {@code RunAfterTestClassCallbacks} statement.
+	 * Constructs a new {@code RunAfterTestClassCallbacks} statement.
+	 *
 	 * @param next the next {@code Statement} in the execution chain
 	 * @param testContextManager the TestContextManager upon which to call
 	 * {@code afterTestClass()}
@@ -55,32 +55,38 @@ public class RunAfterTestClassCallbacks extends Statement {
 		this.testContextManager = testContextManager;
 	}
 
-
 	/**
-	 * Evaluate the next {@link Statement} in the execution chain (typically an instance of
-	 * {@link org.junit.internal.runners.statements.RunAfters RunAfters}), catching any
-	 * exceptions thrown, and then invoke {@link TestContextManager#afterTestClass()}.
-	 * <p>If the invocation of {@code afterTestClass()} throws an exception, it will also
-	 * be tracked. Multiple exceptions will be combined into a {@link MultipleFailureException}.
+	 * Invokes the next {@link Statement} in the execution chain (typically an
+	 * instance of {@link org.junit.internal.runners.statements.RunAfters
+	 * RunAfters}), catching any exceptions thrown, and then calls
+	 * {@link TestContextManager#afterTestClass()}. If the call to
+	 * {@code afterTestClass()} throws an exception, it will also be
+	 * tracked. Multiple exceptions will be combined into a
+	 * {@link MultipleFailureException}.
 	 */
 	@Override
 	public void evaluate() throws Throwable {
-		List<Throwable> errors = new ArrayList<>();
+		List<Throwable> errors = new ArrayList<Throwable>();
 		try {
 			this.next.evaluate();
 		}
-		catch (Throwable ex) {
-			errors.add(ex);
+		catch (Throwable e) {
+			errors.add(e);
 		}
 
 		try {
 			this.testContextManager.afterTestClass();
 		}
-		catch (Throwable ex) {
-			errors.add(ex);
+		catch (Exception e) {
+			errors.add(e);
 		}
 
-		MultipleFailureException.assertEmpty(errors);
+		if (errors.isEmpty()) {
+			return;
+		}
+		if (errors.size() == 1) {
+			throw errors.get(0);
+		}
+		throw new MultipleFailureException(errors);
 	}
-
 }

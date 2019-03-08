@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import javax.resource.cci.RecordFactory;
 import javax.resource.cci.ResourceAdapterMetaData;
 
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /**
  * CCI {@link ConnectionFactory} implementation that delegates all calls
@@ -44,37 +42,24 @@ import org.springframework.util.Assert;
 @SuppressWarnings("serial")
 public class DelegatingConnectionFactory implements ConnectionFactory, InitializingBean {
 
-	@Nullable
 	private ConnectionFactory targetConnectionFactory;
 
 
 	/**
 	 * Set the target ConnectionFactory that this ConnectionFactory should delegate to.
 	 */
-	public void setTargetConnectionFactory(@Nullable ConnectionFactory targetConnectionFactory) {
+	public void setTargetConnectionFactory(ConnectionFactory targetConnectionFactory) {
 		this.targetConnectionFactory = targetConnectionFactory;
 	}
 
 	/**
 	 * Return the target ConnectionFactory that this ConnectionFactory should delegate to.
 	 */
-	@Nullable
 	public ConnectionFactory getTargetConnectionFactory() {
 		return this.targetConnectionFactory;
 	}
 
-	/**
-	 * Obtain the target {@code ConnectionFactory} for actual use (never {@code null}).
-	 * @since 5.0
-	 */
-	protected ConnectionFactory obtainTargetConnectionFactory() {
-		ConnectionFactory connectionFactory = getTargetConnectionFactory();
-		Assert.state(connectionFactory != null, "No 'targetConnectionFactory' set");
-		return connectionFactory;
-	}
 
-
-	@Override
 	public void afterPropertiesSet() {
 		if (getTargetConnectionFactory() == null) {
 			throw new IllegalArgumentException("Property 'targetConnectionFactory' is required");
@@ -82,34 +67,28 @@ public class DelegatingConnectionFactory implements ConnectionFactory, Initializ
 	}
 
 
-	@Override
 	public Connection getConnection() throws ResourceException {
-		return obtainTargetConnectionFactory().getConnection();
+		return getTargetConnectionFactory().getConnection();
 	}
 
-	@Override
 	public Connection getConnection(ConnectionSpec connectionSpec) throws ResourceException {
-		return obtainTargetConnectionFactory().getConnection(connectionSpec);
+		return getTargetConnectionFactory().getConnection(connectionSpec);
 	}
 
-	@Override
 	public RecordFactory getRecordFactory() throws ResourceException {
-		return obtainTargetConnectionFactory().getRecordFactory();
+		return getTargetConnectionFactory().getRecordFactory();
 	}
 
-	@Override
 	public ResourceAdapterMetaData getMetaData() throws ResourceException {
-		return obtainTargetConnectionFactory().getMetaData();
+		return getTargetConnectionFactory().getMetaData();
 	}
 
-	@Override
 	public Reference getReference() throws NamingException {
-		return obtainTargetConnectionFactory().getReference();
+		return getTargetConnectionFactory().getReference();
 	}
 
-	@Override
 	public void setReference(Reference reference) {
-		obtainTargetConnectionFactory().setReference(reference);
+		getTargetConnectionFactory().setReference(reference);
 	}
 
 }

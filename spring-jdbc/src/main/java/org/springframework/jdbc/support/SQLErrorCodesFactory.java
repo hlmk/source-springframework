@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.jdbc.support;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
 import javax.sql.DataSource;
 
 import org.apache.commons.logging.Log;
@@ -28,11 +29,8 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.PatternMatchUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * Factory for creating {@link SQLErrorCodes} based on the
@@ -87,7 +85,7 @@ public class SQLErrorCodesFactory {
 	/**
 	 * Map to cache the SQLErrorCodes instance per DataSource.
 	 */
-	private final Map<DataSource, SQLErrorCodes> dataSourceCache = new ConcurrentReferenceHashMap<>(16);
+	private final Map<DataSource, SQLErrorCodes> dataSourceCache = new WeakHashMap<DataSource, SQLErrorCodes>(16);
 
 
 	/**
@@ -112,20 +110,20 @@ public class SQLErrorCodesFactory {
 				bdr.loadBeanDefinitions(resource);
 			}
 			else {
-				logger.info("Default sql-error-codes.xml not found (should be included in spring-jdbc jar)");
+				logger.warn("Default sql-error-codes.xml not found (should be included in spring.jar)");
 			}
 
 			// Load custom SQL error codes, overriding defaults.
 			resource = loadResource(SQL_ERROR_CODE_OVERRIDE_PATH);
 			if (resource != null && resource.exists()) {
 				bdr.loadBeanDefinitions(resource);
-				logger.debug("Found custom sql-error-codes.xml file at the root of the classpath");
+				logger.info("Found custom sql-error-codes.xml file at the root of the classpath");
 			}
 
 			// Check all beans of type SQLErrorCodes.
 			errorCodes = lbf.getBeansOfType(SQLErrorCodes.class, true, false);
-			if (logger.isTraceEnabled()) {
-				logger.trace("SQLErrorCodes loaded: " + errorCodes.keySet());
+			if (logger.isInfoEnabled()) {
+				logger.info("SQLErrorCodes loaded: " + errorCodes.keySet());
 			}
 		}
 		catch (BeansException ex) {
@@ -147,7 +145,6 @@ public class SQLErrorCodesFactory {
 	 * @return the resource, or {@code null} if the resource wasn't found
 	 * @see #getInstance
 	 */
-	@Nullable
 	protected Resource loadResource(String path) {
 		return new ClassPathResource(path, getClass().getClassLoader());
 	}
@@ -155,34 +152,34 @@ public class SQLErrorCodesFactory {
 
 	/**
 	 * Return the {@link SQLErrorCodes} instance for the given database.
-	 * <p>No need for a database meta-data lookup.
-	 * @param databaseName the database name (must not be {@code null})
+	 * <p>No need for a database metadata lookup.
+	 * @param dbName the database name (must not be {@code null})
 	 * @return the {@code SQLErrorCodes} instance for the given database
 	 * @throws IllegalArgumentException if the supplied database name is {@code null}
 	 */
-	public SQLErrorCodes getErrorCodes(String databaseName) {
-		Assert.notNull(databaseName, "Database product name must not be null");
+	public SQLErrorCodes getErrorCodes(String dbName) {
+		Assert.notNull(dbName, "Database product name must not be null");
 
-		SQLErrorCodes sec = this.errorCodesMap.get(databaseName);
+		SQLErrorCodes sec = this.errorCodesMap.get(dbName);
 		if (sec == null) {
 			for (SQLErrorCodes candidate : this.errorCodesMap.values()) {
-				if (PatternMatchUtils.simpleMatch(candidate.getDatabaseProductNames(), databaseName)) {
+				if (PatternMatchUtils.simpleMatch(candidate.getDatabaseProductNames(), dbName)) {
 					sec = candidate;
 					break;
 				}
 			}
 		}
 		if (sec != null) {
-			checkCustomTranslatorRegistry(databaseName, sec);
+			checkCustomTranslatorRegistry(dbName, sec);
 			if (logger.isDebugEnabled()) {
-				logger.debug("SQL error codes for '" + databaseName + "' found");
+				logger.debug("SQL error codes for '" + dbName + "' found");
 			}
 			return sec;
 		}
 
 		// Could not find the database among the defined ones.
 		if (logger.isDebugEnabled()) {
-			logger.debug("SQL error codes for '" + databaseName + "' not found");
+			logger.debug("SQL error codes for '" + dbName + "' not found");
 		}
 		return new SQLErrorCodes();
 	}
@@ -199,98 +196,75 @@ public class SQLErrorCodesFactory {
 	public SQLErrorCodes getErrorCodes(DataSource dataSource) {
 		Assert.notNull(dataSource, "DataSource must not be null");
 		if (logger.isDebugEnabled()) {
-			logger.debug("Looking up default SQLErrorCodes for DataSource [" + identify(dataSource) + "]");
+			logger.debug("Looking up default SQLErrorCodes for DataSource [" + dataSource + "]");
 		}
 
-		// Try efficient lock-free access for existing cache entry
-		SQLErrorCodes sec = this.dataSourceCache.get(dataSource);
-		if (sec == null) {
-			synchronized (this.dataSourceCache) {
-				// Double-check within full dataSourceCache lock
-				sec = this.dataSourceCache.get(dataSource);
-				if (sec == null) {
-					// We could not find it - got to look it up.
-					try {
-						String name = JdbcUtils.extractDatabaseMetaData(dataSource, "getDatabaseProductName");
-						if (StringUtils.hasLength(name)) {
-							return registerDatabase(dataSource, name);
-						}
-					}
-					catch (MetaDataAccessException ex) {
-						logger.warn("Error while extracting database name - falling back to empty error codes", ex);
-					}
-					// Fallback is to return an empty SQLErrorCodes instance.
-					return new SQLErrorCodes();
+		synchronized (this.dataSourceCache) {
+			// Let's avoid looking up database product info if we can.
+			SQLErrorCodes sec = this.dataSourceCache.get(dataSource);
+			if (sec != null) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("SQLErrorCodes found in cache for DataSource [" +
+							dataSource.getClass().getName() + '@' + Integer.toHexString(dataSource.hashCode()) + "]");
 				}
+				return sec;
+			}
+			// We could not find it - got to look it up.
+			try {
+				String dbName = (String) JdbcUtils.extractDatabaseMetaData(dataSource, "getDatabaseProductName");
+				if (dbName != null) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("Database product name cached for DataSource [" +
+								dataSource.getClass().getName() + '@' + Integer.toHexString(dataSource.hashCode()) +
+								"]: name is '" + dbName + "'");
+					}
+					sec = getErrorCodes(dbName);
+					this.dataSourceCache.put(dataSource, sec);
+					return sec;
+				}
+			}
+			catch (MetaDataAccessException ex) {
+				logger.warn("Error while extracting database product name - falling back to empty error codes", ex);
 			}
 		}
 
-		if (logger.isDebugEnabled()) {
-			logger.debug("SQLErrorCodes found in cache for DataSource [" + identify(dataSource) + "]");
-		}
-
-		return sec;
+		// Fallback is to return an empty SQLErrorCodes instance.
+		return new SQLErrorCodes();
 	}
 
 	/**
 	 * Associate the specified database name with the given {@link DataSource}.
 	 * @param dataSource the {@code DataSource} identifying the database
-	 * @param databaseName the corresponding database name as stated in the error codes
+	 * @param dbName the corresponding database name as stated in the error codes
 	 * definition file (must not be {@code null})
-	 * @return the corresponding {@code SQLErrorCodes} object (never {@code null})
-	 * @see #unregisterDatabase(DataSource)
+	 * @return the corresponding {@code SQLErrorCodes} object
 	 */
-	public SQLErrorCodes registerDatabase(DataSource dataSource, String databaseName) {
-		SQLErrorCodes sec = getErrorCodes(databaseName);
-		if (logger.isDebugEnabled()) {
-			logger.debug("Caching SQL error codes for DataSource [" + identify(dataSource) +
-					"]: database product name is '" + databaseName + "'");
+	public SQLErrorCodes registerDatabase(DataSource dataSource, String dbName) {
+		synchronized (this.dataSourceCache) {
+			SQLErrorCodes sec = getErrorCodes(dbName);
+			this.dataSourceCache.put(dataSource, sec);
+			return sec;
 		}
-		this.dataSourceCache.put(dataSource, sec);
-		return sec;
-	}
-
-	/**
-	 * Clear the cache for the specified {@link DataSource}, if registered.
-	 * @param dataSource the {@code DataSource} identifying the database
-	 * @return the corresponding {@code SQLErrorCodes} object that got removed,
-	 * or {@code null} if not registered
-	 * @since 4.3.5
-	 * @see #registerDatabase(DataSource, String)
-	 */
-	@Nullable
-	public SQLErrorCodes unregisterDatabase(DataSource dataSource) {
-		return this.dataSourceCache.remove(dataSource);
-	}
-
-	/**
-	 * Build an identification String for the given {@link DataSource},
-	 * primarily for logging purposes.
-	 * @param dataSource the {@code DataSource} to introspect
-	 * @return the identification String
-	 */
-	private String identify(DataSource dataSource) {
-		return dataSource.getClass().getName() + '@' + Integer.toHexString(dataSource.hashCode());
 	}
 
 	/**
 	 * Check the {@link CustomSQLExceptionTranslatorRegistry} for any entries.
 	 */
-	private void checkCustomTranslatorRegistry(String databaseName, SQLErrorCodes errorCodes) {
+	private void checkCustomTranslatorRegistry(String dbName, SQLErrorCodes dbCodes) {
 		SQLExceptionTranslator customTranslator =
-				CustomSQLExceptionTranslatorRegistry.getInstance().findTranslatorForDatabase(databaseName);
+				CustomSQLExceptionTranslatorRegistry.getInstance().findTranslatorForDatabase(dbName);
 		if (customTranslator != null) {
-			if (errorCodes.getCustomSqlExceptionTranslator() != null && logger.isDebugEnabled()) {
-				logger.debug("Overriding already defined custom translator '" +
-						errorCodes.getCustomSqlExceptionTranslator().getClass().getSimpleName() +
+			if (dbCodes.getCustomSqlExceptionTranslator() != null) {
+				logger.warn("Overriding already defined custom translator '" +
+						dbCodes.getCustomSqlExceptionTranslator().getClass().getSimpleName() +
 						" with '" + customTranslator.getClass().getSimpleName() +
-						"' found in the CustomSQLExceptionTranslatorRegistry for database '" + databaseName + "'");
+						"' found in the CustomSQLExceptionTranslatorRegistry for database " + dbName);
 			}
-			else if (logger.isTraceEnabled()) {
-				logger.trace("Using custom translator '" + customTranslator.getClass().getSimpleName() +
-						"' found in the CustomSQLExceptionTranslatorRegistry for database '" + databaseName + "'");
+			else {
+				logger.info("Using custom translator '" + customTranslator.getClass().getSimpleName() +
+						"' found in the CustomSQLExceptionTranslatorRegistry for database " + dbName);
 			}
-			errorCodes.setCustomSqlExceptionTranslator(customTranslator);
+			dbCodes.setCustomSqlExceptionTranslator(customTranslator);
 		}
 	}
 

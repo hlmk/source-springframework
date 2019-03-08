@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.FactoryBeanNotInitializedException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
@@ -56,30 +54,25 @@ import org.springframework.util.ReflectionUtils;
  * @author Juergen Hoeller
  * @author Keith Donald
  * @since 1.0.2
- * @param <T> the bean type
  * @see #setSingleton
  * @see #createInstance()
  */
 public abstract class AbstractFactoryBean<T>
 		implements FactoryBean<T>, BeanClassLoaderAware, BeanFactoryAware, InitializingBean, DisposableBean {
 
-	/** Logger available to subclasses. */
+	/** Logger available to subclasses */
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	private boolean singleton = true;
 
-	@Nullable
 	private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
-	@Nullable
 	private BeanFactory beanFactory;
 
 	private boolean initialized = false;
 
-	@Nullable
 	private T singletonInstance;
 
-	@Nullable
 	private T earlySingletonInstance;
 
 
@@ -91,25 +84,21 @@ public abstract class AbstractFactoryBean<T>
 		this.singleton = singleton;
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return this.singleton;
 	}
 
-	@Override
 	public void setBeanClassLoader(ClassLoader classLoader) {
 		this.beanClassLoader = classLoader;
 	}
 
-	@Override
-	public void setBeanFactory(@Nullable BeanFactory beanFactory) {
+	public void setBeanFactory(BeanFactory beanFactory) {
 		this.beanFactory = beanFactory;
 	}
 
 	/**
 	 * Return the BeanFactory that this bean runs in.
 	 */
-	@Nullable
 	protected BeanFactory getBeanFactory() {
 		return this.beanFactory;
 	}
@@ -135,7 +124,6 @@ public abstract class AbstractFactoryBean<T>
 	/**
 	 * Eagerly create the singleton instance, if necessary.
 	 */
-	@Override
 	public void afterPropertiesSet() throws Exception {
 		if (isSingleton()) {
 			this.initialized = true;
@@ -150,7 +138,6 @@ public abstract class AbstractFactoryBean<T>
 	 * @see #createInstance()
 	 * @see #getEarlySingletonInterfaces()
 	 */
-	@Override
 	public final T getObject() throws Exception {
 		if (isSingleton()) {
 			return (this.initialized ? this.singletonInstance : getEarlySingletonInstance());
@@ -161,7 +148,7 @@ public abstract class AbstractFactoryBean<T>
 	}
 
 	/**
-	 * Determine an 'early singleton' instance, exposed in case of a
+	 * Determine an 'eager singleton' instance, exposed in case of a
 	 * circular reference. Not called in a non-circular scenario.
 	 */
 	@SuppressWarnings("unchecked")
@@ -183,9 +170,10 @@ public abstract class AbstractFactoryBean<T>
 	 * @return the singleton instance that this FactoryBean holds
 	 * @throws IllegalStateException if the singleton instance is not initialized
 	 */
-	@Nullable
 	private T getSingletonInstance() throws IllegalStateException {
-		Assert.state(this.initialized, "Singleton instance not initialized yet");
+		if (!this.initialized) {
+			throw new IllegalStateException("Singleton instance not initialized yet");
+		}
 		return this.singletonInstance;
 	}
 
@@ -193,7 +181,6 @@ public abstract class AbstractFactoryBean<T>
 	 * Destroy the singleton instance, if any.
 	 * @see #destroyInstance(Object)
 	 */
-	@Override
 	public void destroy() throws Exception {
 		if (isSingleton()) {
 			destroyInstance(this.singletonInstance);
@@ -206,8 +193,6 @@ public abstract class AbstractFactoryBean<T>
 	 * interface, for a consistent offering of abstract template methods.
 	 * @see org.springframework.beans.factory.FactoryBean#getObjectType()
 	 */
-	@Override
-	@Nullable
 	public abstract Class<?> getObjectType();
 
 	/**
@@ -226,14 +211,13 @@ public abstract class AbstractFactoryBean<T>
 	 * FactoryBean is supposed to implement, for use with an 'early singleton
 	 * proxy' that will be exposed in case of a circular reference.
 	 * <p>The default implementation returns this FactoryBean's object type,
-	 * provided that it is an interface, or {@code null} otherwise. The latter
+	 * provided that it is an interface, or {@code null} else. The latter
 	 * indicates that early singleton access is not supported by this FactoryBean.
 	 * This will lead to a FactoryBeanNotInitializedException getting thrown.
 	 * @return the interfaces to use for 'early singletons',
 	 * or {@code null} to indicate a FactoryBeanNotInitializedException
 	 * @see org.springframework.beans.factory.FactoryBeanNotInitializedException
 	 */
-	@Nullable
 	protected Class<?>[] getEarlySingletonInterfaces() {
 		Class<?> type = getObjectType();
 		return (type != null && type.isInterface() ? new Class<?>[] {type} : null);
@@ -248,7 +232,7 @@ public abstract class AbstractFactoryBean<T>
 	 * @throws Exception in case of shutdown errors
 	 * @see #createInstance()
 	 */
-	protected void destroyInstance(@Nullable T instance) throws Exception {
+	protected void destroyInstance(T instance) throws Exception {
 	}
 
 
@@ -257,7 +241,6 @@ public abstract class AbstractFactoryBean<T>
 	 */
 	private class EarlySingletonInvocationHandler implements InvocationHandler {
 
-		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			if (ReflectionUtils.isEqualsMethod(method)) {
 				// Only consider equal when proxies are identical.

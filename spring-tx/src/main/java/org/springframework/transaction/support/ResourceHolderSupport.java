@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@ package org.springframework.transaction.support;
 
 import java.util.Date;
 
-import org.springframework.lang.Nullable;
 import org.springframework.transaction.TransactionTimedOutException;
 
 /**
  * Convenient base class for resource holders.
  *
- * <p>Features rollback-only support for participating transactions.
- * Can expire after a certain number of seconds or milliseconds
- * in order to determine a transactional timeout.
+ * <p>Features rollback-only support for nested transactions.
+ * Can expire after a certain number of seconds or milliseconds,
+ * to determine transactional timeouts.
  *
  * @author Juergen Hoeller
  * @since 02.02.2004
@@ -39,7 +38,6 @@ public abstract class ResourceHolderSupport implements ResourceHolder {
 
 	private boolean rollbackOnly = false;
 
-	@Nullable
 	private Date deadline;
 
 	private int referenceCount = 0;
@@ -69,17 +67,6 @@ public abstract class ResourceHolderSupport implements ResourceHolder {
 	}
 
 	/**
-	 * Reset the rollback-only status for this resource transaction.
-	 * <p>Only really intended to be called after custom rollback steps which
-	 * keep the original resource in action, e.g. in case of a savepoint.
-	 * @since 5.0
-	 * @see org.springframework.transaction.SavepointManager#rollbackToSavepoint
-	 */
-	public void resetRollbackOnly() {
-		this.rollbackOnly = false;
-	}
-
-	/**
 	 * Return whether the resource transaction is marked as rollback-only.
 	 */
 	public boolean isRollbackOnly() {
@@ -91,7 +78,7 @@ public abstract class ResourceHolderSupport implements ResourceHolder {
 	 * @param seconds number of seconds until expiration
 	 */
 	public void setTimeoutInSeconds(int seconds) {
-		setTimeoutInMillis(seconds * 1000L);
+		setTimeoutInMillis(seconds * 1000);
 	}
 
 	/**
@@ -113,7 +100,6 @@ public abstract class ResourceHolderSupport implements ResourceHolder {
 	 * Return the expiration deadline of this object.
 	 * @return the deadline as Date object
 	 */
-	@Nullable
 	public Date getDeadline() {
 		return this.deadline;
 	}
@@ -133,7 +119,7 @@ public abstract class ResourceHolderSupport implements ResourceHolder {
 
 	/**
 	 * Return the time to live for this object in milliseconds.
-	 * @return number of milliseconds until expiration
+	 * @return number of millseconds until expiration
 	 * @throws TransactionTimedOutException if the deadline has already been reached
 	 */
 	public long getTimeToLiveInMillis() throws TransactionTimedOutException{
@@ -191,18 +177,15 @@ public abstract class ResourceHolderSupport implements ResourceHolder {
 	/**
 	 * Reset this resource holder - transactional state as well as reference count.
 	 */
-	@Override
 	public void reset() {
 		clear();
 		this.referenceCount = 0;
 	}
 
-	@Override
 	public void unbound() {
 		this.isVoid = true;
 	}
 
-	@Override
 	public boolean isVoid() {
 		return this.isVoid;
 	}

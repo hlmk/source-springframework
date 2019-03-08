@@ -23,7 +23,6 @@ import org.aspectj.lang.annotation.SuppressAjWarnings;
  */
 public aspect CodeStyleAspect {
 
-	@SuppressWarnings("unused")
 	private String foo;
 
 	pointcut somePC() : call(* someMethod());

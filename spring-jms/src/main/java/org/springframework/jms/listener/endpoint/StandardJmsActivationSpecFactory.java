@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.jms.support.destination.DestinationResolutionException;
 import org.springframework.jms.support.destination.DestinationResolver;
-import org.springframework.lang.Nullable;
 
 /**
  * Standard implementation of the {@link JmsActivationSpecFactory} interface.
@@ -51,13 +50,10 @@ import org.springframework.lang.Nullable;
  */
 public class StandardJmsActivationSpecFactory implements JmsActivationSpecFactory {
 
-	@Nullable
 	private Class<?> activationSpecClass;
 
-	@Nullable
 	private Map<String, String> defaultProperties;
 
-	@Nullable
 	private DestinationResolver destinationResolver;
 
 
@@ -90,20 +86,11 @@ public class StandardJmsActivationSpecFactory implements JmsActivationSpecFactor
 	 * or {@link org.springframework.jms.support.destination.BeanFactoryDestinationResolver}
 	 * but not {@link org.springframework.jms.support.destination.DynamicDestinationResolver}.
 	 */
-	public void setDestinationResolver(@Nullable DestinationResolver destinationResolver) {
+	public void setDestinationResolver(DestinationResolver destinationResolver) {
 		this.destinationResolver = destinationResolver;
 	}
 
-	/**
-	 * Return the {@link DestinationResolver} to use for resolving destinations names.
-	 */
-	@Nullable
-	public DestinationResolver getDestinationResolver() {
-		return this.destinationResolver;
-	}
 
-
-	@Override
 	public ActivationSpec createActivationSpec(ResourceAdapter adapter, JmsActivationSpecConfig config) {
 		Class<?> activationSpecClassToUse = this.activationSpecClass;
 		if (activationSpecClassToUse == null) {
@@ -130,7 +117,6 @@ public class StandardJmsActivationSpecFactory implements JmsActivationSpecFactor
 	 * if not determinable
 	 * @see #setActivationSpecClass
 	 */
-	@Nullable
 	protected Class<?> determineActivationSpecClass(ResourceAdapter adapter) {
 		return null;
 	}
@@ -145,42 +131,38 @@ public class StandardJmsActivationSpecFactory implements JmsActivationSpecFactor
 	 */
 	protected void populateActivationSpecProperties(BeanWrapper bw, JmsActivationSpecConfig config) {
 		String destinationName = config.getDestinationName();
-		if (destinationName != null) {
-			boolean pubSubDomain = config.isPubSubDomain();
-			Object destination = destinationName;
-			if (this.destinationResolver != null) {
-				try {
-					destination = this.destinationResolver.resolveDestinationName(null, destinationName, pubSubDomain);
-				}
-				catch (JMSException ex) {
-					throw new DestinationResolutionException(
-							"Cannot resolve destination name [" + destinationName + "]", ex);
-				}
+		boolean pubSubDomain = config.isPubSubDomain();
+		Object destination = destinationName;
+		if (this.destinationResolver != null) {
+			try {
+				destination = this.destinationResolver.resolveDestinationName(null, destinationName, pubSubDomain);
 			}
-			bw.setPropertyValue("destination", destination);
-			bw.setPropertyValue("destinationType", pubSubDomain ? Topic.class.getName() : Queue.class.getName());
+			catch (JMSException ex) {
+				throw new DestinationResolutionException("Cannot resolve destination name [" + destinationName + "]", ex);
+			}
 		}
+		bw.setPropertyValue("destination", destination);
+		bw.setPropertyValue("destinationType", pubSubDomain ? Topic.class.getName() : Queue.class.getName());
 
 		if (bw.isWritableProperty("subscriptionDurability")) {
 			bw.setPropertyValue("subscriptionDurability", config.isSubscriptionDurable() ? "Durable" : "NonDurable");
 		}
 		else if (config.isSubscriptionDurable()) {
 			// Standard JCA 1.5 "subscriptionDurability" apparently not supported...
-			throw new IllegalArgumentException("Durable subscriptions not supported by underlying provider");
+			throw new IllegalArgumentException(
+					"Durable subscriptions not supported by underlying provider: " + this.activationSpecClass.getName());
 		}
-		if (config.isSubscriptionShared()) {
-			throw new IllegalArgumentException("Shared subscriptions not supported for JCA-driven endpoints");
-		}
-
-		if (config.getSubscriptionName() != null) {
-			bw.setPropertyValue("subscriptionName", config.getSubscriptionName());
+		if (config.getDurableSubscriptionName() != null) {
+			bw.setPropertyValue("subscriptionName", config.getDurableSubscriptionName());
 		}
 		if (config.getClientId() != null) {
 			bw.setPropertyValue("clientId", config.getClientId());
 		}
+
 		if (config.getMessageSelector() != null) {
 			bw.setPropertyValue("messageSelector", config.getMessageSelector());
 		}
+
 		applyAcknowledgeMode(bw, config.getAcknowledgeMode());
 	}
 
@@ -213,7 +195,8 @@ public class StandardJmsActivationSpecFactory implements JmsActivationSpecFactor
 		}
 		else if (ackMode == Session.DUPS_OK_ACKNOWLEDGE) {
 			// Standard JCA 1.5 "acknowledgeMode" apparently not supported (e.g. WebSphere MQ 6.0.2.1)
-			throw new IllegalArgumentException("Dups-ok-acknowledge not supported by underlying provider");
+			throw new IllegalArgumentException(
+					"Dups-ok-acknowledge not supported by underlying provider: " + this.activationSpecClass.getName());
 		}
 	}
 

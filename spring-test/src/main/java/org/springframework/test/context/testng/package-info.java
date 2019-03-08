@@ -1,10 +1,7 @@
 /**
- * Support classes for integrating the <em>Spring TestContext Framework</em>
- * with TestNG.
+ * <p>Support classes for ApplicationContext-based and transactional
+ * tests run with TestNG and the <em>Spring TestContext Framework</em>.</p>
  */
-@NonNullApi
-@NonNullFields
+
 package org.springframework.test.context.testng;
 
-import org.springframework.lang.NonNullApi;
-import org.springframework.lang.NonNullFields;

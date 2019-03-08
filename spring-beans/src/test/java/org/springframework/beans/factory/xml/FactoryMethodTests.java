@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Properties;
 import org.junit.Test;
 
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.tests.sample.beans.TestBean;
@@ -91,7 +92,8 @@ public class FactoryMethodTests {
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(xbf);
 		reader.loadBeanDefinitions(new ClassPathResource("factory-methods.xml", getClass()));
 
-		assertEquals("null", xbf.getBean("null").toString());
+		FactoryMethods fm = (FactoryMethods) xbf.getBean("null");
+		assertNull(fm);
 
 		try {
 			xbf.getBean("nullWithProperty");
@@ -323,18 +325,17 @@ public class FactoryMethodTests {
 	}
 
 	@Test
-	public void testCanSpecifyFactoryMethodArgumentsOnSingleton() {
+	public void testCannotSpecifyFactoryMethodArgumentsOnSingleton() {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(xbf);
 		reader.loadBeanDefinitions(new ClassPathResource("factory-methods.xml", getClass()));
-
-		// First getBean call triggers actual creation of the singleton bean
-		TestBean tb = new TestBean();
-		FactoryMethods fm1 = (FactoryMethods) xbf.getBean("testBeanOnly", tb);
-		assertSame(tb, fm1.getTestBean());
-		FactoryMethods fm2 = (FactoryMethods) xbf.getBean("testBeanOnly", new TestBean());
-		assertSame(fm1, fm2);
-		assertSame(tb, fm2.getTestBean());
+		try {
+			xbf.getBean("testBeanOnly", new TestBean());
+			fail("Shouldn't allow args to be passed to a singleton");
+		}
+		catch (BeanDefinitionStoreException ex) {
+			// OK
+		}
 	}
 
 	@Test
@@ -342,13 +343,14 @@ public class FactoryMethodTests {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(xbf);
 		reader.loadBeanDefinitions(new ClassPathResource("factory-methods.xml", getClass()));
-
-		// First getBean call triggers actual creation of the singleton bean
-		FactoryMethods fm1 = (FactoryMethods) xbf.getBean("testBeanOnly");
-		TestBean tb = fm1.getTestBean();
-		FactoryMethods fm2 = (FactoryMethods) xbf.getBean("testBeanOnly", new TestBean());
-		assertSame(fm1, fm2);
-		assertSame(tb, fm2.getTestBean());
+		xbf.getBean("testBeanOnly");
+		try {
+			xbf.getBean("testBeanOnly", new TestBean());
+			fail("Shouldn't allow args to be passed to a singleton");
+		}
+		catch (BeanDefinitionStoreException ex) {
+			// OK
+		}
 	}
 
 	@Test
@@ -384,6 +386,7 @@ public class FactoryMethodTests {
 		assertEquals("someuser", session.getProperty("mail.smtp.user"));
 		assertEquals("somepw", session.getProperty("mail.smtp.password"));
 	}
+
 }
 
 

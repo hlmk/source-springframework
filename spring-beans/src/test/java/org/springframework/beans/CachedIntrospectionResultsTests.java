@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,35 +33,35 @@ import static org.junit.Assert.*;
  * @author Chris Beams
  * @author Arjen Poutsma
  */
-public class CachedIntrospectionResultsTests {
+public final class CachedIntrospectionResultsTests {
 
 	@Test
 	public void acceptAndClearClassLoader() throws Exception {
 		BeanWrapper bw = new BeanWrapperImpl(TestBean.class);
 		assertTrue(bw.isWritableProperty("name"));
 		assertTrue(bw.isWritableProperty("age"));
-		assertTrue(CachedIntrospectionResults.strongClassCache.containsKey(TestBean.class));
+		assertTrue(CachedIntrospectionResults.classCache.containsKey(TestBean.class));
 
 		ClassLoader child = new OverridingClassLoader(getClass().getClassLoader());
 		Class<?> tbClass = child.loadClass("org.springframework.tests.sample.beans.TestBean");
-		assertFalse(CachedIntrospectionResults.strongClassCache.containsKey(tbClass));
+		assertFalse(CachedIntrospectionResults.classCache.containsKey(tbClass));
 		CachedIntrospectionResults.acceptClassLoader(child);
 		bw = new BeanWrapperImpl(tbClass);
 		assertTrue(bw.isWritableProperty("name"));
 		assertTrue(bw.isWritableProperty("age"));
-		assertTrue(CachedIntrospectionResults.strongClassCache.containsKey(tbClass));
+		assertTrue(CachedIntrospectionResults.classCache.containsKey(tbClass));
 		CachedIntrospectionResults.clearClassLoader(child);
-		assertFalse(CachedIntrospectionResults.strongClassCache.containsKey(tbClass));
+		assertFalse(CachedIntrospectionResults.classCache.containsKey(tbClass));
 
-		assertTrue(CachedIntrospectionResults.strongClassCache.containsKey(TestBean.class));
+		assertTrue(CachedIntrospectionResults.classCache.containsKey(TestBean.class));
 	}
 
 	@Test
 	public void clearClassLoaderForSystemClassLoader() throws Exception {
 		BeanUtils.getPropertyDescriptors(ArrayList.class);
-		assertTrue(CachedIntrospectionResults.strongClassCache.containsKey(ArrayList.class));
+		assertTrue(CachedIntrospectionResults.classCache.containsKey(ArrayList.class));
 		CachedIntrospectionResults.clearClassLoader(ArrayList.class.getClassLoader());
-		assertFalse(CachedIntrospectionResults.strongClassCache.containsKey(ArrayList.class));
+		assertFalse(CachedIntrospectionResults.classCache.containsKey(ArrayList.class));
 	}
 
 	@Test

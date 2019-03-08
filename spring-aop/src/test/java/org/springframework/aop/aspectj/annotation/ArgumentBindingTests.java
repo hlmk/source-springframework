@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.aop.aspectj.annotation;
 
+import static org.junit.Assert.*;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
@@ -25,38 +27,36 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.junit.Test;
-
 import org.springframework.aop.aspectj.AspectJAdviceParameterNameDiscoverer;
+
 import org.springframework.tests.sample.beans.ITestBean;
 import org.springframework.tests.sample.beans.TestBean;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Adrian Colyer
  * @author Juergen Hoeller
  * @author Chris Beams
  */
-public class ArgumentBindingTests {
+public final class ArgumentBindingTests {
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected=IllegalArgumentException.class)
 	public void testBindingInPointcutUsedByAdvice() {
 		TestBean tb = new TestBean();
 		AspectJProxyFactory proxyFactory = new AspectJProxyFactory(tb);
 		proxyFactory.addAspect(NamedPointcutWithArgs.class);
 
-		ITestBean proxiedTestBean = proxyFactory.getProxy();
-		proxiedTestBean.setName("Supercalifragalisticexpialidocious");
+		ITestBean proxiedTestBean = (ITestBean) proxyFactory.getProxy();
+		proxiedTestBean.setName("Supercalifragalisticexpialidocious"); // should throw
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@Test(expected=IllegalStateException.class)
 	public void testAnnotationArgumentNameBinding() {
 		TransactionalBean tb = new TransactionalBean();
 		AspectJProxyFactory proxyFactory = new AspectJProxyFactory(tb);
 		proxyFactory.addAspect(PointcutWithAnnotationArgument.class);
 
-		ITransactionalBean proxiedTestBean = proxyFactory.getProxy();
-		proxiedTestBean.doInTransaction();
+		ITransactionalBean proxiedTestBean = (ITransactionalBean) proxyFactory.getProxy();
+		proxiedTestBean.doInTransaction(); // should throw
 	}
 
 	@Test
@@ -70,7 +70,6 @@ public class ArgumentBindingTests {
 		assertEquals("one parameter name", 1, pnames.length);
 		assertEquals("formal", pnames[0]);
 	}
-
 
 	public void methodWithOneParam(String aParam) {
 	}
@@ -101,6 +100,9 @@ public class ArgumentBindingTests {
 }
 
 
+/**
+ * @author Juergen Hoeller
+ */
 @Aspect
 class PointcutWithAnnotationArgument {
 
@@ -113,6 +115,9 @@ class PointcutWithAnnotationArgument {
 }
 
 
+/**
+ * @author Adrian Colyer
+ */
 @Aspect
 class NamedPointcutWithArgs {
 

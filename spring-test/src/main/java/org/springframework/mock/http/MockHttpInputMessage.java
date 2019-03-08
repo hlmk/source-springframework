@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,8 @@ public class MockHttpInputMessage implements HttpInputMessage {
 	private final InputStream body;
 
 
-	public MockHttpInputMessage(byte[] content) {
-		Assert.notNull(content, "Byte array must not be null");
-		this.body = new ByteArrayInputStream(content);
+	public MockHttpInputMessage(byte[] contents) {
+		this.body = (contents != null ? new ByteArrayInputStream(contents) : null);
 	}
 
 	public MockHttpInputMessage(InputStream body) {
@@ -48,12 +47,10 @@ public class MockHttpInputMessage implements HttpInputMessage {
 	}
 
 
-	@Override
 	public HttpHeaders getHeaders() {
 		return this.headers;
 	}
 
-	@Override
 	public InputStream getBody() throws IOException {
 		return this.body;
 	}

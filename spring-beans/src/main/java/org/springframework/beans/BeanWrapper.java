@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,25 +49,15 @@ import java.beans.PropertyDescriptor;
 public interface BeanWrapper extends ConfigurablePropertyAccessor {
 
 	/**
-	 * Specify a limit for array and collection auto-growing.
-	 * <p>Default is unlimited on a plain BeanWrapper.
-	 * @since 4.1
-	 */
-	void setAutoGrowCollectionLimit(int autoGrowCollectionLimit);
-
-	/**
-	 * Return the limit for array and collection auto-growing.
-	 * @since 4.1
-	 */
-	int getAutoGrowCollectionLimit();
-
-	/**
-	 * Return the bean instance wrapped by this object.
+	 * Return the bean instance wrapped by this object, if any.
+	 * @return the bean instance, or {@code null} if none set
 	 */
 	Object getWrappedInstance();
 
 	/**
-	 * Return the type of the wrapped bean instance.
+	 * Return the type of the wrapped JavaBean object.
+	 * @return the type of the wrapped bean instance,
+	 * or {@code null} if no wrapped object has been set
 	 */
 	Class<?> getWrappedClass();
 
@@ -87,5 +77,32 @@ public interface BeanWrapper extends ConfigurablePropertyAccessor {
 	 * @throws InvalidPropertyException if there is no such property
 	 */
 	PropertyDescriptor getPropertyDescriptor(String propertyName) throws InvalidPropertyException;
+
+	/**
+	 * Set whether this BeanWrapper should attempt to "auto-grow" a
+	 * nested path that contains a {@code null} value.
+	 * <p>If {@code true}, a {@code null} path location will be populated
+	 * with a default object value and traversed instead of resulting in a
+	 * {@link NullValueInNestedPathException}. Turning this flag on also enables
+	 * auto-growth of collection elements when accessing an out-of-bounds index.
+	 * <p>Default is {@code false} on a plain BeanWrapper.
+	 */
+	void setAutoGrowNestedPaths(boolean autoGrowNestedPaths);
+
+	/**
+	 * Return whether "auto-growing" of nested paths has been activated.
+	 */
+	boolean isAutoGrowNestedPaths();
+
+	/**
+	 * Specify a limit for array and collection auto-growing.
+	 * <p>Default is unlimited on a plain BeanWrapper.
+	 */
+	void setAutoGrowCollectionLimit(int autoGrowCollectionLimit);
+
+	/**
+	 * Return the limit for array and collection auto-growing.
+	 */
+	int getAutoGrowCollectionLimit();
 
 }

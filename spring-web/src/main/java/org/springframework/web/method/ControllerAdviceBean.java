@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.web.method;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Ordered;
-import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.annotation.OrderUtils;
-import org.springframework.lang.Nullable;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.Order;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -40,20 +36,15 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
  * from any object, including ones without an {@code @ControllerAdvice}.
  *
  * @author Rossen Stoyanchev
- * @author Brian Clozel
- * @author Juergen Hoeller
  * @since 3.2
  */
 public class ControllerAdviceBean implements Ordered {
 
 	private final Object bean;
 
-	@Nullable
 	private final BeanFactory beanFactory;
 
 	private final int order;
-
-	private final HandlerTypePredicate beanTypePredicate;
 
 
 	/**
@@ -61,7 +52,10 @@ public class ControllerAdviceBean implements Ordered {
 	 * @param bean the bean instance
 	 */
 	public ControllerAdviceBean(Object bean) {
-		this(bean, null);
+		Assert.notNull(bean, "Bean must not be null");
+		this.bean = bean;
+		this.order = initOrderFromBean(bean);
+		this.beanFactory = null;
 	}
 
 	/**
@@ -69,46 +63,18 @@ public class ControllerAdviceBean implements Ordered {
 	 * @param beanName the name of the bean
 	 * @param beanFactory a BeanFactory that can be used later to resolve the bean
 	 */
-	public ControllerAdviceBean(String beanName, @Nullable BeanFactory beanFactory) {
-		this((Object) beanName, beanFactory);
-	}
+	public ControllerAdviceBean(String beanName, BeanFactory beanFactory) {
+		Assert.hasText(beanName, "Bean name must not be null");
+		Assert.notNull(beanFactory, "BeanFactory must not be null");
 
-	private ControllerAdviceBean(Object bean, @Nullable BeanFactory beanFactory) {
-		this.bean = bean;
+		if (!beanFactory.containsBean(beanName)) {
+			throw new IllegalArgumentException(
+					"BeanFactory [" + beanFactory + "] does not contain bean with name '" + beanName + "'");
+		}
+
+		this.bean = beanName;
 		this.beanFactory = beanFactory;
-		Class<?> beanType;
-
-		if (bean instanceof String) {
-			String beanName = (String) bean;
-			Assert.hasText(beanName, "Bean name must not be null");
-			Assert.notNull(beanFactory, "BeanFactory must not be null");
-			if (!beanFactory.containsBean(beanName)) {
-				throw new IllegalArgumentException("BeanFactory [" + beanFactory +
-						"] does not contain specified controller advice bean '" + beanName + "'");
-			}
-			beanType = this.beanFactory.getType(beanName);
-			this.order = initOrderFromBeanType(beanType);
-		}
-		else {
-			Assert.notNull(bean, "Bean must not be null");
-			beanType = bean.getClass();
-			this.order = initOrderFromBean(bean);
-		}
-
-		ControllerAdvice annotation = (beanType != null ?
-				AnnotatedElementUtils.findMergedAnnotation(beanType, ControllerAdvice.class) : null);
-
-		if (annotation != null) {
-			this.beanTypePredicate = HandlerTypePredicate.builder()
-					.basePackage(annotation.basePackages())
-					.basePackageClass(annotation.basePackageClasses())
-					.assignableType(annotation.assignableTypes())
-					.annotation(annotation.annotations())
-					.build();
-		}
-		else {
-			this.beanTypePredicate = HandlerTypePredicate.forAnyHandlerType();
-		}
+		this.order = initOrderFromBeanType(this.beanFactory.getType(beanName));
 	}
 
 
@@ -116,7 +82,6 @@ public class ControllerAdviceBean implements Ordered {
 	 * Returns the order value extracted from the {@link ControllerAdvice}
 	 * annotation, or {@link Ordered#LOWEST_PRECEDENCE} otherwise.
 	 */
-	@Override
 	public int getOrder() {
 		return this.order;
 	}
@@ -126,47 +91,24 @@ public class ControllerAdviceBean implements Ordered {
 	 * <p>If the bean type is a CGLIB-generated class, the original
 	 * user-defined class is returned.
 	 */
-	@Nullable
 	public Class<?> getBeanType() {
-		Class<?> beanType = (this.bean instanceof String ?
-				obtainBeanFactory().getType((String) this.bean) : this.bean.getClass());
-		return (beanType != null ? ClassUtils.getUserClass(beanType) : null);
+		Class<?> clazz = (this.bean instanceof String ?
+				this.beanFactory.getType((String) this.bean) : this.bean.getClass());
+		return ClassUtils.getUserClass(clazz);
 	}
 
 	/**
 	 * Return a bean instance if necessary resolving the bean name through the BeanFactory.
 	 */
 	public Object resolveBean() {
-		return (this.bean instanceof String ? obtainBeanFactory().getBean((String) this.bean) : this.bean);
-	}
-
-	private BeanFactory obtainBeanFactory() {
-		Assert.state(this.beanFactory != null, "No BeanFactory set");
-		return this.beanFactory;
-	}
-
-	/**
-	 * Check whether the given bean type should be assisted by this
-	 * {@code @ControllerAdvice} instance.
-	 * @param beanType the type of the bean to check
-	 * @since 4.0
-	 * @see org.springframework.web.bind.annotation.ControllerAdvice
-	 */
-	public boolean isApplicableToBeanType(@Nullable Class<?> beanType) {
-		return this.beanTypePredicate.test(beanType);
+		return (this.bean instanceof String ? this.beanFactory.getBean((String) this.bean) : this.bean);
 	}
 
 
 	@Override
 	public boolean equals(Object other) {
-		if (this == other) {
-			return true;
-		}
-		if (!(other instanceof ControllerAdviceBean)) {
-			return false;
-		}
-		ControllerAdviceBean otherAdvice = (ControllerAdviceBean) other;
-		return (this.bean.equals(otherAdvice.bean) && this.beanFactory == otherAdvice.beanFactory);
+		return (this == other ||
+				(other instanceof ControllerAdviceBean && this.bean.equals(((ControllerAdviceBean) other).bean)));
 	}
 
 	@Override
@@ -185,23 +127,23 @@ public class ControllerAdviceBean implements Ordered {
 	 * {@linkplain ControllerAdvice @ControllerAdvice} in the given
 	 * ApplicationContext and wrap them as {@code ControllerAdviceBean} instances.
 	 */
-	public static List<ControllerAdviceBean> findAnnotatedBeans(ApplicationContext context) {
-		return Arrays.stream(BeanFactoryUtils.beanNamesForTypeIncludingAncestors(context, Object.class))
-				.filter(name -> context.findAnnotationOnBean(name, ControllerAdvice.class) != null)
-				.map(name -> new ControllerAdviceBean(name, context))
-				.collect(Collectors.toList());
+	public static List<ControllerAdviceBean> findAnnotatedBeans(ApplicationContext applicationContext) {
+		List<ControllerAdviceBean> beans = new ArrayList<ControllerAdviceBean>();
+		for (String name : applicationContext.getBeanDefinitionNames()) {
+			if (applicationContext.findAnnotationOnBean(name, ControllerAdvice.class) != null) {
+				beans.add(new ControllerAdviceBean(name, applicationContext));
+			}
+		}
+		return beans;
 	}
 
 	private static int initOrderFromBean(Object bean) {
 		return (bean instanceof Ordered ? ((Ordered) bean).getOrder() : initOrderFromBeanType(bean.getClass()));
 	}
 
-	private static int initOrderFromBeanType(@Nullable Class<?> beanType) {
-		Integer order = null;
-		if (beanType != null) {
-			order = OrderUtils.getOrder(beanType);
-		}
-		return (order != null ? order : Ordered.LOWEST_PRECEDENCE);
+	private static int initOrderFromBeanType(Class<?> beanType) {
+		Order ann = AnnotationUtils.findAnnotation(beanType, Order.class);
+		return (ann != null ? ann.value() : Ordered.LOWEST_PRECEDENCE);
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,9 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 
 import org.w3c.dom.Document;
-
-import org.springframework.lang.Nullable;
 
 /**
  * Abstraction for handling XML fields in specific databases. Its main purpose
@@ -63,7 +60,6 @@ public interface SqlXmlHandler {
 	 * @see java.sql.ResultSet#getString
 	 * @see java.sql.ResultSet#getSQLXML
 	 */
-	@Nullable
 	String getXmlAsString(ResultSet rs, String columnName) throws SQLException;
 
 	/**
@@ -78,7 +74,6 @@ public interface SqlXmlHandler {
 	 * @see java.sql.ResultSet#getString
 	 * @see java.sql.ResultSet#getSQLXML
 	 */
-	@Nullable
 	String getXmlAsString(ResultSet rs, int columnIndex) throws SQLException;
 
 	/**
@@ -93,7 +88,6 @@ public interface SqlXmlHandler {
 	 * @see java.sql.ResultSet#getSQLXML
 	 * @see java.sql.SQLXML#getBinaryStream
 	 */
-	@Nullable
 	InputStream getXmlAsBinaryStream(ResultSet rs, String columnName) throws SQLException;
 
 	/**
@@ -108,7 +102,6 @@ public interface SqlXmlHandler {
 	 * @see java.sql.ResultSet#getSQLXML
 	 * @see java.sql.SQLXML#getBinaryStream
 	 */
-	@Nullable
 	InputStream getXmlAsBinaryStream(ResultSet rs, int columnIndex) throws SQLException;
 
 	/**
@@ -123,7 +116,6 @@ public interface SqlXmlHandler {
 	 * @see java.sql.ResultSet#getSQLXML
 	 * @see java.sql.SQLXML#getCharacterStream
 	 */
-	@Nullable
 	Reader getXmlAsCharacterStream(ResultSet rs, String columnName) throws SQLException;
 
 	/**
@@ -138,7 +130,6 @@ public interface SqlXmlHandler {
 	 * @see java.sql.ResultSet#getSQLXML
 	 * @see java.sql.SQLXML#getCharacterStream
 	 */
-	@Nullable
 	Reader getXmlAsCharacterStream(ResultSet rs, int columnIndex) throws SQLException;
 
 	/**
@@ -154,8 +145,7 @@ public interface SqlXmlHandler {
 	 * @see java.sql.ResultSet#getSQLXML
 	 * @see java.sql.SQLXML#getSource
 	 */
-	@Nullable
-	Source getXmlAsSource(ResultSet rs, String columnName, @Nullable Class<? extends Source> sourceClass) throws SQLException;
+	Source getXmlAsSource(ResultSet rs, String columnName, Class sourceClass) throws SQLException;
 
 	/**
 	 * Retrieve the given column as Source implemented using the specified source class
@@ -170,8 +160,7 @@ public interface SqlXmlHandler {
 	 * @see java.sql.ResultSet#getSQLXML
 	 * @see java.sql.SQLXML#getSource
 	 */
-	@Nullable
-	Source getXmlAsSource(ResultSet rs, int columnIndex, @Nullable Class<? extends Source> sourceClass) throws SQLException;
+	Source getXmlAsSource(ResultSet rs, int columnIndex, Class sourceClass) throws SQLException;
 
 
 	//-------------------------------------------------------------------------
@@ -217,7 +206,7 @@ public interface SqlXmlHandler {
 	 * @see SqlXmlValue
 	 * @see java.sql.SQLXML#setResult(Class)
 	 */
-	SqlXmlValue newSqlXmlValue(Class<? extends Result> resultClass, XmlResultProvider provider);
+	SqlXmlValue newSqlXmlValue(Class resultClass, XmlResultProvider provider);
 
 	/**
 	 * Create a {@code SqlXmlValue} instance for the given XML data,

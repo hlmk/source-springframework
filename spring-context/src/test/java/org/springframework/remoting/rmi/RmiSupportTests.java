@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,24 +29,21 @@ import java.rmi.StubNotFoundException;
 import java.rmi.UnknownHostException;
 import java.rmi.UnmarshalException;
 
+import junit.framework.TestCase;
 import org.aopalliance.intercept.MethodInvocation;
-import org.junit.Test;
 
 import org.springframework.remoting.RemoteAccessException;
 import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.remoting.RemoteProxyFailureException;
 import org.springframework.remoting.support.RemoteInvocation;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Juergen Hoeller
  * @since 16.05.2003
  */
-public class RmiSupportTests {
+public class RmiSupportTests extends TestCase {
 
-	@Test
-	public void rmiProxyFactoryBean() throws Exception {
+	public void testRmiProxyFactoryBean() throws Exception {
 		CountingRmiProxyFactoryBean factory = new CountingRmiProxyFactoryBean();
 		factory.setServiceInterface(IRemoteBean.class);
 		factory.setServiceUrl("rmi://localhost:1090/test");
@@ -55,47 +52,39 @@ public class RmiSupportTests {
 		assertTrue(factory.getObject() instanceof IRemoteBean);
 		IRemoteBean proxy = (IRemoteBean) factory.getObject();
 		proxy.setName("myName");
-		assertEquals("myName", RemoteBean.name);
+		assertEquals(RemoteBean.name, "myName");
 		assertEquals(1, factory.counter);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithRemoteException() throws Exception {
+	public void testRmiProxyFactoryBeanWithRemoteException() throws Exception {
 		doTestRmiProxyFactoryBeanWithException(RemoteException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithConnectException() throws Exception {
+	public void testRmiProxyFactoryBeanWithConnectException() throws Exception {
 		doTestRmiProxyFactoryBeanWithException(ConnectException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithConnectIOException() throws Exception {
+	public void testRmiProxyFactoryBeanWithConnectIOException() throws Exception {
 		doTestRmiProxyFactoryBeanWithException(ConnectIOException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithUnknownHostException() throws Exception {
+	public void testRmiProxyFactoryBeanWithUnknownHostException() throws Exception {
 		doTestRmiProxyFactoryBeanWithException(UnknownHostException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithNoSuchObjectException() throws Exception {
+	public void testRmiProxyFactoryBeanWithNoSuchObjectException() throws Exception {
 		doTestRmiProxyFactoryBeanWithException(NoSuchObjectException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithStubNotFoundException() throws Exception {
+	public void testRmiProxyFactoryBeanWithStubNotFoundException() throws Exception {
 		doTestRmiProxyFactoryBeanWithException(StubNotFoundException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithMarshalException() throws Exception {
+	public void testRmiProxyFactoryBeanWithMarshalException() throws Exception {
 		doTestRmiProxyFactoryBeanWithException(MarshalException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithUnmarshalException() throws Exception {
+	public void testRmiProxyFactoryBeanWithUnmarshalException() throws Exception {
 		doTestRmiProxyFactoryBeanWithException(UnmarshalException.class);
 	}
 
@@ -121,28 +110,23 @@ public class RmiSupportTests {
 		assertEquals(1, factory.counter);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithConnectExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithConnectExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithExceptionAndRefresh(ConnectException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithConnectIOExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithConnectIOExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithExceptionAndRefresh(ConnectIOException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithUnknownHostExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithUnknownHostExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithExceptionAndRefresh(UnknownHostException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithNoSuchObjectExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithNoSuchObjectExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithExceptionAndRefresh(NoSuchObjectException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithStubNotFoundExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithStubNotFoundExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithExceptionAndRefresh(StubNotFoundException.class);
 	}
 
@@ -169,8 +153,7 @@ public class RmiSupportTests {
 		assertEquals(2, factory.counter);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterface() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterface() throws Exception {
 		CountingRmiProxyFactoryBean factory = new CountingRmiProxyFactoryBean();
 		factory.setServiceInterface(IBusinessBean.class);
 		factory.setServiceUrl("rmi://localhost:1090/test");
@@ -179,12 +162,11 @@ public class RmiSupportTests {
 		IBusinessBean proxy = (IBusinessBean) factory.getObject();
 		assertFalse(proxy instanceof IRemoteBean);
 		proxy.setName("myName");
-		assertEquals("myName", RemoteBean.name);
+		assertEquals(RemoteBean.name, "myName");
 		assertEquals(1, factory.counter);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithWrongBusinessInterface() throws Exception {
+	public void testRmiProxyFactoryBeanWithWrongBusinessInterface() throws Exception {
 		CountingRmiProxyFactoryBean factory = new CountingRmiProxyFactoryBean();
 		factory.setServiceInterface(IWrongBusinessBean.class);
 		factory.setServiceUrl("rmi://localhost:1090/test");
@@ -198,44 +180,38 @@ public class RmiSupportTests {
 		}
 		catch (RemoteProxyFailureException ex) {
 			assertTrue(ex.getCause() instanceof NoSuchMethodException);
-			assertTrue(ex.getMessage().contains("setOtherName"));
-			assertTrue(ex.getMessage().contains("IWrongBusinessBean"));
+			assertTrue(ex.getMessage().indexOf("setOtherName") != -1);
+			assertTrue(ex.getMessage().indexOf("IWrongBusinessBean") != -1);
 		}
 		assertEquals(1, factory.counter);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndRemoteException() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndRemoteException() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndException(
 				RemoteException.class, RemoteAccessException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndConnectException() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndConnectException() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndException(
 				ConnectException.class, RemoteConnectFailureException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndConnectIOException() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndConnectIOException() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndException(
 				ConnectIOException.class, RemoteConnectFailureException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndUnknownHostException() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndUnknownHostException() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndException(
 				UnknownHostException.class, RemoteConnectFailureException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndNoSuchObjectExceptionException() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndNoSuchObjectExceptionException() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndException(
 				NoSuchObjectException.class, RemoteConnectFailureException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndStubNotFoundException() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndStubNotFoundException() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndException(
 				StubNotFoundException.class, RemoteConnectFailureException.class);
 	}
@@ -265,38 +241,32 @@ public class RmiSupportTests {
 		assertEquals(1, factory.counter);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndRemoteExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndRemoteExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndExceptionAndRefresh(
 				RemoteException.class, RemoteAccessException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndConnectExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndConnectExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndExceptionAndRefresh(
 				ConnectException.class, RemoteConnectFailureException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndConnectIOExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndConnectIOExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndExceptionAndRefresh(
 				ConnectIOException.class, RemoteConnectFailureException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndUnknownHostExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndUnknownHostExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndExceptionAndRefresh(
 				UnknownHostException.class, RemoteConnectFailureException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndNoSuchObjectExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndNoSuchObjectExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndExceptionAndRefresh(
 				NoSuchObjectException.class, RemoteConnectFailureException.class);
 	}
 
-	@Test
-	public void rmiProxyFactoryBeanWithBusinessInterfaceAndStubNotFoundExceptionAndRefresh() throws Exception {
+	public void testRmiProxyFactoryBeanWithBusinessInterfaceAndStubNotFoundExceptionAndRefresh() throws Exception {
 		doTestRmiProxyFactoryBeanWithBusinessInterfaceAndExceptionAndRefresh(
 				StubNotFoundException.class, RemoteConnectFailureException.class);
 	}
@@ -332,8 +302,7 @@ public class RmiSupportTests {
 		}
 	}
 
-	@Test
-	public void rmiClientInterceptorRequiresUrl() throws Exception{
+	public void testRmiClientInterceptorRequiresUrl() throws Exception{
 		RmiClientInterceptor client = new RmiClientInterceptor();
 		client.setServiceInterface(IRemoteBean.class);
 
@@ -341,17 +310,16 @@ public class RmiSupportTests {
 			client.afterPropertiesSet();
 			fail("url isn't set, expected IllegalArgumentException");
 		}
-		catch (IllegalArgumentException ex){
+		catch(IllegalArgumentException e){
 			// expected
 		}
 	}
 
-	@Test
-	public void remoteInvocation() throws NoSuchMethodException {
+	public void testRemoteInvocation() throws NoSuchMethodException {
 		// let's see if the remote invocation object works
 
 		final RemoteBean rb = new RemoteBean();
-		final Method setNameMethod = rb.getClass().getDeclaredMethod("setName", String.class);
+		final Method setNameMethod = rb.getClass().getDeclaredMethod("setName", new Class<?>[] {String.class});
 
 		MethodInvocation mi = new MethodInvocation() {
 			@Override
@@ -397,8 +365,7 @@ public class RmiSupportTests {
 		assertEquals(String.class, inv.getParameterTypes()[0]);
 	}
 
-	@Test
-	public void rmiInvokerWithSpecialLocalMethods() throws Exception {
+	public void testRmiInvokerWithSpecialLocalMethods() throws Exception {
 		String serviceUrl = "rmi://localhost:1090/test";
 		RmiProxyFactoryBean factory = new RmiProxyFactoryBean() {
 			@Override
@@ -421,8 +388,8 @@ public class RmiSupportTests {
 		IBusinessBean proxy = (IBusinessBean) factory.getObject();
 
 		// shouldn't go through to remote service
-		assertTrue(proxy.toString().contains("RMI invoker"));
-		assertTrue(proxy.toString().contains(serviceUrl));
+		assertTrue(proxy.toString().indexOf("RMI invoker") != -1);
+		assertTrue(proxy.toString().indexOf(serviceUrl) != -1);
 		assertEquals(proxy.hashCode(), proxy.hashCode());
 		assertTrue(proxy.equals(proxy));
 
@@ -449,21 +416,24 @@ public class RmiSupportTests {
 	}
 
 
-	public interface IBusinessBean {
+	public static interface IBusinessBean {
 
-		void setName(String name);
+		public void setName(String name);
+
 	}
 
 
-	public interface IWrongBusinessBean {
+	public static interface IWrongBusinessBean {
 
-		void setOtherName(String name);
+		public void setOtherName(String name);
+
 	}
 
 
-	public interface IRemoteBean extends Remote {
+	public static interface IRemoteBean extends Remote {
 
-		void setName(String name) throws RemoteException;
+		public void setName(String name) throws RemoteException;
+
 	}
 
 
@@ -474,11 +444,11 @@ public class RmiSupportTests {
 		@Override
 		public void setName(String nam) throws RemoteException {
 			if (nam != null && nam.endsWith("Exception")) {
-				RemoteException rex;
+				RemoteException rex = null;
 				try {
 					Class<?> exClass = Class.forName(nam);
-					Constructor<?> ctor = exClass.getConstructor(String.class);
-					rex = (RemoteException) ctor.newInstance("myMessage");
+					Constructor<?> ctor = exClass.getConstructor(new Class<?>[] {String.class});
+					rex = (RemoteException) ctor.newInstance(new Object[] {"myMessage"});
 				}
 				catch (Exception ex) {
 					throw new RemoteException("Illegal exception class name: " + nam, ex);

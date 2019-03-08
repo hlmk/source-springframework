@@ -40,7 +40,6 @@ import org.springframework.jms.ResourceAllocationException;
 import org.springframework.jms.TransactionInProgressException;
 import org.springframework.jms.TransactionRolledBackException;
 import org.springframework.jms.UncategorizedJmsException;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -60,7 +59,7 @@ public abstract class JmsUtils {
 	 * This is useful for typical {@code finally} blocks in manual JMS code.
 	 * @param con the JMS Connection to close (may be {@code null})
 	 */
-	public static void closeConnection(@Nullable Connection con) {
+	public static void closeConnection(Connection con) {
 		closeConnection(con, false);
 	}
 
@@ -70,7 +69,7 @@ public abstract class JmsUtils {
 	 * @param con the JMS Connection to close (may be {@code null})
 	 * @param stop whether to call {@code stop()} before closing
 	 */
-	public static void closeConnection(@Nullable Connection con, boolean stop) {
+	public static void closeConnection(Connection con, boolean stop) {
 		if (con != null) {
 			try {
 				if (stop) {
@@ -103,7 +102,7 @@ public abstract class JmsUtils {
 	 * This is useful for typical {@code finally} blocks in manual JMS code.
 	 * @param session the JMS Session to close (may be {@code null})
 	 */
-	public static void closeSession(@Nullable Session session) {
+	public static void closeSession(Session session) {
 		if (session != null) {
 			try {
 				session.close();
@@ -123,7 +122,7 @@ public abstract class JmsUtils {
 	 * This is useful for typical {@code finally} blocks in manual JMS code.
 	 * @param producer the JMS MessageProducer to close (may be {@code null})
 	 */
-	public static void closeMessageProducer(@Nullable MessageProducer producer) {
+	public static void closeMessageProducer(MessageProducer producer) {
 		if (producer != null) {
 			try {
 				producer.close();
@@ -143,7 +142,7 @@ public abstract class JmsUtils {
 	 * This is useful for typical {@code finally} blocks in manual JMS code.
 	 * @param consumer the JMS MessageConsumer to close (may be {@code null})
 	 */
-	public static void closeMessageConsumer(@Nullable MessageConsumer consumer) {
+	public static void closeMessageConsumer(MessageConsumer consumer) {
 		if (consumer != null) {
 			// Clear interruptions to ensure that the consumer closes successfully...
 			// (working around misbehaving JMS providers such as ActiveMQ)
@@ -172,7 +171,7 @@ public abstract class JmsUtils {
 	 * This is useful for typical {@code finally} blocks in manual JMS code.
 	 * @param browser the JMS QueueBrowser to close (may be {@code null})
 	 */
-	public static void closeQueueBrowser(@Nullable QueueBrowser browser) {
+	public static void closeQueueBrowser(QueueBrowser browser) {
 		if (browser != null) {
 			try {
 				browser.close();
@@ -192,7 +191,7 @@ public abstract class JmsUtils {
 	 * This is useful for typical {@code finally} blocks in manual JMS code.
 	 * @param requestor the JMS QueueRequestor to close (may be {@code null})
 	 */
-	public static void closeQueueRequestor(@Nullable QueueRequestor requestor) {
+	public static void closeQueueRequestor(QueueRequestor requestor) {
 		if (requestor != null) {
 			try {
 				requestor.close();
@@ -217,7 +216,10 @@ public abstract class JmsUtils {
 		try {
 			session.commit();
 		}
-		catch (javax.jms.TransactionInProgressException | javax.jms.IllegalStateException ex) {
+		catch (javax.jms.TransactionInProgressException ex) {
+			// Ignore -> can only happen in case of a JTA transaction.
+		}
+		catch (javax.jms.IllegalStateException ex) {
 			// Ignore -> can only happen in case of a JTA transaction.
 		}
 	}
@@ -232,7 +234,10 @@ public abstract class JmsUtils {
 		try {
 			session.rollback();
 		}
-		catch (javax.jms.TransactionInProgressException | javax.jms.IllegalStateException ex) {
+		catch (javax.jms.TransactionInProgressException ex) {
+			// Ignore -> can only happen in case of a JTA transaction.
+		}
+		catch (javax.jms.IllegalStateException ex) {
 			// Ignore -> can only happen in case of a JTA transaction.
 		}
 	}

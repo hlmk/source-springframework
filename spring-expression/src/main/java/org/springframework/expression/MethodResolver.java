@@ -19,7 +19,6 @@ package org.springframework.expression;
 import java.util.List;
 
 import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.lang.Nullable;
 
 /**
  * A method resolver attempts locate a method and returns a command executor that can be
@@ -40,7 +39,6 @@ public interface MethodResolver {
 	 * @param argumentTypes the arguments that the constructor must be able to handle
 	 * @return a MethodExecutor that can invoke the method, or null if the method cannot be found
 	 */
-	@Nullable
 	MethodExecutor resolve(EvaluationContext context, Object targetObject, String name,
 			List<TypeDescriptor> argumentTypes) throws AccessException;
 

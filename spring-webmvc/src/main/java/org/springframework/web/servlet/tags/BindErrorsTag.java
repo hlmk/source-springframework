@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,43 +20,13 @@ import javax.servlet.ServletException;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
 
-import org.springframework.lang.Nullable;
 import org.springframework.validation.Errors;
+import org.springframework.web.util.ExpressionEvaluationUtils;
 
 /**
- * This {@code <hasBindErrors>} tag provides an {@link Errors} instance in case of
- * bind errors. The HTML escaping flag participates in a page-wide or
- * application-wide setting (i.e. by HtmlEscapeTag or a "defaultHtmlEscape"
- * context-param in web.xml).
- *
- * <table>
- * <caption>Attribute Summary</caption>
- * <thead>
- * <tr>
- * <th>Attribute</th>
- * <th>Required?</th>
- * <th>Runtime Expression?</th>
- * <th>Description</th>
- * </tr>
- * </thead>
- * <tbody>
- * <tr>
- * <td>htmlEscape</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Set HTML escaping for this tag, as boolean value.
- * Overrides the default HTML escaping setting for the current page.</td>
- * </tr>
- * <tr>
- * <td>name</td>
- * <td>true</td>
- * <td>true</td>
- * <td>The name of the bean in the request that needs to be inspected for errors.
- * If errors are available for this bean, they will be bound under the
- * 'errors' key.</td>
- * </tr>
- * </tbody>
- * </table>
+ * JSP tag that evaluates content if there are binding errors
+ * for a certain bean. Exports an "errors" variable of type
+ * {@link org.springframework.validation.Errors} for the given bean.
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -66,15 +36,11 @@ import org.springframework.validation.Errors;
 @SuppressWarnings("serial")
 public class BindErrorsTag extends HtmlEscapingAwareTag {
 
-	/**
-	 * Page context attribute containing {@link Errors}.
-	 */
 	public static final String ERRORS_VARIABLE_NAME = "errors";
 
 
-	private String name = "";
+	private String name;
 
-	@Nullable
 	private Errors errors;
 
 
@@ -95,7 +61,9 @@ public class BindErrorsTag extends HtmlEscapingAwareTag {
 
 	@Override
 	protected final int doStartTagInternal() throws ServletException, JspException {
-		this.errors = getRequestContext().getErrors(this.name, isHtmlEscape());
+		String resolvedName = ExpressionEvaluationUtils.evaluateString("name", this.name, pageContext);
+		this.errors = getRequestContext().getErrors(resolvedName, isHtmlEscape());
+
 		if (this.errors != null && this.errors.hasErrors()) {
 			this.pageContext.setAttribute(ERRORS_VARIABLE_NAME, this.errors, PageContext.REQUEST_SCOPE);
 			return EVAL_BODY_INCLUDE;
@@ -115,7 +83,6 @@ public class BindErrorsTag extends HtmlEscapingAwareTag {
 	 * Retrieve the Errors instance that this tag is currently bound to.
 	 * <p>Intended for cooperating nesting tags.
 	 */
-	@Nullable
 	public final Errors getErrors() {
 		return this.errors;
 	}

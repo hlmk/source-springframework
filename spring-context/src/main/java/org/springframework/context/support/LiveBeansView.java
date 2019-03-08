@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContextException;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -45,27 +44,18 @@ import org.springframework.util.StringUtils;
  * Spring Tool Suite 3.1 and higher.
  *
  * @author Juergen Hoeller
- * @author Stephane Nicoll
  * @since 3.2
  * @see #getSnapshotAsJson()
  * @see org.springframework.web.context.support.LiveBeansViewServlet
  */
 public class LiveBeansView implements LiveBeansViewMBean, ApplicationContextAware {
 
-	/**
-	 * The "MBean Domain" property name.
-	 */
 	public static final String MBEAN_DOMAIN_PROPERTY_NAME = "spring.liveBeansView.mbeanDomain";
 
-	/**
-	 * The MBean application key.
-	 */
 	public static final String MBEAN_APPLICATION_KEY = "application";
 
-	private static final Set<ConfigurableApplicationContext> applicationContexts = new LinkedHashSet<>();
-
-	@Nullable
-	private static String applicationName;
+	private static final Set<ConfigurableApplicationContext> applicationContexts =
+			new LinkedHashSet<ConfigurableApplicationContext>();
 
 
 	static void registerApplicationContext(ConfigurableApplicationContext applicationContext) {
@@ -75,11 +65,10 @@ public class LiveBeansView implements LiveBeansViewMBean, ApplicationContextAwar
 				if (applicationContexts.isEmpty()) {
 					try {
 						MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-						applicationName = applicationContext.getApplicationName();
 						server.registerMBean(new LiveBeansView(),
-								new ObjectName(mbeanDomain, MBEAN_APPLICATION_KEY, applicationName));
+								new ObjectName(mbeanDomain, MBEAN_APPLICATION_KEY, applicationContext.getApplicationName()));
 					}
-					catch (Throwable ex) {
+					catch (Exception ex) {
 						throw new ApplicationContextException("Failed to register LiveBeansView MBean", ex);
 					}
 				}
@@ -94,26 +83,19 @@ public class LiveBeansView implements LiveBeansViewMBean, ApplicationContextAwar
 				try {
 					MBeanServer server = ManagementFactory.getPlatformMBeanServer();
 					String mbeanDomain = applicationContext.getEnvironment().getProperty(MBEAN_DOMAIN_PROPERTY_NAME);
-					if (mbeanDomain != null) {
-						server.unregisterMBean(new ObjectName(mbeanDomain, MBEAN_APPLICATION_KEY, applicationName));
-					}
+					server.unregisterMBean(new ObjectName(mbeanDomain, MBEAN_APPLICATION_KEY, applicationContext.getApplicationName()));
 				}
-				catch (Throwable ex) {
+				catch (Exception ex) {
 					throw new ApplicationContextException("Failed to unregister LiveBeansView MBean", ex);
-				}
-				finally {
-					applicationName = null;
 				}
 			}
 		}
 	}
 
 
-	@Nullable
 	private ConfigurableApplicationContext applicationContext;
 
 
-	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		Assert.isTrue(applicationContext instanceof ConfigurableApplicationContext,
 				"ApplicationContext does not implement ConfigurableApplicationContext");
@@ -126,7 +108,6 @@ public class LiveBeansView implements LiveBeansViewMBean, ApplicationContextAwar
 	 * finding all active ApplicationContexts through {@link #findApplicationContexts()},
 	 * then delegating to {@link #generateJson(java.util.Set)}.
 	 */
-	@Override
 	public String getSnapshotAsJson() {
 		Set<ConfigurableApplicationContext> contexts;
 		if (this.applicationContext != null) {
@@ -145,7 +126,7 @@ public class LiveBeansView implements LiveBeansViewMBean, ApplicationContextAwar
 	 */
 	protected Set<ConfigurableApplicationContext> findApplicationContexts() {
 		synchronized (applicationContexts) {
-			return new LinkedHashSet<>(applicationContexts);
+			return new LinkedHashSet<ConfigurableApplicationContext>(applicationContexts);
 		}
 	}
 
@@ -182,9 +163,6 @@ public class LiveBeansView implements LiveBeansViewMBean, ApplicationContextAwar
 						result.append(",\n");
 					}
 					result.append("{\n\"bean\": \"").append(beanName).append("\",\n");
-					result.append("\"aliases\": ");
-					appendArray(result, bf.getAliases(beanName));
-					result.append(",\n");
 					String scope = bd.getScope();
 					if (!StringUtils.hasText(scope)) {
 						scope = BeanDefinition.SCOPE_SINGLETON;
@@ -198,9 +176,16 @@ public class LiveBeansView implements LiveBeansViewMBean, ApplicationContextAwar
 						result.append("\"type\": null,\n");
 					}
 					result.append("\"resource\": \"").append(getEscapedResourceDescription(bd)).append("\",\n");
-					result.append("\"dependencies\": ");
-					appendArray(result, bf.getDependenciesForBean(beanName));
-					result.append("\n}");
+					result.append("\"dependencies\": [");
+					String[] dependencies = bf.getDependenciesForBean(beanName);
+					if (dependencies.length > 0) {
+						result.append("\"");
+					}
+					result.append(StringUtils.arrayToDelimitedString(dependencies, "\", \""));
+					if (dependencies.length > 0) {
+						result.append("\"");
+					}
+					result.append("]\n}");
 					elementAppended = true;
 				}
 			}
@@ -233,7 +218,6 @@ public class LiveBeansView implements LiveBeansViewMBean, ApplicationContextAwar
 	 * @param bd the bean definition to build the resource description for
 	 * @return the JSON-escaped resource description
 	 */
-	@Nullable
 	protected String getEscapedResourceDescription(BeanDefinition bd) {
 		String resourceDescription = bd.getResourceDescription();
 		if (resourceDescription == null) {
@@ -253,18 +237,6 @@ public class LiveBeansView implements LiveBeansViewMBean, ApplicationContextAwar
 			}
 		}
 		return result.toString();
-	}
-
-	private void appendArray(StringBuilder result, String[] arr) {
-		result.append('[');
-		if (arr.length > 0) {
-			result.append('\"');
-		}
-		result.append(StringUtils.arrayToDelimitedString(arr, "\", \""));
-		if (arr.length > 0) {
-			result.append('\"');
-		}
-		result.append(']');
 	}
 
 }

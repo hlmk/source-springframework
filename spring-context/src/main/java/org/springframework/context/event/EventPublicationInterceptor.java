@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /**
  * {@link MethodInterceptor Interceptor} that publishes an
@@ -50,10 +48,8 @@ import org.springframework.util.Assert;
 public class EventPublicationInterceptor
 		implements MethodInterceptor, ApplicationEventPublisherAware, InitializingBean {
 
-	@Nullable
-	private Constructor<?> applicationEventClassConstructor;
+	private Constructor applicationEventClassConstructor;
 
-	@Nullable
 	private ApplicationEventPublisher applicationEventPublisher;
 
 
@@ -66,42 +62,37 @@ public class EventPublicationInterceptor
 	 * {@code null} or if it is not an {@code ApplicationEvent} subclass or
 	 * if it does not expose a constructor that takes a single {@code Object} argument
 	 */
-	public void setApplicationEventClass(Class<?> applicationEventClass) {
-		if (ApplicationEvent.class == applicationEventClass ||
-				!ApplicationEvent.class.isAssignableFrom(applicationEventClass)) {
-			throw new IllegalArgumentException("'applicationEventClass' needs to extend ApplicationEvent");
+	public void setApplicationEventClass(Class applicationEventClass) {
+		if (ApplicationEvent.class.equals(applicationEventClass) ||
+			!ApplicationEvent.class.isAssignableFrom(applicationEventClass)) {
+			throw new IllegalArgumentException("applicationEventClass needs to extend ApplicationEvent");
 		}
 		try {
-			this.applicationEventClassConstructor = applicationEventClass.getConstructor(Object.class);
+			this.applicationEventClassConstructor =
+					applicationEventClass.getConstructor(new Class[] {Object.class});
 		}
 		catch (NoSuchMethodException ex) {
-			throw new IllegalArgumentException("ApplicationEvent class [" +
+			throw new IllegalArgumentException("applicationEventClass [" +
 					applicationEventClass.getName() + "] does not have the required Object constructor: " + ex);
 		}
 	}
 
-	@Override
 	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
 		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
-	@Override
 	public void afterPropertiesSet() throws Exception {
 		if (this.applicationEventClassConstructor == null) {
-			throw new IllegalArgumentException("Property 'applicationEventClass' is required");
+			throw new IllegalArgumentException("applicationEventClass is required");
 		}
 	}
 
 
-	@Override
 	public Object invoke(MethodInvocation invocation) throws Throwable {
 		Object retVal = invocation.proceed();
 
-		Assert.state(this.applicationEventClassConstructor != null, "No ApplicationEvent class set");
 		ApplicationEvent event = (ApplicationEvent)
-				this.applicationEventClassConstructor.newInstance(invocation.getThis());
-
-		Assert.state(this.applicationEventPublisher != null, "No ApplicationEventPublisher available");
+				this.applicationEventClassConstructor.newInstance(new Object[] {invocation.getThis()});
 		this.applicationEventPublisher.publishEvent(event);
 
 		return retVal;

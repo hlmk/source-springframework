@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,9 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.xml.ResourceEntityResolver;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.Resource;
-import org.springframework.lang.Nullable;
 import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.springframework.web.servlet.View;
 
@@ -58,18 +56,24 @@ import org.springframework.web.servlet.View;
 public class XmlViewResolver extends AbstractCachingViewResolver
 		implements Ordered, InitializingBean, DisposableBean {
 
-	/** Default if no other location is supplied. */
-	public static final String DEFAULT_LOCATION = "/WEB-INF/views.xml";
+	/** Default if no other location is supplied */
+	public final static String DEFAULT_LOCATION = "/WEB-INF/views.xml";
 
 
-	@Nullable
+	private int order = Integer.MAX_VALUE;  // default: same as non-Ordered
+
 	private Resource location;
 
-	@Nullable
 	private ConfigurableApplicationContext cachedFactory;
 
-	private int order = Ordered.LOWEST_PRECEDENCE;  // default: same as non-Ordered
 
+	public void setOrder(int order) {
+		this.order = order;
+	}
+
+	public int getOrder() {
+		return this.order;
+	}
 
 	/**
 	 * Set the location of the XML file that defines the view beans.
@@ -81,24 +85,9 @@ public class XmlViewResolver extends AbstractCachingViewResolver
 	}
 
 	/**
-	 * Specify the order value for this ViewResolver bean.
-	 * <p>The default value is {@code Ordered.LOWEST_PRECEDENCE}, meaning non-ordered.
-	 * @see org.springframework.core.Ordered#getOrder()
-	 */
-	public void setOrder(int order) {
-		this.order = order;
-	}
-
-	@Override
-	public int getOrder() {
-		return this.order;
-	}
-
-	/**
 	 * Pre-initialize the factory from the XML file.
 	 * Only effective if caching is enabled.
 	 */
-	@Override
 	public void afterPropertiesSet() throws BeansException {
 		if (isCache()) {
 			initFactory();
@@ -137,22 +126,20 @@ public class XmlViewResolver extends AbstractCachingViewResolver
 			return this.cachedFactory;
 		}
 
-		ApplicationContext applicationContext = obtainApplicationContext();
-
 		Resource actualLocation = this.location;
 		if (actualLocation == null) {
-			actualLocation = applicationContext.getResource(DEFAULT_LOCATION);
+			actualLocation = getApplicationContext().getResource(DEFAULT_LOCATION);
 		}
 
 		// Create child ApplicationContext for views.
 		GenericWebApplicationContext factory = new GenericWebApplicationContext();
-		factory.setParent(applicationContext);
+		factory.setParent(getApplicationContext());
 		factory.setServletContext(getServletContext());
 
 		// Load XML resource with context-aware entity resolver.
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(factory);
-		reader.setEnvironment(applicationContext.getEnvironment());
-		reader.setEntityResolver(new ResourceEntityResolver(applicationContext));
+		reader.setEnvironment(getApplicationContext().getEnvironment());
+		reader.setEntityResolver(new ResourceEntityResolver(getApplicationContext()));
 		reader.loadBeanDefinitions(actualLocation);
 
 		factory.refresh();
@@ -167,7 +154,6 @@ public class XmlViewResolver extends AbstractCachingViewResolver
 	/**
 	 * Close the view bean factory on context shutdown.
 	 */
-	@Override
 	public void destroy() throws BeansException {
 		if (this.cachedFactory != null) {
 			this.cachedFactory.close();

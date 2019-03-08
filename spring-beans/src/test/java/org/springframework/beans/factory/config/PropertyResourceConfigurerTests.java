@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.core.io.Resource;
 import org.springframework.tests.sample.beans.IndexedTestBean;
 import org.springframework.tests.sample.beans.TestBean;
-import org.springframework.util.StringUtils;
 
 import static org.junit.Assert.*;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.*;
@@ -355,18 +354,18 @@ public class PropertyResourceConfigurerTests {
 		MutablePropertyValues pvs = new MutablePropertyValues();
 		pvs.add("stringArray", new String[] {"${os.name}", "${age}"});
 
-		List<Object> friends = new ManagedList<>();
+		List<Object> friends = new ManagedList<Object>();
 		friends.add("na${age}me");
 		friends.add(new RuntimeBeanReference("${ref}"));
 		pvs.add("friends", friends);
 
-		Set<Object> someSet = new ManagedSet<>();
+		Set<Object> someSet = new ManagedSet<Object>();
 		someSet.add("na${age}me");
 		someSet.add(new RuntimeBeanReference("${ref}"));
 		someSet.add(new TypedStringValue("${age}", Integer.class));
 		pvs.add("someSet", someSet);
 
-		Map<Object, Object> someMap = new ManagedMap<>();
+		Map<Object, Object> someMap = new ManagedMap<Object, Object>();
 		someMap.put(new TypedStringValue("key${age}"), new TypedStringValue("${age}"));
 		someMap.put(new TypedStringValue("key${age}ref"), new RuntimeBeanReference("${ref}"));
 		someMap.put("key1", new RuntimeBeanReference("${ref}"));
@@ -806,9 +805,9 @@ public class PropertyResourceConfigurerTests {
 	 */
 	public static class MockPreferences extends AbstractPreferences {
 
-		private static Map<String, String> values = new HashMap<>();
+		private static Map<String, String> values = new HashMap<String, String>();
 
-		private static Map<String, AbstractPreferences> children = new HashMap<>();
+		private static Map<String, AbstractPreferences> children = new HashMap<String, AbstractPreferences>();
 
 		public MockPreferences() {
 			super(null, "");
@@ -839,12 +838,12 @@ public class PropertyResourceConfigurerTests {
 
 		@Override
 		protected String[] keysSpi() throws BackingStoreException {
-			return StringUtils.toStringArray(values.keySet());
+			return values.keySet().toArray(new String[values.size()]);
 		}
 
 		@Override
 		protected String[] childrenNamesSpi() throws BackingStoreException {
-			return StringUtils.toStringArray(children.keySet());
+			return children.keySet().toArray(new String[values.size()]);
 		}
 
 		@Override

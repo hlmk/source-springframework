@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 
 package org.springframework.aop.framework.autoproxy;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 
 import org.junit.Test;
-import test.mixin.Lockable;
-
-import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.autoproxy.target.AbstractBeanFactoryBasedTargetSourceCreator;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.aop.target.AbstractBeanFactoryBasedTargetSource;
-import org.springframework.aop.target.CommonsPool2TargetSource;
+import org.springframework.aop.target.CommonsPoolTargetSource;
 import org.springframework.aop.target.LazyInitTargetSource;
 import org.springframework.aop.target.PrototypeTargetSource;
 import org.springframework.aop.target.ThreadLocalTargetSource;
@@ -37,7 +38,7 @@ import org.springframework.tests.aop.interceptor.NopInterceptor;
 import org.springframework.tests.sample.beans.CountingTestBean;
 import org.springframework.tests.sample.beans.ITestBean;
 
-import static org.junit.Assert.*;
+import test.mixin.Lockable;
 
 /**
  * Tests for auto proxy creation by advisor recognition.
@@ -48,8 +49,7 @@ import static org.junit.Assert.*;
  * @author Dave Syer
  * @author Chris Beams
  */
-@SuppressWarnings("resource")
-public class AdvisorAutoProxyCreatorTests {
+public final class AdvisorAutoProxyCreatorTests {
 
 	private static final Class<?> CLASS = AdvisorAutoProxyCreatorTests.class;
 	private static final String CLASSNAME = CLASS.getSimpleName();
@@ -60,6 +60,8 @@ public class AdvisorAutoProxyCreatorTests {
 	private static final String QUICK_TARGETSOURCE_CONTEXT = CLASSNAME + "-quick-targetsource.xml";
 	private static final String OPTIMIZED_CONTEXT = CLASSNAME + "-optimized.xml";
 
+	private static final String ADVISOR_APC_BEAN_NAME = "aapc";
+	private static final String TXMANAGER_BEAN_NAME = "txManager";
 
 	/**
 	 * Return a bean factory with attributes and EnterpriseServices configured.
@@ -67,7 +69,6 @@ public class AdvisorAutoProxyCreatorTests {
 	protected BeanFactory getBeanFactory() throws IOException {
 		return new ClassPathXmlApplicationContext(DEFAULT_CONTEXT, CLASS);
 	}
-
 
 	/**
 	 * Check that we can provide a common interceptor that will
@@ -81,8 +82,8 @@ public class AdvisorAutoProxyCreatorTests {
 		assertTrue(AopUtils.isAopProxy(test1));
 
 		Lockable lockable1 = (Lockable) test1;
-		NopInterceptor nop1 = (NopInterceptor) bf.getBean("nopInterceptor");
-		NopInterceptor nop2 = (NopInterceptor) bf.getBean("pointcutAdvisor", Advisor.class).getAdvice();
+		NopInterceptor nop = (NopInterceptor) bf.getBean("nopInterceptor");
+		assertEquals(0, nop.getCount());
 
 		ITestBean test2 = (ITestBean) bf.getBean("test2");
 		Lockable lockable2 = (Lockable) test2;
@@ -90,28 +91,14 @@ public class AdvisorAutoProxyCreatorTests {
 		// Locking should be independent; nop is shared
 		assertFalse(lockable1.locked());
 		assertFalse(lockable2.locked());
-		// equals 2 calls on shared nop, because it's first and sees calls
-		// against the Lockable interface introduced by the specific advisor
-		assertEquals(2, nop1.getCount());
-		assertEquals(0, nop2.getCount());
+		// equals 2 calls on shared nop, because it's first
+		// and sees calls against the Lockable interface introduced
+		// by the specific advisor
+		assertEquals(2, nop.getCount());
 		lockable1.lock();
 		assertTrue(lockable1.locked());
 		assertFalse(lockable2.locked());
-		assertEquals(5, nop1.getCount());
-		assertEquals(0, nop2.getCount());
-
-		PackageVisibleMethod packageVisibleMethod = (PackageVisibleMethod) bf.getBean("packageVisibleMethod");
-		assertEquals(5, nop1.getCount());
-		assertEquals(0, nop2.getCount());
-		packageVisibleMethod.doSomething();
-		assertEquals(6, nop1.getCount());
-		assertEquals(1, nop2.getCount());
-		assertTrue(packageVisibleMethod instanceof Lockable);
-		Lockable lockable3 = (Lockable) packageVisibleMethod;
-		lockable3.lock();
-		assertTrue(lockable3.locked());
-		lockable3.unlock();
-		assertFalse(lockable3.locked());
+		assertEquals(5, nop.getCount());
 	}
 
 	/**
@@ -171,7 +158,7 @@ public class AdvisorAutoProxyCreatorTests {
 		test = (ITestBean) bf.getBean(":test");
 		assertTrue(AopUtils.isAopProxy(test));
 		Advised advised = (Advised) test;
-		assertTrue(advised.getTargetSource() instanceof CommonsPool2TargetSource);
+		assertTrue(advised.getTargetSource() instanceof CommonsPoolTargetSource);
 		assertEquals("Rod", test.getName());
 		// Check that references survived pooling
 		assertEquals("Kerry", test.getSpouse().getName());
@@ -218,7 +205,6 @@ public class AdvisorAutoProxyCreatorTests {
 	}
 
 }
-
 
 class SelectivePrototypeTargetSourceCreator extends AbstractBeanFactoryBasedTargetSourceCreator {
 

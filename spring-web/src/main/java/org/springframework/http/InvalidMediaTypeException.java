@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.springframework.http;
 
-import org.springframework.util.InvalidMimeTypeException;
-
 /**
  * Exception thrown from {@link MediaType#parseMediaType(String)} in case of
  * encountering an invalid media type specification String.
@@ -28,25 +26,18 @@ import org.springframework.util.InvalidMimeTypeException;
 @SuppressWarnings("serial")
 public class InvalidMediaTypeException extends IllegalArgumentException {
 
-	private final String mediaType;
+	private String mediaType;
 
 
 	/**
 	 * Create a new InvalidMediaTypeException for the given media type.
 	 * @param mediaType the offending media type
-	 * @param message a detail message indicating the invalid part
+	 * @param msg a detail message indicating the invalid part
 	 */
-	public InvalidMediaTypeException(String mediaType, String message) {
-		super("Invalid media type \"" + mediaType + "\": " + message);
+	public InvalidMediaTypeException(String mediaType, String msg) {
+		super("Invalid media type \"" + mediaType + "\": " + msg);
 		this.mediaType = mediaType;
-	}
 
-	/**
-	 * Constructor that allows wrapping {@link InvalidMimeTypeException}.
-	 */
-	InvalidMediaTypeException(InvalidMimeTypeException ex) {
-		super(ex.getMessage(), ex);
-		this.mediaType = ex.getMimeType();
 	}
 
 

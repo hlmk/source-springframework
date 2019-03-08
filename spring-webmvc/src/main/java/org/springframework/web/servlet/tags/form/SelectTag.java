@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,220 +18,22 @@ package org.springframework.web.servlet.tags.form;
 
 import java.util.Collection;
 import java.util.Map;
+
 import javax.servlet.jsp.JspException;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.servlet.support.BindStatus;
 
 /**
- * The {@code <select>} tag renders an HTML 'select' element.
- * Supports data binding to the selected option.
+ * Databinding-aware JSP tag that renders an HTML '{@code select}'
+ * element.
  *
  * <p>Inner '{@code option}' tags can be rendered using one of the
  * approaches supported by the OptionWriter class.
  *
  * <p>Also supports the use of nested {@link OptionTag OptionTags} or
  * (typically one) nested {@link OptionsTag}.
- *
- * <p>
- * <table>
- * <caption>Attribute Summary</caption>
- * <thead>
- * <tr>
- * <th class="colFirst">Attribute</th>
- * <th class="colOne">Required?</th>
- * <th class="colOne">Runtime Expression?</th>
- * <th class="colLast">Description</th>
- * </tr>
- * </thead>
- * <tbody>
- * <tr class="altColor">
- * <td><p>accesskey</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>cssClass</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Optional Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>cssErrorClass</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Optional Attribute. Used when the bound field has errors.</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>cssStyle</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Optional Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>dir</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>disabled</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Optional Attribute. Setting the value of this attribute to 'true'
- * will disable the HTML element.</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>htmlEscape</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>Enable/disable HTML escaping of rendered values.</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>id</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>itemLabel</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>Name of the property mapped to the inner text of the 'option' tag</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>items</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>The Collection, Map or array of objects used to generate the inner
- * 'option' tags</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>itemValue</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>Name of the property mapped to 'value' attribute of the 'option'
- * tag</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>lang</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>multiple</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Optional Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onblur</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onchange</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onclick</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>ondblclick</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onfocus</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onkeydown</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onkeypress</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onkeyup</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onmousedown</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onmousemove</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onmouseout</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onmouseover</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onmouseup</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>path</p></td>
- * <td><p>true</p></td>
- * <td><p>true</p></td>
- * <td><p>Path to property for data binding</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>size</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Optional Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>tabindex</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>title</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * </tbody>
- * </table>
  *
  * @author Rob Harrop
  * @author Juergen Hoeller
@@ -256,45 +58,39 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 
 
 	/**
-	 * The {@link Collection}, {@link Map} or array of objects used to generate
-	 * the inner '{@code option}' tags.
+	 * The {@link Collection}, {@link Map} or array of objects used to generate the inner
+	 * '{@code option}' tags.
 	 */
-	@Nullable
 	private Object items;
 
 	/**
 	 * The name of the property mapped to the '{@code value}' attribute
 	 * of the '{@code option}' tag.
 	 */
-	@Nullable
 	private String itemValue;
 
 	/**
 	 * The name of the property mapped to the inner text of the
 	 * '{@code option}' tag.
 	 */
-	@Nullable
 	private String itemLabel;
 
 	/**
 	 * The value of the HTML '{@code size}' attribute rendered
 	 * on the final '{@code select}' element.
 	 */
-	@Nullable
 	private String size;
 
 	/**
 	 * Indicates whether or not the '{@code select}' tag allows
 	 * multiple-selections.
 	 */
-	@Nullable
-	private Object multiple;
+	private Object multiple = Boolean.FALSE;
 
 	/**
 	 * The {@link TagWriter} instance that the output is being written.
 	 * <p>Only used in conjunction with nested {@link OptionTag OptionTags}.
 	 */
-	@Nullable
 	private TagWriter tagWriter;
 
 
@@ -306,7 +102,7 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	 * <p>Typically a runtime expression.
 	 * @param items the items that comprise the options of this selection
 	 */
-	public void setItems(@Nullable Object items) {
+	public void setItems(Object items) {
 		this.items = (items != null ? items : EMPTY);
 	}
 
@@ -314,7 +110,6 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	 * Get the value of the '{@code items}' attribute.
 	 * <p>May be a runtime expression.
 	 */
-	@Nullable
 	protected Object getItems() {
 		return this.items;
 	}
@@ -334,7 +129,6 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	 * Get the value of the '{@code itemValue}' attribute.
 	 * <p>May be a runtime expression.
 	 */
-	@Nullable
 	protected String getItemValue() {
 		return this.itemValue;
 	}
@@ -352,7 +146,6 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	 * Get the value of the '{@code itemLabel}' attribute.
 	 * <p>May be a runtime expression.
 	 */
-	@Nullable
 	protected String getItemLabel() {
 		return this.itemLabel;
 	}
@@ -360,6 +153,8 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	/**
 	 * Set the value of the HTML '{@code size}' attribute rendered
 	 * on the final '{@code select}' element.
+	 * <p>May be a runtime expression.
+	 * @param size the desired value of the '{@code size}' attribute
 	 */
 	public void setSize(String size) {
 		this.size = size;
@@ -367,8 +162,8 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 
 	/**
 	 * Get the value of the '{@code size}' attribute.
+	 * <p>May be a runtime expression.
 	 */
-	@Nullable
 	protected String getSize() {
 		return this.size;
 	}
@@ -376,6 +171,7 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	/**
 	 * Set the value of the HTML '{@code multiple}' attribute rendered
 	 * on the final '{@code select}' element.
+	 * <p>May be a runtime expression.
 	 */
 	public void setMultiple(Object multiple) {
 		this.multiple = multiple;
@@ -384,8 +180,8 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	/**
 	 * Get the value of the HTML '{@code multiple}' attribute rendered
 	 * on the final '{@code select}' element.
+	 * <p>May be a runtime expression.
 	 */
-	@Nullable
 	protected Object getMultiple() {
 		return this.multiple;
 	}
@@ -420,7 +216,6 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 							ObjectUtils.getDisplayString(evaluate("itemLabel", getItemLabel())) : null);
 					OptionWriter optionWriter =
 							new OptionWriter(itemsObject, getBindStatus(), valueProperty, labelProperty, isHtmlEscape()) {
-								@Override
 								protected String processOptionValue(String resolvedValue) {
 									return processFieldValue(selectName, resolvedValue, "option");
 								}
@@ -459,9 +254,11 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 
 	private boolean isMultiple() throws JspException {
 		Object multiple = getMultiple();
-		if (multiple != null) {
-			String stringValue = multiple.toString();
-			return ("multiple".equalsIgnoreCase(stringValue) || Boolean.parseBoolean(stringValue));
+		if (Boolean.TRUE.equals(multiple) || "multiple".equals(multiple)) {
+			return true;
+		}
+		else if (this.multiple instanceof String) {
+			return evaluateBoolean("multiple", (String) multiple);
 		}
 		return forceMultiple();
 	}
@@ -472,7 +269,7 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	 */
 	private boolean forceMultiple() throws JspException {
 		BindStatus bindStatus = getBindStatus();
-		Class<?> valueType = bindStatus.getValueType();
+		Class valueType = bindStatus.getValueType();
 		if (valueType != null && typeRequiresMultiple(valueType)) {
 			return true;
 		}
@@ -489,7 +286,7 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	 * Returns '{@code true}' for arrays, {@link Collection Collections}
 	 * and {@link Map Maps}.
 	 */
-	private static boolean typeRequiresMultiple(Class<?> type) {
+	private static boolean typeRequiresMultiple(Class type) {
 		return (type.isArray() || Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type));
 	}
 
@@ -501,7 +298,7 @@ public class SelectTag extends AbstractHtmlInputElementTag {
 	public int doEndTag() throws JspException {
 		if (this.tagWriter != null) {
 			this.tagWriter.endTag();
-			writeHiddenTagIfNecessary(this.tagWriter);
+			writeHiddenTagIfNecessary(tagWriter);
 		}
 		return EVAL_PAGE;
 	}

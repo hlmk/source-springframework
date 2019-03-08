@@ -16,20 +16,20 @@
 
 package org.springframework.aop.interceptor;
 
-import org.junit.Test;
+import static org.junit.Assert.*;
 
+import org.junit.Test;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.NamedBean;
+
 import org.springframework.tests.sample.beans.ITestBean;
 import org.springframework.tests.sample.beans.TestBean;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Rod Johnson
  * @author Chris Beams
  */
-public class ExposeBeanNameAdvisorsTests {
+public final class ExposeBeanNameAdvisorsTests {
 
 	private class RequiresBeanNameBoundTestBean extends TestBean {
 		private final String beanName;

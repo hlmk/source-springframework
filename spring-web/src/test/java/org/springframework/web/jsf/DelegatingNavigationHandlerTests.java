@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2006 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,36 +19,37 @@ package org.springframework.web.jsf;
 import javax.faces.application.NavigationHandler;
 import javax.faces.context.FacesContext;
 
-import org.junit.Test;
+import junit.framework.TestCase;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
-import org.springframework.lang.Nullable;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Colin Sampaleanu
  * @author Juergen Hoeller
  */
-public class DelegatingNavigationHandlerTests {
+public class DelegatingNavigationHandlerTests extends TestCase {
 
-	private final MockFacesContext facesContext = new MockFacesContext();
+	private MockFacesContext facesContext;
+	private StaticListableBeanFactory beanFactory;
+	private TestNavigationHandler origNavHandler;
+	private DelegatingNavigationHandlerProxy delNavHandler;
 
-	private final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
+	@Override
+	protected void setUp() {
+		facesContext = new MockFacesContext();
+		beanFactory = new StaticListableBeanFactory();
+		origNavHandler = new TestNavigationHandler();
 
-	private final TestNavigationHandler origNavHandler = new TestNavigationHandler();
+		delNavHandler = new DelegatingNavigationHandlerProxy(origNavHandler) {
+			@Override
+			protected BeanFactory getBeanFactory(FacesContext facesContext) {
+				return beanFactory;
+			}
+		};
+	}
 
-	private final DelegatingNavigationHandlerProxy delNavHandler = new DelegatingNavigationHandlerProxy(origNavHandler) {
-		@Override
-		protected BeanFactory getBeanFactory(FacesContext facesContext) {
-			return beanFactory;
-		}
-	};
-
-
-	@Test
-	public void handleNavigationWithoutDecoration() {
+	public void testHandleNavigationWithoutDecoration() {
 		TestNavigationHandler targetHandler = new TestNavigationHandler();
 		beanFactory.addBean("jsfNavigationHandler", targetHandler);
 
@@ -57,8 +58,7 @@ public class DelegatingNavigationHandlerTests {
 		assertEquals("myViewId", targetHandler.lastOutcome);
 	}
 
-	@Test
-	public void handleNavigationWithDecoration() {
+	public void testHandleNavigationWithDecoration() {
 		TestDecoratingNavigationHandler targetHandler = new TestDecoratingNavigationHandler();
 		beanFactory.addBean("jsfNavigationHandler", targetHandler);
 
@@ -72,7 +72,7 @@ public class DelegatingNavigationHandlerTests {
 	}
 
 
-	static class TestNavigationHandler extends NavigationHandler {
+	public static class TestNavigationHandler extends NavigationHandler {
 
 		private String lastFromAction;
 		private String lastOutcome;
@@ -85,15 +85,14 @@ public class DelegatingNavigationHandlerTests {
 	}
 
 
-	static class TestDecoratingNavigationHandler extends DecoratingNavigationHandler {
+	public static class TestDecoratingNavigationHandler extends DecoratingNavigationHandler {
 
 		private String lastFromAction;
 		private String lastOutcome;
 
 		@Override
-		public void handleNavigation(FacesContext facesContext, @Nullable String fromAction,
-				@Nullable String outcome, @Nullable NavigationHandler originalNavigationHandler) {
-
+		public void handleNavigation(
+				FacesContext facesContext, String fromAction, String outcome, NavigationHandler originalNavigationHandler) {
 			lastFromAction = fromAction;
 			lastOutcome = outcome;
 			if (originalNavigationHandler != null) {

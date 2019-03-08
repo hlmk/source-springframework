@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,9 @@ import org.springframework.util.Assert;
  *
  * @author Juergen Hoeller
  * @since 2.0
- * @deprecated as of 5.1, in favor of EE 7's
- * {@link org.springframework.scheduling.concurrent.DefaultManagedTaskExecutor}
+ * @see commonj.work.Work
+ * @see java.lang.Runnable
  */
-@Deprecated
 public class DelegatingWork implements Work {
 
 	private final Runnable delegate;
@@ -58,7 +57,6 @@ public class DelegatingWork implements Work {
 	/**
 	 * Delegates execution to the underlying Runnable.
 	 */
-	@Override
 	public void run() {
 		this.delegate.run();
 	}
@@ -68,7 +66,6 @@ public class DelegatingWork implements Work {
 	 * {@link org.springframework.scheduling.SchedulingAwareRunnable#isLongLived()},
 	 * if available.
 	 */
-	@Override
 	public boolean isDaemon() {
 		return (this.delegate instanceof SchedulingAwareRunnable &&
 				((SchedulingAwareRunnable) this.delegate).isLongLived());
@@ -78,7 +75,6 @@ public class DelegatingWork implements Work {
 	 * This implementation is empty, since we expect the Runnable
 	 * to terminate based on some specific shutdown signal.
 	 */
-	@Override
 	public void release() {
 	}
 

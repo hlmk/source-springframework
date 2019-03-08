@@ -16,19 +16,18 @@
 
 package org.springframework.aop.config;
 
-import org.junit.Test;
-import org.xml.sax.SAXParseException;
+import static org.junit.Assert.*;
 
+import org.junit.Test;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import static org.junit.Assert.*;
+import org.xml.sax.SAXParseException;
 
 /**
  * @author Adrian Colyer
  * @author Chris Beams
  */
-public class AopNamespaceHandlerAdviceTypeTests {
+public final class AopNamespaceHandlerAdviceTypeTests {
 
 	@Test
 	public void testParsingOfAdviceTypes() {

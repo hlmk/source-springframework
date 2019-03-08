@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,12 @@ package org.springframework.mail;
 import java.io.Serializable;
 import java.util.Date;
 
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.util.Assert;
 
 /**
- * Models a simple mail message, including data such as the from, to, cc, subject,
- * and text fields.
+ * Models a simple mail message, including data such as the from, to, cc, subject, and text fields.
  *
  * <p>Consider {@code JavaMailSender} and JavaMail {@code MimeMessages} for creating
  * more sophisticated messages, for example messages with attachments, special
@@ -44,28 +42,20 @@ import org.springframework.util.StringUtils;
 @SuppressWarnings("serial")
 public class SimpleMailMessage implements MailMessage, Serializable {
 
-	@Nullable
 	private String from;
 
-	@Nullable
 	private String replyTo;
 
-	@Nullable
 	private String[] to;
 
-	@Nullable
 	private String[] cc;
 
-	@Nullable
 	private String[] bcc;
 
-	@Nullable
 	private Date sentDate;
 
-	@Nullable
 	private String subject;
 
-	@Nullable
 	private String text;
 
 
@@ -78,111 +68,99 @@ public class SimpleMailMessage implements MailMessage, Serializable {
 	/**
 	 * Copy constructor for creating a new {@code SimpleMailMessage} from the state
 	 * of an existing {@code SimpleMailMessage} instance.
+	 * @throws IllegalArgumentException if the supplied message is {@code null}
 	 */
 	public SimpleMailMessage(SimpleMailMessage original) {
-		Assert.notNull(original, "'original' message argument must not be null");
+		Assert.notNull(original, "The 'original' message argument cannot be null");
 		this.from = original.getFrom();
 		this.replyTo = original.getReplyTo();
-		this.to = copyOrNull(original.getTo());
-		this.cc = copyOrNull(original.getCc());
-		this.bcc = copyOrNull(original.getBcc());
+		if (original.getTo() != null) {
+			this.to = copy(original.getTo());
+		}
+		if (original.getCc() != null) {
+			this.cc = copy(original.getCc());
+		}
+		if (original.getBcc() != null) {
+			this.bcc = copy(original.getBcc());
+		}
 		this.sentDate = original.getSentDate();
 		this.subject = original.getSubject();
 		this.text = original.getText();
 	}
 
 
-	@Override
 	public void setFrom(String from) {
 		this.from = from;
 	}
 
-	@Nullable
 	public String getFrom() {
 		return this.from;
 	}
 
-	@Override
 	public void setReplyTo(String replyTo) {
 		this.replyTo = replyTo;
 	}
 
-	@Nullable
 	public String getReplyTo() {
-		return this.replyTo;
+		return replyTo;
 	}
 
-	@Override
 	public void setTo(String to) {
 		this.to = new String[] {to};
 	}
 
-	@Override
-	public void setTo(String... to) {
+	public void setTo(String[] to) {
 		this.to = to;
 	}
 
-	@Nullable
 	public String[] getTo() {
 		return this.to;
 	}
 
-	@Override
 	public void setCc(String cc) {
 		this.cc = new String[] {cc};
 	}
 
-	@Override
-	public void setCc(String... cc) {
+	public void setCc(String[] cc) {
 		this.cc = cc;
 	}
 
-	@Nullable
 	public String[] getCc() {
-		return this.cc;
+		return cc;
 	}
 
-	@Override
 	public void setBcc(String bcc) {
 		this.bcc = new String[] {bcc};
 	}
 
-	@Override
-	public void setBcc(String... bcc) {
+	public void setBcc(String[] bcc) {
 		this.bcc = bcc;
 	}
 
-	@Nullable
 	public String[] getBcc() {
-		return this.bcc;
+		return bcc;
 	}
 
-	@Override
 	public void setSentDate(Date sentDate) {
 		this.sentDate = sentDate;
 	}
 
-	@Nullable
 	public Date getSentDate() {
-		return this.sentDate;
+		return sentDate;
 	}
 
-	@Override
 	public void setSubject(String subject) {
 		this.subject = subject;
 	}
 
-	@Nullable
 	public String getSubject() {
 		return this.subject;
 	}
 
-	@Override
 	public void setText(String text) {
 		this.text = text;
 	}
 
-	@Nullable
 	public String getText() {
 		return this.text;
 	}
@@ -191,9 +169,10 @@ public class SimpleMailMessage implements MailMessage, Serializable {
 	/**
 	 * Copy the contents of this message to the given target message.
 	 * @param target the {@code MailMessage} to copy to
+	 * @throws IllegalArgumentException if the supplied {@code target} is {@code null}
 	 */
 	public void copyTo(MailMessage target) {
-		Assert.notNull(target, "'target' MailMessage must not be null");
+		Assert.notNull(target, "The 'target' message argument cannot be null");
 		if (getFrom() != null) {
 			target.setFrom(getFrom());
 		}
@@ -201,13 +180,13 @@ public class SimpleMailMessage implements MailMessage, Serializable {
 			target.setReplyTo(getReplyTo());
 		}
 		if (getTo() != null) {
-			target.setTo(copy(getTo()));
+			target.setTo(getTo());
 		}
 		if (getCc() != null) {
-			target.setCc(copy(getCc()));
+			target.setCc(getCc());
 		}
 		if (getBcc() != null) {
-			target.setBcc(copy(getBcc()));
+			target.setBcc(getBcc());
 		}
 		if (getSentDate() != null) {
 			target.setSentDate(getSentDate());
@@ -220,37 +199,6 @@ public class SimpleMailMessage implements MailMessage, Serializable {
 		}
 	}
 
-
-	@Override
-	public boolean equals(Object other) {
-		if (this == other) {
-			return true;
-		}
-		if (!(other instanceof SimpleMailMessage)) {
-			return false;
-		}
-		SimpleMailMessage otherMessage = (SimpleMailMessage) other;
-		return (ObjectUtils.nullSafeEquals(this.from, otherMessage.from) &&
-				ObjectUtils.nullSafeEquals(this.replyTo, otherMessage.replyTo) &&
-				ObjectUtils.nullSafeEquals(this.to, otherMessage.to) &&
-				ObjectUtils.nullSafeEquals(this.cc, otherMessage.cc) &&
-				ObjectUtils.nullSafeEquals(this.bcc, otherMessage.bcc) &&
-				ObjectUtils.nullSafeEquals(this.sentDate, otherMessage.sentDate) &&
-				ObjectUtils.nullSafeEquals(this.subject, otherMessage.subject) &&
-				ObjectUtils.nullSafeEquals(this.text, otherMessage.text));
-	}
-
-	@Override
-	public int hashCode() {
-		int hashCode = ObjectUtils.nullSafeHashCode(this.from);
-		hashCode = 29 * hashCode + ObjectUtils.nullSafeHashCode(this.replyTo);
-		hashCode = 29 * hashCode + ObjectUtils.nullSafeHashCode(this.to);
-		hashCode = 29 * hashCode + ObjectUtils.nullSafeHashCode(this.cc);
-		hashCode = 29 * hashCode + ObjectUtils.nullSafeHashCode(this.bcc);
-		hashCode = 29 * hashCode + ObjectUtils.nullSafeHashCode(this.sentDate);
-		hashCode = 29 * hashCode + ObjectUtils.nullSafeHashCode(this.subject);
-		return hashCode;
-	}
 
 	@Override
 	public String toString() {
@@ -266,14 +214,44 @@ public class SimpleMailMessage implements MailMessage, Serializable {
 		return sb.toString();
 	}
 
-
-	@Nullable
-	private static String[] copyOrNull(@Nullable String[] state) {
-		if (state == null) {
-			return null;
+	@Override
+	public boolean equals(Object other) {
+		if (this == other) {
+			return true;
 		}
-		return copy(state);
+		if (!(other instanceof SimpleMailMessage)) {
+			return false;
+		}
+		SimpleMailMessage otherMessage = (SimpleMailMessage) other;
+		return (ObjectUtils.nullSafeEquals(this.from, otherMessage.from) &&
+				ObjectUtils.nullSafeEquals(this.replyTo, otherMessage.replyTo) &&
+				java.util.Arrays.equals(this.to, otherMessage.to) &&
+				java.util.Arrays.equals(this.cc, otherMessage.cc) &&
+				java.util.Arrays.equals(this.bcc, otherMessage.bcc) &&
+				ObjectUtils.nullSafeEquals(this.sentDate, otherMessage.sentDate) &&
+				ObjectUtils.nullSafeEquals(this.subject, otherMessage.subject) &&
+				ObjectUtils.nullSafeEquals(this.text, otherMessage.text));
 	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = (this.from == null ? 0 : this.from.hashCode());
+		hashCode = 29 * hashCode + (this.replyTo == null ? 0 : this.replyTo.hashCode());
+		for (int i = 0; this.to != null && i < this.to.length; i++) {
+			hashCode = 29 * hashCode + (this.to == null ? 0 : this.to[i].hashCode());
+		}
+		for (int i = 0; this.cc != null && i < this.cc.length; i++) {
+			hashCode = 29 * hashCode + (this.cc == null ? 0 : this.cc[i].hashCode());
+		}
+		for (int i = 0; this.bcc != null && i < this.bcc.length; i++) {
+			hashCode = 29 * hashCode + (this.bcc == null ? 0 : this.bcc[i].hashCode());
+		}
+		hashCode = 29 * hashCode + (this.sentDate == null ? 0 : this.sentDate.hashCode());
+		hashCode = 29 * hashCode + (this.subject == null ? 0 : this.subject.hashCode());
+		hashCode = 29 * hashCode + (this.text == null ? 0 : this.text.hashCode());
+		return hashCode;
+	}
+
 
 	private static String[] copy(String[] state) {
 		String[] copy = new String[state.length];

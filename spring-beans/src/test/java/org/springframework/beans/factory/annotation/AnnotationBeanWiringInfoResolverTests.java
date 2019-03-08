@@ -16,17 +16,19 @@
 
 package org.springframework.beans.factory.annotation;
 
-import org.junit.Test;
-
-import org.springframework.beans.factory.wiring.BeanWiringInfo;
-
 import static org.junit.Assert.*;
+
+import org.junit.Test;
+import org.springframework.beans.factory.annotation.AnnotationBeanWiringInfoResolver;
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.wiring.BeanWiringInfo;
 
 /**
  * @author Rick Evans
  * @author Chris Beams
  */
-public class AnnotationBeanWiringInfoResolverTests {
+public final class AnnotationBeanWiringInfoResolverTests {
 
 	@Test
 	public void testResolveWiringInfo() throws Exception {

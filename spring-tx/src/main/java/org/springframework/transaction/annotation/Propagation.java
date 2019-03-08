@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,13 +56,12 @@ public enum Propagation {
 	MANDATORY(TransactionDefinition.PROPAGATION_MANDATORY),
 
 	/**
-	 * Create a new transaction, and suspend the current transaction if one exists.
-	 * Analogous to the EJB transaction attribute of the same name.
-	 * <p><b>NOTE:</b> Actual transaction suspension will not work out-of-the-box
-	 * on all transaction managers. This in particular applies to
-	 * {@link org.springframework.transaction.jta.JtaTransactionManager},
+	 * Create a new transaction, suspend the current transaction if one exists.
+	 * Analogous to EJB transaction attribute of the same name.
+	 * <p>Note: Actual transaction suspension will not work on out-of-the-box
+	 * on all transaction managers. This in particular applies to JtaTransactionManager,
 	 * which requires the {@code javax.transaction.TransactionManager} to be
-	 * made available to it (which is server-specific in standard Java EE).
+	 * made available it to it (which is server-specific in standard J2EE).
 	 * @see org.springframework.transaction.jta.JtaTransactionManager#setTransactionManager
 	 */
 	REQUIRES_NEW(TransactionDefinition.PROPAGATION_REQUIRES_NEW),
@@ -70,11 +69,10 @@ public enum Propagation {
 	/**
 	 * Execute non-transactionally, suspend the current transaction if one exists.
 	 * Analogous to EJB transaction attribute of the same name.
-	 * <p><b>NOTE:</b> Actual transaction suspension will not work out-of-the-box
-	 * on all transaction managers. This in particular applies to
-	 * {@link org.springframework.transaction.jta.JtaTransactionManager},
+	 * <p>Note: Actual transaction suspension will not work on out-of-the-box
+	 * on all transaction managers. This in particular applies to JtaTransactionManager,
 	 * which requires the {@code javax.transaction.TransactionManager} to be
-	 * made available to it (which is server-specific in standard Java EE).
+	 * made available it to it (which is server-specific in standard J2EE).
 	 * @see org.springframework.transaction.jta.JtaTransactionManager#setTransactionManager
 	 */
 	NOT_SUPPORTED(TransactionDefinition.PROPAGATION_NOT_SUPPORTED),
@@ -100,12 +98,8 @@ public enum Propagation {
 	private final int value;
 
 
-	Propagation(int value) {
-		this.value = value;
-	}
+	Propagation(int value) { this.value = value; }
 
-	public int value() {
-		return this.value;
-	}
+	public int value() { return this.value; }
 
 }

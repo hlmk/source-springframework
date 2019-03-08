@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.core.io;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.ResourceUtils;
 
 /**
@@ -32,11 +31,6 @@ import org.springframework.util.ResourceUtils;
  * from Strings when running in an ApplicationContext, using the particular
  * context's resource loading strategy.
  *
- *
- *
- * 定义资源加载器，主要应用于根据给定的资源文件地址返回对应的Resource
- *
- *
  * @author Juergen Hoeller
  * @since 10.03.2004
  * @see Resource
@@ -46,13 +40,13 @@ import org.springframework.util.ResourceUtils;
  */
 public interface ResourceLoader {
 
-	/** Pseudo URL prefix for loading from the class path: "classpath:". */
+	/** Pseudo URL prefix for loading from the class path: "classpath:" */
 	String CLASSPATH_URL_PREFIX = ResourceUtils.CLASSPATH_URL_PREFIX;
 
 
 	/**
-	 * Return a Resource handle for the specified resource location.
-	 * <p>The handle should always be a reusable resource descriptor,
+	 * Return a Resource handle for the specified resource.
+	 * The handle should always be a reusable resource descriptor,
 	 * allowing for multiple {@link Resource#getInputStream()} calls.
 	 * <p><ul>
 	 * <li>Must support fully qualified URLs, e.g. "file:C:/test.dat".
@@ -64,10 +58,10 @@ public interface ResourceLoader {
 	 * <p>Note that a Resource handle does not imply an existing resource;
 	 * you need to invoke {@link Resource#exists} to check for existence.
 	 * @param location the resource location
-	 * @return a corresponding Resource handle (never {@code null})
+	 * @return a corresponding Resource handle
 	 * @see #CLASSPATH_URL_PREFIX
-	 * @see Resource#exists()
-	 * @see Resource#getInputStream()
+	 * @see org.springframework.core.io.Resource#exists
+	 * @see org.springframework.core.io.Resource#getInputStream
 	 */
 	Resource getResource(String location);
 
@@ -76,12 +70,10 @@ public interface ResourceLoader {
 	 * <p>Clients which need to access the ClassLoader directly can do so
 	 * in a uniform manner with the ResourceLoader, rather than relying
 	 * on the thread context ClassLoader.
-	 * @return the ClassLoader
-	 * (only {@code null} if even the system ClassLoader isn't accessible)
+	 * @return the ClassLoader (only {@code null} if even the system
+	 * ClassLoader isn't accessible)
 	 * @see org.springframework.util.ClassUtils#getDefaultClassLoader()
-	 * @see org.springframework.util.ClassUtils#forName(String, ClassLoader)
 	 */
-	@Nullable
 	ClassLoader getClassLoader();
 
 }

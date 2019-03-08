@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 
 package org.springframework.core;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -34,14 +32,11 @@ import org.springframework.util.Assert;
  */
 public abstract class DecoratingClassLoader extends ClassLoader {
 
-	static {
-		ClassLoader.registerAsParallelCapable();
-	}
+	private final Set<String> excludedPackages = new HashSet<String>();
 
+	private final Set<String> excludedClasses = new HashSet<String>();
 
-	private final Set<String> excludedPackages = Collections.newSetFromMap(new ConcurrentHashMap<>(8));
-
-	private final Set<String> excludedClasses = Collections.newSetFromMap(new ConcurrentHashMap<>(8));
+	private final Object exclusionMonitor = new Object();
 
 
 	/**
@@ -54,7 +49,7 @@ public abstract class DecoratingClassLoader extends ClassLoader {
 	 * Create a new DecoratingClassLoader using the given parent ClassLoader
 	 * for delegation.
 	 */
-	public DecoratingClassLoader(@Nullable ClassLoader parent) {
+	public DecoratingClassLoader(ClassLoader parent) {
 		super(parent);
 	}
 
@@ -67,7 +62,9 @@ public abstract class DecoratingClassLoader extends ClassLoader {
 	 */
 	public void excludePackage(String packageName) {
 		Assert.notNull(packageName, "Package name must not be null");
-		this.excludedPackages.add(packageName);
+		synchronized (this.exclusionMonitor) {
+			this.excludedPackages.add(packageName);
+		}
 	}
 
 	/**
@@ -78,7 +75,9 @@ public abstract class DecoratingClassLoader extends ClassLoader {
 	 */
 	public void excludeClass(String className) {
 		Assert.notNull(className, "Class name must not be null");
-		this.excludedClasses.add(className);
+		synchronized (this.exclusionMonitor) {
+			this.excludedClasses.add(className);
+		}
 	}
 
 	/**
@@ -91,12 +90,14 @@ public abstract class DecoratingClassLoader extends ClassLoader {
 	 * @see #excludeClass
 	 */
 	protected boolean isExcluded(String className) {
-		if (this.excludedClasses.contains(className)) {
-			return true;
-		}
-		for (String packageName : this.excludedPackages) {
-			if (className.startsWith(packageName)) {
+		synchronized (this.exclusionMonitor) {
+			if (this.excludedClasses.contains(className)) {
 				return true;
+			}
+			for (String packageName : this.excludedPackages) {
+				if (className.startsWith(packageName)) {
+					return true;
+				}
 			}
 		}
 		return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,11 @@ package org.springframework.jdbc.datasource.embedded;
 
 import java.sql.Driver;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 
 /**
- * {@link EmbeddedDatabaseConfigurer} for an HSQL embedded database instance.
- *
- * <p>Call {@link #getInstance()} to get the singleton instance of this class.
+ * Initializes an HSQL embedded database instance.
+ * Call {@link #getInstance()} to get the singleton instance of this class.
  *
  * @author Keith Donald
  * @author Oliver Gierke
@@ -32,32 +30,28 @@ import org.springframework.util.ClassUtils;
  */
 final class HsqlEmbeddedDatabaseConfigurer extends AbstractEmbeddedDatabaseConfigurer {
 
-	@Nullable
-	private static HsqlEmbeddedDatabaseConfigurer instance;
+	private static HsqlEmbeddedDatabaseConfigurer INSTANCE;
 
 	private final Class<? extends Driver> driverClass;
 
-
 	/**
 	 * Get the singleton {@link HsqlEmbeddedDatabaseConfigurer} instance.
-	 * @return the configurer instance
+	 * @return the configurer
 	 * @throws ClassNotFoundException if HSQL is not on the classpath
 	 */
 	@SuppressWarnings("unchecked")
 	public static synchronized HsqlEmbeddedDatabaseConfigurer getInstance() throws ClassNotFoundException {
-		if (instance == null) {
-			instance = new HsqlEmbeddedDatabaseConfigurer( (Class<? extends Driver>)
-					ClassUtils.forName("org.hsqldb.jdbcDriver", HsqlEmbeddedDatabaseConfigurer.class.getClassLoader()));
+		if (INSTANCE == null) {
+			INSTANCE = new HsqlEmbeddedDatabaseConfigurer(
+					(Class<? extends Driver>) ClassUtils.forName("org.hsqldb.jdbcDriver", HsqlEmbeddedDatabaseConfigurer.class.getClassLoader()));
 		}
-		return instance;
+		return INSTANCE;
 	}
-
 
 	private HsqlEmbeddedDatabaseConfigurer(Class<? extends Driver> driverClass) {
 		this.driverClass = driverClass;
 	}
 
-	@Override
 	public void configureConnectionProperties(ConnectionProperties properties, String databaseName) {
 		properties.setDriverClass(this.driverClass);
 		properties.setUrl("jdbc:hsqldb:mem:" + databaseName);

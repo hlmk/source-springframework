@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.Set;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.lang.Nullable;
 
 /**
  * Composite {@link CacheManager} implementation that iterates over
@@ -53,7 +52,7 @@ import org.springframework.lang.Nullable;
  */
 public class CompositeCacheManager implements CacheManager, InitializingBean {
 
-	private final List<CacheManager> cacheManagers = new ArrayList<>();
+	private final List<CacheManager> cacheManagers = new ArrayList<CacheManager>();
 
 	private boolean fallbackToNoOpCache = false;
 
@@ -78,6 +77,7 @@ public class CompositeCacheManager implements CacheManager, InitializingBean {
 	 * Specify the CacheManagers to delegate to.
 	 */
 	public void setCacheManagers(Collection<CacheManager> cacheManagers) {
+		this.cacheManagers.clear();  // just here to preserve compatibility with previous behavior
 		this.cacheManagers.addAll(cacheManagers);
 	}
 
@@ -90,7 +90,6 @@ public class CompositeCacheManager implements CacheManager, InitializingBean {
 		this.fallbackToNoOpCache = fallbackToNoOpCache;
 	}
 
-	@Override
 	public void afterPropertiesSet() {
 		if (this.fallbackToNoOpCache) {
 			this.cacheManagers.add(new NoOpCacheManager());
@@ -98,8 +97,6 @@ public class CompositeCacheManager implements CacheManager, InitializingBean {
 	}
 
 
-	@Override
-	@Nullable
 	public Cache getCache(String name) {
 		for (CacheManager cacheManager : this.cacheManagers) {
 			Cache cache = cacheManager.getCache(name);
@@ -110,9 +107,8 @@ public class CompositeCacheManager implements CacheManager, InitializingBean {
 		return null;
 	}
 
-	@Override
 	public Collection<String> getCacheNames() {
-		Set<String> names = new LinkedHashSet<>();
+		Set<String> names = new LinkedHashSet<String>();
 		for (CacheManager manager : this.cacheManagers) {
 			names.addAll(manager.getCacheNames());
 		}

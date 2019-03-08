@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.web.jsf;
 
 import java.util.Iterator;
+
 import javax.faces.application.Application;
 import javax.faces.application.FacesMessage;
 import javax.faces.application.FacesMessage.Severity;
@@ -53,7 +54,7 @@ public class MockFacesContext extends FacesContext {
 	}
 
 	@Override
-	public Iterator<String> getClientIdsWithMessages() {
+	public Iterator getClientIdsWithMessages() {
 		return null;
 	}
 
@@ -72,12 +73,12 @@ public class MockFacesContext extends FacesContext {
 	}
 
 	@Override
-	public Iterator<FacesMessage> getMessages() {
+	public Iterator getMessages() {
 		return null;
 	}
 
 	@Override
-	public Iterator<FacesMessage> getMessages(String clientId) {
+	public Iterator getMessages(String arg0) {
 		return null;
 	}
 

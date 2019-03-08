@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation that indicates a method return value should be bound to the web
- * response body. Supported for annotated handler methods.
- *
- * <p>As of version 4.0 this annotation can also be added on the type level in
- * which case it is inherited and does not need to be added on the method level.
+ * Annotation which indicates that a method return value should be bound to the web response body.
+ * Supported for annotated handler methods in Servlet environments.
  *
  * @author Arjen Poutsma
  * @since 3.0
  * @see RequestBody
- * @see RestController
+ * @see org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter
  */
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface ResponseBody {

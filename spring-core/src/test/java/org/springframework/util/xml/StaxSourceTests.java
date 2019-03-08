@@ -16,10 +16,12 @@
 
 package org.springframework.util.xml;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
+import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import java.io.StringReader;
+import java.io.StringWriter;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -30,17 +32,12 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamResult;
-import java.io.StringReader;
-import java.io.StringWriter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
+import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
-/**
- * @author Arjen Poutsma
- */
 public class StaxSourceTests {
 
 	private static final String XML = "<root xmlns='namespace'><child/></root>";
@@ -69,7 +66,7 @@ public class StaxSourceTests {
 		assertNull("EventReader returned", source.getXMLEventReader());
 		StringWriter writer = new StringWriter();
 		transformer.transform(source, new StreamResult(writer));
-		assertThat("Invalid result", writer.toString(), isSimilarTo(XML));
+		assertXMLEqual("Invalid result", XML, writer.toString());
 	}
 
 	@Test
@@ -82,7 +79,7 @@ public class StaxSourceTests {
 		Document expected = documentBuilder.parse(new InputSource(new StringReader(XML)));
 		Document result = documentBuilder.newDocument();
 		transformer.transform(source, new DOMResult(result));
-		assertThat("Invalid result", result, isSimilarTo(expected));
+		assertXMLEqual("Invalid result", expected, result);
 	}
 
 	@Test
@@ -93,7 +90,7 @@ public class StaxSourceTests {
 		assertNull("StreamReader returned", source.getXMLStreamReader());
 		StringWriter writer = new StringWriter();
 		transformer.transform(source, new StreamResult(writer));
-		assertThat("Invalid result", writer.toString(), isSimilarTo(XML));
+		assertXMLEqual("Invalid result", XML, writer.toString());
 	}
 
 	@Test
@@ -106,6 +103,6 @@ public class StaxSourceTests {
 		Document expected = documentBuilder.parse(new InputSource(new StringReader(XML)));
 		Document result = documentBuilder.newDocument();
 		transformer.transform(source, new DOMResult(result));
-		assertThat("Invalid result", result, isSimilarTo(expected));
+		assertXMLEqual("Invalid result", expected, result);
 	}
 }

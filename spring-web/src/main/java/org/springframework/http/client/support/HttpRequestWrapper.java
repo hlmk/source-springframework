@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.net.URI;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpRequest;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -58,24 +57,13 @@ public class HttpRequestWrapper implements HttpRequest {
 	/**
 	 * Return the method of the wrapped request.
 	 */
-	@Override
-	@Nullable
 	public HttpMethod getMethod() {
 		return this.request.getMethod();
 	}
 
 	/**
-	 * Return the method value of the wrapped request.
-	 */
-	@Override
-	public String getMethodValue() {
-		return this.request.getMethodValue();
-	}
-
-	/**
 	 * Return the URI of the wrapped request.
 	 */
-	@Override
 	public URI getURI() {
 		return this.request.getURI();
 	}
@@ -83,7 +71,6 @@ public class HttpRequestWrapper implements HttpRequest {
 	/**
 	 * Return the headers of the wrapped request.
 	 */
-	@Override
 	public HttpHeaders getHeaders() {
 		return this.request.getHeaders();
 	}

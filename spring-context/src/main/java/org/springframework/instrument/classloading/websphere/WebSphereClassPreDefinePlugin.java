@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.instrument.classloading.websphere;
 
 import java.lang.instrument.ClassFileTransformer;
@@ -47,7 +46,7 @@ class WebSphereClassPreDefinePlugin implements InvocationHandler {
 		this.transformer = transformer;
 		ClassLoader classLoader = transformer.getClass().getClassLoader();
 
-		// First force the full class loading of the weaver by invoking transformation on a dummy class
+		// first force the full class loading of the weaver by invoking transformation on a dummy class
 		try {
 			String dummyClass = Dummy.class.getName().replace('.', '/');
 			byte[] bytes = FileCopyUtils.copyToByteArray(classLoader.getResourceAsStream(dummyClass + ".class"));
@@ -59,7 +58,6 @@ class WebSphereClassPreDefinePlugin implements InvocationHandler {
 	}
 
 
-	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		String name = method.getName();
 		if ("equals".equals(name)) {
@@ -82,14 +80,17 @@ class WebSphereClassPreDefinePlugin implements InvocationHandler {
 	protected byte[] transform(String className, byte[] classfileBuffer, CodeSource codeSource, ClassLoader classLoader)
 			throws Exception {
 
-		// NB: WebSphere passes className as "." without class while the transformer expects a VM "/" format
-		byte[] result = this.transformer.transform(classLoader, className.replace('.', '/'), null, null, classfileBuffer);
+		// NB: WebSphere passes className as "." without class while the transformer expects a VM, "/" format
+		byte[] result = transformer.transform(classLoader, className.replace('.', '/'), null, null, classfileBuffer);
 		return (result != null ? result : classfileBuffer);
 	}
 
 	@Override
 	public String toString() {
-		return getClass().getName() + " for transformer: " + this.transformer;
+		StringBuilder builder = new StringBuilder(getClass().getName());
+		builder.append(" for transformer: ");
+		builder.append(this.transformer);
+		return builder.toString();
 	}
 
 

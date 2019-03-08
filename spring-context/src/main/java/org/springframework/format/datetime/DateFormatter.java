@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
 import org.springframework.format.Formatter;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -43,31 +43,25 @@ import org.springframework.util.StringUtils;
  */
 public class DateFormatter implements Formatter<Date> {
 
-	private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
-
 	private static final Map<ISO, String> ISO_PATTERNS;
 
 	static {
-		Map<ISO, String> formats = new EnumMap<>(ISO.class);
+		Map<ISO, String> formats = new HashMap<DateTimeFormat.ISO, String>(4);
 		formats.put(ISO.DATE, "yyyy-MM-dd");
-		formats.put(ISO.TIME, "HH:mm:ss.SSSXXX");
-		formats.put(ISO.DATE_TIME, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+		formats.put(ISO.TIME, "HH:mm:ss.SSSZ");
+		formats.put(ISO.DATE_TIME, "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 		ISO_PATTERNS = Collections.unmodifiableMap(formats);
 	}
 
 
-	@Nullable
 	private String pattern;
 
 	private int style = DateFormat.DEFAULT;
 
-	@Nullable
 	private String stylePattern;
 
-	@Nullable
 	private ISO iso;
 
-	@Nullable
 	private TimeZone timeZone;
 
 	private boolean lenient = false;
@@ -126,7 +120,7 @@ public class DateFormatter implements Formatter<Date> {
 	 * <li>'L' = Long</li>
 	 * <li>'F' = Full</li>
 	 * <li>'-' = Omitted</li>
-	 * </ul>
+	 * <ul>
 	 * This method mimics the styles supported by Joda-Time.
 	 * @param stylePattern two characters from the set {"S", "M", "L", "F", "-"}
 	 * @since 3.2
@@ -152,12 +146,10 @@ public class DateFormatter implements Formatter<Date> {
 	}
 
 
-	@Override
 	public String print(Date date, Locale locale) {
 		return getDateFormat(locale).format(date);
 	}
 
-	@Override
 	public Date parse(String text, Locale locale) throws ParseException {
 		return getDateFormat(locale).parse(text);
 	}
@@ -182,7 +174,7 @@ public class DateFormatter implements Formatter<Date> {
 				throw new IllegalStateException("Unsupported ISO format " + this.iso);
 			}
 			SimpleDateFormat format = new SimpleDateFormat(pattern);
-			format.setTimeZone(UTC);
+			format.setTimeZone(TimeZone.getTimeZone("UTC"));
 			return format;
 		}
 		if (StringUtils.hasLength(this.stylePattern)) {

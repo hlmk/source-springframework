@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.jmx.support;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.management.MalformedObjectNameException;
@@ -25,7 +24,6 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -41,30 +39,25 @@ import org.springframework.util.ObjectUtils;
  */
 public class NotificationListenerHolder {
 
-	@Nullable
 	private NotificationListener notificationListener;
 
-	@Nullable
 	private NotificationFilter notificationFilter;
 
-	@Nullable
 	private Object handback;
 
-	@Nullable
 	protected Set<Object> mappedObjectNames;
 
 
 	/**
 	 * Set the {@link javax.management.NotificationListener}.
 	 */
-	public void setNotificationListener(@Nullable NotificationListener notificationListener) {
+	public void setNotificationListener(NotificationListener notificationListener) {
 		this.notificationListener = notificationListener;
 	}
 
 	/**
 	 * Get the {@link javax.management.NotificationListener}.
 	 */
-	@Nullable
 	public NotificationListener getNotificationListener() {
 		return this.notificationListener;
 	}
@@ -74,16 +67,15 @@ public class NotificationListenerHolder {
 	 * with the encapsulated {@link #getNotificationFilter() NotificationFilter}.
 	 * <p>May be {@code null}.
 	 */
-	public void setNotificationFilter(@Nullable NotificationFilter notificationFilter) {
+	public void setNotificationFilter(NotificationFilter notificationFilter) {
 		this.notificationFilter = notificationFilter;
 	}
 
 	/**
 	 * Return the {@link javax.management.NotificationFilter} associated
-	 * with the encapsulated {@link #getNotificationListener() NotificationListener}.
+	 * with the encapsulated {@link #getNotificationFilter() NotificationFilter}.
 	 * <p>May be {@code null}.
 	 */
-	@Nullable
 	public NotificationFilter getNotificationFilter() {
 		return this.notificationFilter;
 	}
@@ -95,7 +87,7 @@ public class NotificationListenerHolder {
 	 * @param handback the handback object (can be {@code null})
 	 * @see javax.management.NotificationListener#handleNotification(javax.management.Notification, Object)
 	 */
-	public void setHandback(@Nullable Object handback) {
+	public void setHandback(Object handback) {
 		this.handback = handback;
 	}
 
@@ -106,7 +98,6 @@ public class NotificationListenerHolder {
 	 * @return the handback object (may be {@code null})
 	 * @see javax.management.NotificationListener#handleNotification(javax.management.Notification, Object)
 	 */
-	@Nullable
 	public Object getHandback() {
 		return this.handback;
 	}
@@ -118,9 +109,8 @@ public class NotificationListenerHolder {
 	 * Can be specified as {@code ObjectName} instance or as {@code String}.
 	 * @see #setMappedObjectNames
 	 */
-	public void setMappedObjectName(@Nullable Object mappedObjectName) {
-		this.mappedObjectNames = (mappedObjectName != null ?
-				new LinkedHashSet<>(Collections.singleton(mappedObjectName)) : null);
+	public void setMappedObjectName(Object mappedObjectName) {
+		setMappedObjectNames(mappedObjectName != null ? new Object[] {mappedObjectName} : null);
 	}
 
 	/**
@@ -130,8 +120,9 @@ public class NotificationListenerHolder {
 	 * Can be specified as {@code ObjectName} instances or as {@code String}s.
 	 * @see #setMappedObjectName
 	 */
-	public void setMappedObjectNames(Object... mappedObjectNames) {
-		this.mappedObjectNames = new LinkedHashSet<>(Arrays.asList(mappedObjectNames));
+	public void setMappedObjectNames(Object[] mappedObjectNames) {
+		this.mappedObjectNames = (mappedObjectNames != null ?
+				new LinkedHashSet<Object>(Arrays.asList(mappedObjectNames)) : null);
 	}
 
 	/**
@@ -140,7 +131,6 @@ public class NotificationListenerHolder {
 	 * be registered as a listener for {@link javax.management.Notification Notifications}.
 	 * @throws MalformedObjectNameException if an {@code ObjectName} is malformed
 	 */
-	@Nullable
 	public ObjectName[] getResolvedObjectNames() throws MalformedObjectNameException {
 		if (this.mappedObjectNames == null) {
 			return null;

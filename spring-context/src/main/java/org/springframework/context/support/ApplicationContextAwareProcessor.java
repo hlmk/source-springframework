@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.security.PrivilegedAction;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.Aware;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.beans.factory.config.EmbeddedValueResolver;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -31,7 +31,6 @@ import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.MessageSourceAware;
 import org.springframework.context.ResourceLoaderAware;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringValueResolver;
 
 /**
@@ -62,20 +61,15 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 
 	private final ConfigurableApplicationContext applicationContext;
 
-	private final StringValueResolver embeddedValueResolver;
-
 
 	/**
 	 * Create a new ApplicationContextAwareProcessor for the given context.
 	 */
 	public ApplicationContextAwareProcessor(ConfigurableApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
-		this.embeddedValueResolver = new EmbeddedValueResolver(applicationContext.getBeanFactory());
 	}
 
 
-	@Override
-	@Nullable
 	public Object postProcessBeforeInitialization(final Object bean, String beanName) throws BeansException {
 		AccessControlContext acc = null;
 
@@ -87,9 +81,11 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 		}
 
 		if (acc != null) {
-			AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-				invokeAwareInterfaces(bean);
-				return null;
+			AccessController.doPrivileged(new PrivilegedAction<Object>() {
+				public Object run() {
+					invokeAwareInterfaces(bean);
+					return null;
+				}
 			}, acc);
 		}
 		else {
@@ -105,7 +101,8 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 				((EnvironmentAware) bean).setEnvironment(this.applicationContext.getEnvironment());
 			}
 			if (bean instanceof EmbeddedValueResolverAware) {
-				((EmbeddedValueResolverAware) bean).setEmbeddedValueResolver(this.embeddedValueResolver);
+				((EmbeddedValueResolverAware) bean).setEmbeddedValueResolver(
+						new EmbeddedValueResolver(this.applicationContext.getBeanFactory()));
 			}
 			if (bean instanceof ResourceLoaderAware) {
 				((ResourceLoaderAware) bean).setResourceLoader(this.applicationContext);
@@ -122,9 +119,22 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 		}
 	}
 
-	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) {
 		return bean;
+	}
+
+
+	private static class EmbeddedValueResolver implements StringValueResolver {
+
+		private final ConfigurableBeanFactory beanFactory;
+
+		public EmbeddedValueResolver(ConfigurableBeanFactory beanFactory) {
+			this.beanFactory = beanFactory;
+		}
+
+		public String resolveStringValue(String strVal) {
+			return this.beanFactory.resolveEmbeddedValue(strVal);
+		}
 	}
 
 }

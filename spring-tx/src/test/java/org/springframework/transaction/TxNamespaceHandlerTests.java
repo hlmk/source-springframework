@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,22 @@ package org.springframework.transaction;
 
 import java.lang.reflect.Method;
 
-import org.junit.Before;
-import org.junit.Test;
+import junit.framework.TestCase;
 
 import org.springframework.aop.support.AopUtils;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.tests.sample.beans.ITestBean;
 import org.springframework.tests.transaction.CallCountingTransactionManager;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.transaction.interceptor.TransactionAttribute;
 import org.springframework.transaction.interceptor.TransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Rob Harrop
  * @author Adrian Colyer
  */
-public class TxNamespaceHandlerTests {
+public class TxNamespaceHandlerTests extends TestCase {
 
 	private ApplicationContext context;
 
@@ -44,23 +41,19 @@ public class TxNamespaceHandlerTests {
 
 	private Method setAgeMethod;
 
-
-	@Before
-	public void setup() throws Exception {
+	@Override
+	public void setUp() throws Exception {
 		this.context = new ClassPathXmlApplicationContext("txNamespaceHandlerTests.xml", getClass());
-		this.getAgeMethod = ITestBean.class.getMethod("getAge");
-		this.setAgeMethod = ITestBean.class.getMethod("setAge", int.class);
+		this.getAgeMethod = ITestBean.class.getMethod("getAge", new Class[0]);
+		this.setAgeMethod = ITestBean.class.getMethod("setAge", new Class[] {int.class});
 	}
 
-
-	@Test
-	public void isProxy() {
+	public void testIsProxy() throws Exception {
 		ITestBean bean = getTestBean();
 		assertTrue("testBean is not a proxy", AopUtils.isAopProxy(bean));
 	}
 
-	@Test
-	public void invokeTransactional() {
+	public void testInvokeTransactional() throws Exception {
 		ITestBean testBean = getTestBean();
 		CallCountingTransactionManager ptm = (CallCountingTransactionManager) context.getBean("transactionManager");
 
@@ -86,8 +79,7 @@ public class TxNamespaceHandlerTests {
 		}
 	}
 
-	@Test
-	public void rollbackRules() {
+	public void testRollbackRules() {
 		TransactionInterceptor txInterceptor = (TransactionInterceptor) context.getBean("txRollbackAdvice");
 		TransactionAttributeSource txAttrSource = txInterceptor.getTransactionAttributeSource();
 		TransactionAttribute txAttr = txAttrSource.getTransactionAttribute(getAgeMethod,ITestBean.class);
@@ -98,7 +90,7 @@ public class TxNamespaceHandlerTests {
 	}
 
 	private ITestBean getTestBean() {
-		return (ITestBean) context.getBean("testBean");
+		return (ITestBean)context.getBean("testBean");
 	}
 
 }

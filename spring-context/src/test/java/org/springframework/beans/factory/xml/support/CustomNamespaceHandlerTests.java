@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,12 @@
 
 package org.springframework.beans.factory.xml.support;
 
+import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -24,11 +30,6 @@ import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.config.AbstractInterceptorDrivenBeanDefinitionDecorator;
 import org.springframework.aop.framework.Advised;
@@ -58,9 +59,10 @@ import org.springframework.core.io.Resource;
 import org.springframework.tests.aop.interceptor.NopInterceptor;
 import org.springframework.tests.sample.beans.ITestBean;
 import org.springframework.tests.sample.beans.TestBean;
-
-import static java.lang.String.format;
-import static org.junit.Assert.*;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
 
 /**
  * Unit tests for custom XML namespace handler implementations.
@@ -81,7 +83,6 @@ public class CustomNamespaceHandlerTests {
 	private static final String TEST_XSD = format("%s/%s.xsd", FQ_PATH, CLASSNAME);
 
 	private GenericApplicationContext beanFactory;
-
 
 	@Before
 	public void setUp() throws Exception {
@@ -115,7 +116,7 @@ public class CustomNamespaceHandlerTests {
 		assertTrue(AopUtils.isAopProxy(bean));
 		Advisor[] advisors = ((Advised) bean).getAdvisors();
 		assertEquals("Incorrect number of advisors", 1, advisors.length);
-		assertEquals("Incorrect advice class", DebugInterceptor.class, advisors[0].getAdvice().getClass());
+		assertEquals("Incorrect advice class.", DebugInterceptor.class, advisors[0].getAdvice().getClass());
 	}
 
 	@Test
@@ -139,8 +140,8 @@ public class CustomNamespaceHandlerTests {
 		assertTrue(AopUtils.isAopProxy(bean));
 		Advisor[] advisors = ((Advised) bean).getAdvisors();
 		assertEquals("Incorrect number of advisors", 2, advisors.length);
-		assertEquals("Incorrect advice class", DebugInterceptor.class, advisors[0].getAdvice().getClass());
-		assertEquals("Incorrect advice class", NopInterceptor.class, advisors[1].getAdvice().getClass());
+		assertEquals("Incorrect advice class.", DebugInterceptor.class, advisors[0].getAdvice().getClass());
+		assertEquals("Incorrect advice class.", NopInterceptor.class, advisors[1].getAdvice().getClass());
 	}
 
 	@Test
@@ -149,21 +150,30 @@ public class CustomNamespaceHandlerTests {
 		assertEquals("foo", beanDefinition.getAttribute("objectName"));
 	}
 
-	@Test  // SPR-2728
+	/**
+	 * http://opensource.atlassian.com/projects/spring/browse/SPR-2728
+	 */
+	@Test
 	public void testCustomElementNestedWithinUtilList() throws Exception {
 		List<?> things = (List<?>) this.beanFactory.getBean("list.of.things");
 		assertNotNull(things);
 		assertEquals(2, things.size());
 	}
 
-	@Test  // SPR-2728
+	/**
+	 * http://opensource.atlassian.com/projects/spring/browse/SPR-2728
+	 */
+	@Test
 	public void testCustomElementNestedWithinUtilSet() throws Exception {
 		Set<?> things = (Set<?>) this.beanFactory.getBean("set.of.things");
 		assertNotNull(things);
 		assertEquals(2, things.size());
 	}
 
-	@Test  // SPR-2728
+	/**
+	 * http://opensource.atlassian.com/projects/spring/browse/SPR-2728
+	 */
+	@Test
 	public void testCustomElementNestedWithinUtilMap() throws Exception {
 		Map<?, ?> things = (Map<?, ?>) this.beanFactory.getBean("map.of.things");
 		assertNotNull(things);
@@ -221,7 +231,6 @@ final class TestNamespaceHandler extends NamespaceHandlerSupport {
 		registerBeanDefinitionDecoratorForAttribute("object-name", new ObjectNameBeanDefinitionDecorator());
 	}
 
-
 	private static class TestBeanDefinitionParser implements BeanDefinitionParser {
 
 		@Override
@@ -235,10 +244,10 @@ final class TestNamespaceHandler extends NamespaceHandlerSupport {
 			definition.setPropertyValues(mpvs);
 
 			parserContext.getRegistry().registerBeanDefinition(element.getAttribute("id"), definition);
+
 			return null;
 		}
 	}
-
 
 	private static final class PersonDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
@@ -253,7 +262,6 @@ final class TestNamespaceHandler extends NamespaceHandlerSupport {
 			builder.addPropertyValue("age", element.getAttribute("age"));
 		}
 	}
-
 
 	private static class PropertyModifyingBeanDefinitionDecorator implements BeanDefinitionDecorator {
 
@@ -271,7 +279,6 @@ final class TestNamespaceHandler extends NamespaceHandlerSupport {
 		}
 	}
 
-
 	private static class DebugBeanDefinitionDecorator extends AbstractInterceptorDrivenBeanDefinitionDecorator {
 
 		@Override
@@ -280,7 +287,6 @@ final class TestNamespaceHandler extends NamespaceHandlerSupport {
 		}
 	}
 
-
 	private static class NopInterceptorBeanDefinitionDecorator extends AbstractInterceptorDrivenBeanDefinitionDecorator {
 
 		@Override
@@ -288,7 +294,6 @@ final class TestNamespaceHandler extends NamespaceHandlerSupport {
 			return new RootBeanDefinition(NopInterceptor.class);
 		}
 	}
-
 
 	private static class ObjectNameBeanDefinitionDecorator implements BeanDefinitionDecorator {
 
@@ -299,5 +304,5 @@ final class TestNamespaceHandler extends NamespaceHandlerSupport {
 			return definition;
 		}
 	}
-
 }
+

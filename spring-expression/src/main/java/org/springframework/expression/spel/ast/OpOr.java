@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,11 @@
 
 package org.springframework.expression.spel.ast;
 
-import org.springframework.asm.Label;
-import org.springframework.asm.MethodVisitor;
 import org.springframework.expression.EvaluationException;
-import org.springframework.expression.spel.CodeFlow;
 import org.springframework.expression.spel.ExpressionState;
 import org.springframework.expression.spel.SpelEvaluationException;
 import org.springframework.expression.spel.SpelMessage;
 import org.springframework.expression.spel.support.BooleanTypedValue;
-import org.springframework.lang.Nullable;
 
 /**
  * Represents the boolean OR operation.
@@ -36,11 +32,9 @@ import org.springframework.lang.Nullable;
  */
 public class OpOr extends Operator {
 
-	public OpOr(int startPos, int endPos, SpelNodeImpl... operands) {
-		super("or", startPos, endPos, operands);
-		this.exitTypeDescriptor = "Z";
+	public OpOr(int pos, SpelNodeImpl... operands) {
+		super("or", pos, operands);
 	}
-
 
 	@Override
 	public BooleanTypedValue getValueInternal(ExpressionState state) throws EvaluationException {
@@ -63,40 +57,10 @@ public class OpOr extends Operator {
 		}
 	}
 
-	private void assertValueNotNull(@Nullable Boolean value) {
+	private void assertValueNotNull(Boolean value) {
 		if (value == null) {
 			throw new SpelEvaluationException(SpelMessage.TYPE_CONVERSION_ERROR, "null", "boolean");
 		}
-	}
-
-	@Override
-	public boolean isCompilable() {
-		SpelNodeImpl left = getLeftOperand();
-		SpelNodeImpl right = getRightOperand();
-		return (left.isCompilable() && right.isCompilable() &&
-				CodeFlow.isBooleanCompatible(left.exitTypeDescriptor) &&
-				CodeFlow.isBooleanCompatible(right.exitTypeDescriptor));
-	}
-
-	@Override
-	public void generateCode(MethodVisitor mv, CodeFlow cf) {
-		// pseudo: if (leftOperandValue) { result=true; } else { result=rightOperandValue; }
-		Label elseTarget = new Label();
-		Label endOfIf = new Label();
-		cf.enterCompilationScope();
-		getLeftOperand().generateCode(mv, cf);
-		cf.unboxBooleanIfNecessary(mv);
-		cf.exitCompilationScope();
-		mv.visitJumpInsn(IFEQ, elseTarget);
-		mv.visitLdcInsn(1); // TRUE
-		mv.visitJumpInsn(GOTO,endOfIf);
-		mv.visitLabel(elseTarget);
-		cf.enterCompilationScope();
-		getRightOperand().generateCode(mv, cf);
-		cf.unboxBooleanIfNecessary(mv);
-		cf.exitCompilationScope();
-		mv.visitLabel(endOfIf);
-		cf.pushDescriptor(this.exitTypeDescriptor);
 	}
 
 }

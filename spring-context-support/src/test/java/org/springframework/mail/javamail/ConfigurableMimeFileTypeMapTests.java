@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2005 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,18 @@ package org.springframework.mail.javamail;
 
 import java.io.File;
 
-import org.junit.Test;
+import junit.framework.TestCase;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Rob Harrop
  * @author Juergen Hoeller
  */
-public class ConfigurableMimeFileTypeMapTests {
+public class ConfigurableMimeFileTypeMapTests extends TestCase {
 
-	@Test
-	public void againstDefaultConfiguration() throws Exception {
+	public void testAgainstDefaultConfiguration() throws Exception {
 		ConfigurableMimeFileTypeMap ftm = new ConfigurableMimeFileTypeMap();
 		ftm.afterPropertiesSet();
 
@@ -44,14 +41,12 @@ public class ConfigurableMimeFileTypeMapTests {
 		assertEquals("Invalid default content type", "application/octet-stream", ftm.getContentType("foobar.foo"));
 	}
 
-	@Test
-	public void againstDefaultConfigurationWithFilePath() throws Exception {
+	public void testAgainstDefaultConfigurationWithFilePath() throws Exception {
 		ConfigurableMimeFileTypeMap ftm = new ConfigurableMimeFileTypeMap();
 		assertEquals("Invalid content type for HTM", "text/html", ftm.getContentType(new File("/tmp/foobar.HTM")));
 	}
 
-	@Test
-	public void withAdditionalMappings() throws Exception {
+	public void testWithAdditionalMappings() throws Exception {
 		ConfigurableMimeFileTypeMap ftm = new ConfigurableMimeFileTypeMap();
 		ftm.setMappings(new String[] {"foo/bar HTM foo", "foo/cpp c++"});
 		ftm.afterPropertiesSet();
@@ -61,8 +56,7 @@ public class ConfigurableMimeFileTypeMapTests {
 		assertEquals("Invalid content type for foo - new mapping didn't work", "foo/bar", ftm.getContentType("bar.foo"));
 	}
 
-	@Test
-	public void withCustomMappingLocation() throws Exception {
+	public void testWithCustomMappingLocation() throws Exception {
 		Resource resource = new ClassPathResource("test.mime.types", getClass());
 
 		ConfigurableMimeFileTypeMap ftm = new ConfigurableMimeFileTypeMap();

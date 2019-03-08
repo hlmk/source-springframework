@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,13 +32,6 @@ import org.springframework.http.MockHttpInputMessage;
 import org.springframework.http.MockHttpOutputMessage;
 import org.springframework.util.FileCopyUtils;
 
-import static org.junit.Assert.*;
-
-/**
- * Unit tests for BufferedImageHttpMessageConverter.
- * @author Arjen Poutsma
- * @author Rossen Stoyanchev
- */
 public class BufferedImageHttpMessageConverterTests {
 
 	private BufferedImageHttpMessageConverter converter;
@@ -78,7 +72,7 @@ public class BufferedImageHttpMessageConverterTests {
 		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
 		MediaType contentType = new MediaType("image", "png");
 		converter.write(body, contentType, outputMessage);
-		assertEquals("Invalid content type", contentType, outputMessage.getWrittenHeaders().getContentType());
+		assertEquals("Invalid content type", contentType, outputMessage.getHeaders().getContentType());
 		assertTrue("Invalid size", outputMessage.getBodyAsBytes().length > 0);
 		BufferedImage result = ImageIO.read(new ByteArrayInputStream(outputMessage.getBodyAsBytes()));
 		assertEquals("Invalid height", 500, result.getHeight());
@@ -93,7 +87,7 @@ public class BufferedImageHttpMessageConverterTests {
 		BufferedImage body = ImageIO.read(logo.getFile());
 		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
 		converter.write(body, new MediaType("*", "*"), outputMessage);
-		assertEquals("Invalid content type", contentType, outputMessage.getWrittenHeaders().getContentType());
+		assertEquals("Invalid content type", contentType, outputMessage.getHeaders().getContentType());
 		assertTrue("Invalid size", outputMessage.getBodyAsBytes().length > 0);
 		BufferedImage result = ImageIO.read(new ByteArrayInputStream(outputMessage.getBodyAsBytes()));
 		assertEquals("Invalid height", 500, result.getHeight());

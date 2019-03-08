@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.springframework.aop.ClassFilter;
 import org.springframework.aop.MethodMatcher;
 import org.springframework.aop.Pointcut;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Convenient class for building up pointcuts. All methods return
@@ -39,7 +40,7 @@ import org.springframework.util.Assert;
  */
 public class ComposablePointcut implements Pointcut, Serializable {
 
-	/** use serialVersionUID from Spring 1.2 for interoperability. */
+	/** use serialVersionUID from Spring 1.2 for interoperability */
 	private static final long serialVersionUID = -2743223737633663832L;
 
 	private ClassFilter classFilter;
@@ -169,12 +170,10 @@ public class ComposablePointcut implements Pointcut, Serializable {
 	}
 
 
-	@Override
 	public ClassFilter getClassFilter() {
 		return this.classFilter;
 	}
 
-	@Override
 	public MethodMatcher getMethodMatcher() {
 		return this.methodMatcher;
 	}
@@ -187,14 +186,21 @@ public class ComposablePointcut implements Pointcut, Serializable {
 		if (!(other instanceof ComposablePointcut)) {
 			return false;
 		}
-		ComposablePointcut otherPointcut = (ComposablePointcut) other;
-		return (this.classFilter.equals(otherPointcut.classFilter) &&
-				this.methodMatcher.equals(otherPointcut.methodMatcher));
+		ComposablePointcut that = (ComposablePointcut) other;
+		return ObjectUtils.nullSafeEquals(that.classFilter, this.classFilter) &&
+				ObjectUtils.nullSafeEquals(that.methodMatcher, this.methodMatcher);
 	}
 
 	@Override
 	public int hashCode() {
-		return this.classFilter.hashCode() * 37 + this.methodMatcher.hashCode();
+		int code = 17;
+		if (this.classFilter != null) {
+			code = 37 * code + this.classFilter.hashCode();
+		}
+		if (this.methodMatcher != null) {
+			code = 37 * code + this.methodMatcher.hashCode();
+		}
+		return code;
 	}
 
 	@Override

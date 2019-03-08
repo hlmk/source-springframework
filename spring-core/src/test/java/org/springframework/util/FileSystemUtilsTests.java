@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,14 @@ package org.springframework.util;
 
 import java.io.File;
 
-import org.junit.After;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import junit.framework.TestCase;
 
 /**
  * @author Rob Harrop
  */
-public class FileSystemUtilsTests {
+public class FileSystemUtilsTests extends TestCase {
 
-	@Test
-	public void deleteRecursively() throws Exception {
+	public void testDeleteRecursively() throws Exception {
 		File root = new File("./tmp/root");
 		File child = new File(root, "child");
 		File grandchild = new File(child, "grandchild");
@@ -52,8 +48,7 @@ public class FileSystemUtilsTests {
 		assertFalse(bar.exists());
 	}
 
-	@Test
-	public void copyRecursively() throws Exception {
+	public void testCopyRecursively() throws Exception {
 		File src = new File("./tmp/src");
 		File child = new File(src, "child");
 		File grandchild = new File(child, "grandchild");
@@ -75,12 +70,11 @@ public class FileSystemUtilsTests {
 		assertTrue(new File(dest, child.getName()).exists());
 
 		FileSystemUtils.deleteRecursively(src);
-		assertFalse(src.exists());
+		assertTrue(!src.exists());
 	}
 
-
-	@After
-	public void tearDown() throws Exception {
+	@Override
+	protected void tearDown() throws Exception {
 		File tmp = new File("./tmp");
 		if (tmp.exists()) {
 			FileSystemUtils.deleteRecursively(tmp);
@@ -89,6 +83,7 @@ public class FileSystemUtilsTests {
 		if (dest.exists()) {
 			FileSystemUtils.deleteRecursively(dest);
 		}
+		super.tearDown();
 	}
 
 }

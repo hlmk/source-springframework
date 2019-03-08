@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,9 @@ import java.net.URL;
 import java.util.concurrent.Executor;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
-import javax.xml.ws.WebServiceFeature;
 import javax.xml.ws.handler.HandlerResolver;
 
 import org.springframework.core.io.Resource;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -44,22 +42,14 @@ import org.springframework.util.Assert;
  */
 public class LocalJaxWsServiceFactory {
 
-	@Nullable
 	private URL wsdlDocumentUrl;
 
-	@Nullable
 	private String namespaceUri;
 
-	@Nullable
 	private String serviceName;
 
-	@Nullable
-	private WebServiceFeature[] serviceFeatures;
-
-	@Nullable
 	private Executor executor;
 
-	@Nullable
 	private HandlerResolver handlerResolver;
 
 
@@ -67,23 +57,23 @@ public class LocalJaxWsServiceFactory {
 	 * Set the URL of the WSDL document that describes the service.
 	 * @see #setWsdlDocumentResource(Resource)
 	 */
-	public void setWsdlDocumentUrl(@Nullable URL wsdlDocumentUrl) {
+	public void setWsdlDocumentUrl(URL wsdlDocumentUrl) {
 		this.wsdlDocumentUrl = wsdlDocumentUrl;
 	}
 
 	/**
 	 * Set the WSDL document URL as a {@link Resource}.
+	 * @throws IOException
 	 * @since 3.2
 	 */
 	public void setWsdlDocumentResource(Resource wsdlDocumentResource) throws IOException {
-		Assert.notNull(wsdlDocumentResource, "WSDL Resource must not be null");
+		Assert.notNull(wsdlDocumentResource, "WSDL Resource must not be null.");
 		this.wsdlDocumentUrl = wsdlDocumentResource.getURL();
 	}
 
 	/**
 	 * Return the URL of the WSDL document that describes the service.
 	 */
-	@Nullable
 	public URL getWsdlDocumentUrl() {
 		return this.wsdlDocumentUrl;
 	}
@@ -92,14 +82,13 @@ public class LocalJaxWsServiceFactory {
 	 * Set the namespace URI of the service.
 	 * Corresponds to the WSDL "targetNamespace".
 	 */
-	public void setNamespaceUri(@Nullable String namespaceUri) {
+	public void setNamespaceUri(String namespaceUri) {
 		this.namespaceUri = (namespaceUri != null ? namespaceUri.trim() : null);
 	}
 
 	/**
 	 * Return the namespace URI of the service.
 	 */
-	@Nullable
 	public String getNamespaceUri() {
 		return this.namespaceUri;
 	}
@@ -108,26 +97,15 @@ public class LocalJaxWsServiceFactory {
 	 * Set the name of the service to look up.
 	 * Corresponds to the "wsdl:service" name.
 	 */
-	public void setServiceName(@Nullable String serviceName) {
+	public void setServiceName(String serviceName) {
 		this.serviceName = serviceName;
 	}
 
 	/**
 	 * Return the name of the service.
 	 */
-	@Nullable
 	public String getServiceName() {
 		return this.serviceName;
-	}
-
-	/**
-	 * Specify WebServiceFeature objects (e.g. as inner bean definitions)
-	 * to apply to JAX-WS service creation.
-	 * @since 4.0
-	 * @see Service#create(QName, WebServiceFeature...)
-	 */
-	public void setServiceFeatures(WebServiceFeature... serviceFeatures) {
-		this.serviceFeatures = serviceFeatures;
 	}
 
 	/**
@@ -156,18 +134,9 @@ public class LocalJaxWsServiceFactory {
 	 */
 	public Service createJaxWsService() {
 		Assert.notNull(this.serviceName, "No service name specified");
-		Service service;
-
-		if (this.serviceFeatures != null) {
-			service = (this.wsdlDocumentUrl != null ?
-				Service.create(this.wsdlDocumentUrl, getQName(this.serviceName), this.serviceFeatures) :
-				Service.create(getQName(this.serviceName), this.serviceFeatures));
-		}
-		else {
-			service = (this.wsdlDocumentUrl != null ?
-					Service.create(this.wsdlDocumentUrl, getQName(this.serviceName)) :
-					Service.create(getQName(this.serviceName)));
-		}
+		Service service = (this.wsdlDocumentUrl != null ?
+				Service.create(this.wsdlDocumentUrl, getQName(this.serviceName)) :
+				Service.create(getQName(this.serviceName)));
 
 		if (this.executor != null) {
 			service.setExecutor(this.executor);
@@ -175,7 +144,6 @@ public class LocalJaxWsServiceFactory {
 		if (this.handlerResolver != null) {
 			service.setHandlerResolver(this.handlerResolver);
 		}
-
 		return service;
 	}
 

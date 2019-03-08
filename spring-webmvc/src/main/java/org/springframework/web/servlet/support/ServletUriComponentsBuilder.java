@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,38 +18,25 @@ package org.springframework.web.servlet.support;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriUtils;
 import org.springframework.web.util.UrlPathHelper;
 
 /**
- * UriComponentsBuilder with additional static factory methods to create links
- * based on the current HttpServletRequest.
- *
- * <p><strong>Note:</strong> As of 5.1, methods in this class do not extract
- * {@code "Forwarded"} and {@code "X-Forwarded-*"} headers that specify the
- * client-originated address. Please, use
- * {@link org.springframework.web.filter.ForwardedHeaderFilter
- * ForwardedHeaderFilter}, or similar from the underlying server, to extract
- * and use such headers, or to discard them.
+ * A UriComponentsBuilder that extracts information from an HttpServletRequest.
  *
  * @author Rossen Stoyanchev
  * @since 3.1
  */
 public class ServletUriComponentsBuilder extends UriComponentsBuilder {
 
-	@Nullable
-	private String originalPath;
-
-
 	/**
 	 * Default constructor. Protected to prevent direct instantiation.
+	 *
 	 * @see #fromContextPath(HttpServletRequest)
 	 * @see #fromServletMapping(HttpServletRequest)
 	 * @see #fromRequest(HttpServletRequest)
@@ -60,25 +47,17 @@ public class ServletUriComponentsBuilder extends UriComponentsBuilder {
 	protected ServletUriComponentsBuilder() {
 	}
 
-	/**
-	 * Create a deep copy of the given ServletUriComponentsBuilder.
-	 * @param other the other builder to copy from
-	 */
-	protected ServletUriComponentsBuilder(ServletUriComponentsBuilder other) {
-		super(other);
-		this.originalPath = other.originalPath;
-	}
-
 
 	// Factory methods based on a HttpServletRequest
 
 	/**
-	 * Prepare a builder from the host, port, scheme, and context path of the
-	 * given HttpServletRequest.
+	 * Prepare a builder from the host, port, scheme, and context path of
+	 * an HttpServletRequest.
 	 */
 	public static ServletUriComponentsBuilder fromContextPath(HttpServletRequest request) {
-		ServletUriComponentsBuilder builder = initFromRequest(request);
+		ServletUriComponentsBuilder builder = fromRequest(request);
 		builder.replacePath(request.getContextPath());
+		builder.replaceQuery(null);
 		return builder;
 	}
 
@@ -99,12 +78,13 @@ public class ServletUriComponentsBuilder extends UriComponentsBuilder {
 	}
 
 	/**
-	 * Prepare a builder from the host, port, scheme, and path (but not the query)
-	 * of the HttpServletRequest.
+	 * Prepare a builder from the host, port, scheme, and path of
+	 * an HttpSevletRequest.
 	 */
 	public static ServletUriComponentsBuilder fromRequestUri(HttpServletRequest request) {
-		ServletUriComponentsBuilder builder = initFromRequest(request);
-		builder.initPath(request.getRequestURI());
+		ServletUriComponentsBuilder builder = fromRequest(request);
+		builder.replacePath(request.getRequestURI());
+		builder.replaceQuery(null);
 		return builder;
 	}
 
@@ -113,19 +93,24 @@ public class ServletUriComponentsBuilder extends UriComponentsBuilder {
 	 * query string of an HttpServletRequest.
 	 */
 	public static ServletUriComponentsBuilder fromRequest(HttpServletRequest request) {
-		ServletUriComponentsBuilder builder = initFromRequest(request);
-		builder.initPath(request.getRequestURI());
-		builder.query(request.getQueryString());
-		return builder;
-	}
-
-	/**
-	 * Initialize a builder with a scheme, host,and port (but not path and query).
-	 */
-	private static ServletUriComponentsBuilder initFromRequest(HttpServletRequest request) {
 		String scheme = request.getScheme();
-		String host = request.getServerName();
 		int port = request.getServerPort();
+		String host = request.getServerName();
+
+		String header = request.getHeader("X-Forwarded-Host");
+
+		if (StringUtils.hasText(header)) {
+			String[] hosts = StringUtils.commaDelimitedListToStringArray(header);
+			String hostToUse = hosts[0];
+			if (hostToUse.contains(":")) {
+				String[] hostAndPort = StringUtils.split(hostToUse, ":");
+				host  = hostAndPort[0];
+				port = Integer.parseInt(hostAndPort[1]);
+			}
+			else {
+				host = hostToUse;
+			}
+		}
 
 		ServletUriComponentsBuilder builder = new ServletUriComponentsBuilder();
 		builder.scheme(scheme);
@@ -133,6 +118,8 @@ public class ServletUriComponentsBuilder extends UriComponentsBuilder {
 		if (("http".equals(scheme) && port != 80) || ("https".equals(scheme) && port != 443)) {
 			builder.port(port);
 		}
+		builder.path(request.getRequestURI());
+		builder.query(request.getQueryString());
 		return builder;
 	}
 
@@ -175,49 +162,12 @@ public class ServletUriComponentsBuilder extends UriComponentsBuilder {
 	 * Obtain current request through {@link RequestContextHolder}.
 	 */
 	protected static HttpServletRequest getCurrentRequest() {
-		RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
-		Assert.state(attrs instanceof ServletRequestAttributes, "No current ServletRequestAttributes");
-		return ((ServletRequestAttributes) attrs).getRequest();
-	}
-
-
-	private void initPath(String path) {
-		this.originalPath = path;
-		replacePath(path);
-	}
-
-	/**
-	 * Remove any path extension from the {@link HttpServletRequest#getRequestURI()
-	 * requestURI}. This method must be invoked before any calls to {@link #path(String)}
-	 * or {@link #pathSegment(String...)}.
-	 * <pre>
-	 * GET http://foo.com/rest/books/6.json
-	 *
-	 * ServletUriComponentsBuilder builder = ServletUriComponentsBuilder.fromRequestUri(this.request);
-	 * String ext = builder.removePathExtension();
-	 * String uri = builder.path("/pages/1.{ext}").buildAndExpand(ext).toUriString();
-	 * assertEquals("http://foo.com/rest/books/6/pages/1.json", result);
-	 * </pre>
-	 * @return the removed path extension for possible re-use, or {@code null}
-	 * @since 4.0
-	 */
-	@Nullable
-	public String removePathExtension() {
-		String extension = null;
-		if (this.originalPath != null) {
-			extension = UriUtils.extractFileExtension(this.originalPath);
-			if (!StringUtils.isEmpty(extension)) {
-				int end = this.originalPath.length() - (extension.length() + 1);
-				replacePath(this.originalPath.substring(0, end));
-			}
-			this.originalPath = null;
-		}
-		return extension;
-	}
-
-	@Override
-	public ServletUriComponentsBuilder cloneBuilder() {
-		return new ServletUriComponentsBuilder(this);
+		RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+		Assert.state(requestAttributes != null, "Could not find current request via RequestContextHolder");
+		Assert.isInstanceOf(ServletRequestAttributes.class, requestAttributes);
+		HttpServletRequest servletRequest = ((ServletRequestAttributes) requestAttributes).getRequest();
+		Assert.state(servletRequest != null, "Could not find current HttpServletRequest");
+		return servletRequest;
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,44 +16,39 @@
 
 package org.springframework.orm.jpa;
 
-import java.lang.reflect.Proxy;
 import java.util.List;
+import java.lang.reflect.Proxy;
+
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import javax.persistence.TransactionRequiredException;
 
-import org.junit.Test;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.orm.jpa.domain.Person;
-
-import static org.junit.Assert.*;
+import org.springframework.test.annotation.ExpectedException;
+import org.springframework.test.annotation.NotTransactional;
 
 /**
  * Integration tests using in-memory database for container-managed JPA
  *
  * @author Rod Johnson
- * @author Juergen Hoeller
  * @since 2.0
  */
 public class ContainerManagedEntityManagerIntegrationTests extends AbstractEntityManagerFactoryIntegrationTests {
 
-	@Autowired
-	private AbstractEntityManagerFactoryBean entityManagerFactoryBean;
-
-
-	@Test
+	@NotTransactional
 	public void testExceptionTranslationWithDialectFoundOnIntroducedEntityManagerInfo() throws Exception {
 		doTestExceptionTranslationWithDialectFound(((EntityManagerFactoryInfo) entityManagerFactory).getJpaDialect());
 	}
 
-	@Test
+	@NotTransactional
 	public void testExceptionTranslationWithDialectFoundOnEntityManagerFactoryBean() throws Exception {
-		assertNotNull("Dialect must have been set", entityManagerFactoryBean.getJpaDialect());
-		doTestExceptionTranslationWithDialectFound(entityManagerFactoryBean);
+		AbstractEntityManagerFactoryBean aefb =
+				(AbstractEntityManagerFactoryBean) applicationContext.getBean("&entityManagerFactory");
+		assertNotNull("Dialect must have been set", aefb.getJpaDialect());
+		doTestExceptionTranslationWithDialectFound(aefb);
 	}
 
 	protected void doTestExceptionTranslationWithDialectFound(PersistenceExceptionTranslator pet) throws Exception {
@@ -65,8 +60,6 @@ public class ContainerManagedEntityManagerIntegrationTests extends AbstractEntit
 		assertSame(in2, dex.getCause());
 	}
 
-	@Test
-	@SuppressWarnings("unchecked")
 	public void testEntityManagerProxyIsProxy() {
 		EntityManager em = createContainerManagedEntityManager();
 		assertTrue(Proxy.isProxyClass(em.getClass()));
@@ -80,53 +73,39 @@ public class ContainerManagedEntityManagerIntegrationTests extends AbstractEntit
 			fail("Close should not work on container managed EM");
 		}
 		catch (IllegalStateException ex) {
-			// OK
+			// Ok
 		}
 		assertTrue(em.isOpen());
 	}
 
 	// This would be legal, at least if not actually _starting_ a tx
-	@Test
+	@ExpectedException(IllegalStateException.class)
 	public void testEntityManagerProxyRejectsProgrammaticTxManagement() {
-		try {
-			createContainerManagedEntityManager().getTransaction();
-			fail("Should have thrown an IllegalStateException");
-		}
-		catch (IllegalStateException ex) {
-			// expected
-		}
+		createContainerManagedEntityManager().getTransaction();
 	}
 
 	/*
 	 * See comments in spec on EntityManager.joinTransaction().
 	 * We take the view that this is a valid no op.
 	 */
-	@Test
 	public void testContainerEntityManagerProxyAllowsJoinTransactionInTransaction() {
 		createContainerManagedEntityManager().joinTransaction();
 	}
 
-	@Test
+	@NotTransactional
+	@ExpectedException(TransactionRequiredException.class)
 	public void testContainerEntityManagerProxyRejectsJoinTransactionWithoutTransaction() {
-		endTransaction();
-
-		try {
-			createContainerManagedEntityManager().joinTransaction();
-			fail("Should have thrown a TransactionRequiredException");
-		}
-		catch (TransactionRequiredException ex) {
-			// expected
-		}
+		createContainerManagedEntityManager().joinTransaction();
 	}
 
-	@Test
 	public void testInstantiateAndSave() {
 		EntityManager em = createContainerManagedEntityManager();
 		doInstantiateAndSave(em);
 	}
 
-	protected void doInstantiateAndSave(EntityManager em) {
-		assertEquals("Should be no people from previous transactions", 0, countRowsInTable(em, "person"));
+	public void doInstantiateAndSave(EntityManager em) {
+		assertEquals("Should be no people from previous transactions",
+				0, countRowsInTable("person"));
 		Person p = new Person();
 
 		p.setFirstName("Tony");
@@ -134,10 +113,9 @@ public class ContainerManagedEntityManagerIntegrationTests extends AbstractEntit
 		em.persist(p);
 
 		em.flush();
-		assertEquals("1 row must have been inserted", 1, countRowsInTable(em, "person"));
+		assertEquals("1 row must have been inserted", 1, countRowsInTable("person"));
 	}
 
-	@Test
 	public void testReuseInNewTransaction() {
 		EntityManager em = createContainerManagedEntityManager();
 		doInstantiateAndSave(em);
@@ -153,30 +131,46 @@ public class ContainerManagedEntityManagerIntegrationTests extends AbstractEntit
 		doInstantiateAndSave(em);
 		setComplete();
 		endTransaction();	// Should rollback
-		assertEquals("Tx must have committed back", 1, countRowsInTable(em, "person"));
+		assertEquals("Tx must have committed back",
+				1, countRowsInTable("person"));
 
 		// Now clean up the database
-		deleteFromTables("person");
+		deleteFromTables(new String[] { "person" });
 	}
 
-	@Test
 	public void testRollbackOccurs() {
 		EntityManager em = createContainerManagedEntityManager();
 		doInstantiateAndSave(em);
 		endTransaction();	// Should rollback
-		assertEquals("Tx must have been rolled back", 0, countRowsInTable(em, "person"));
+		assertEquals("Tx must have been rolled back",
+				0, countRowsInTable("person"));
 	}
 
-	@Test
 	public void testCommitOccurs() {
 		EntityManager em = createContainerManagedEntityManager();
 		doInstantiateAndSave(em);
 		setComplete();
 		endTransaction();	// Should rollback
-		assertEquals("Tx must have committed back", 1, countRowsInTable(em, "person"));
+		assertEquals("Tx must have committed back",
+				1, countRowsInTable("person"));
 
 		// Now clean up the database
-		deleteFromTables("person");
+		deleteFromTables(new String[] { "person" });
 	}
+
+	/*
+	 * TODO: This displays incorrect behavior in TopLink because of its EJBQLException -
+	 * which is not a subclass of PersistenceException but rather of TopLinkException!
+	public void testEntityManagerProxyException() {
+		EntityManager em = entityManagerFactory.createEntityManager();
+		try {
+			em.createQuery("select p from Person p where p.o=0").getResultList();
+			fail("Semantic nonsense should be rejected");
+		}
+		catch (PersistenceException ex) {
+			// expected
+		}
+	}
+	*/
 
 }

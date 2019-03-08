@@ -18,8 +18,6 @@ package org.springframework.beans;
 
 import java.beans.PropertyChangeEvent;
 
-import org.springframework.lang.Nullable;
-
 /**
  * Exception thrown when no suitable editor or converter can be found for a bean property.
  *
@@ -36,8 +34,7 @@ public class ConversionNotSupportedException extends TypeMismatchException {
 	 * @param requiredType the required target type (or {@code null} if not known)
 	 * @param cause the root cause (may be {@code null})
 	 */
-	public ConversionNotSupportedException(PropertyChangeEvent propertyChangeEvent,
-			@Nullable Class<?> requiredType, @Nullable Throwable cause) {
+	public ConversionNotSupportedException(PropertyChangeEvent propertyChangeEvent, Class requiredType, Throwable cause) {
 		super(propertyChangeEvent, requiredType, cause);
 	}
 
@@ -47,7 +44,7 @@ public class ConversionNotSupportedException extends TypeMismatchException {
 	 * @param requiredType the required target type (or {@code null} if not known)
 	 * @param cause the root cause (may be {@code null})
 	 */
-	public ConversionNotSupportedException(@Nullable Object value, @Nullable Class<?> requiredType, @Nullable Throwable cause) {
+	public ConversionNotSupportedException(Object value, Class requiredType, Throwable cause) {
 		super(value, requiredType, cause);
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,10 @@ import org.aopalliance.intercept.MethodInvocation;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.DelegatingIntroductionInterceptor;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * Generic implementation of the JCA 1.7
+ * Generic implementation of the JCA 1.5
  * {@link javax.resource.spi.endpoint.MessageEndpointFactory} interface,
  * providing transaction management capabilities for any kind of message
  * listener object (e.g. {@link javax.jms.MessageListener} objects or
@@ -54,7 +52,6 @@ import org.springframework.util.ReflectionUtils;
  */
 public class GenericMessageEndpointFactory extends AbstractMessageEndpointFactory {
 
-	@Nullable
 	private Object messageListener;
 
 
@@ -68,15 +65,6 @@ public class GenericMessageEndpointFactory extends AbstractMessageEndpointFactor
 	}
 
 	/**
-	 * Return the message listener object for this endpoint.
-	 * @since 5.0
-	 */
-	protected Object getMessageListener() {
-		Assert.state(this.messageListener != null, "No message listener set");
-		return this.messageListener;
-	}
-
-	/**
 	 * Wrap each concrete endpoint instance with an AOP proxy,
 	 * exposing the message listener's interfaces as well as the
 	 * endpoint SPI through an AOP introduction.
@@ -84,7 +72,7 @@ public class GenericMessageEndpointFactory extends AbstractMessageEndpointFactor
 	@Override
 	public MessageEndpoint createEndpoint(XAResource xaResource) throws UnavailableException {
 		GenericMessageEndpoint endpoint = (GenericMessageEndpoint) super.createEndpoint(xaResource);
-		ProxyFactory proxyFactory = new ProxyFactory(getMessageListener());
+		ProxyFactory proxyFactory = new ProxyFactory(this.messageListener);
 		DelegatingIntroductionInterceptor introduction = new DelegatingIntroductionInterceptor(endpoint);
 		introduction.suppressInterface(MethodInterceptor.class);
 		proxyFactory.addAdvice(introduction);
@@ -106,23 +94,25 @@ public class GenericMessageEndpointFactory extends AbstractMessageEndpointFactor
 	 */
 	private class GenericMessageEndpoint extends AbstractMessageEndpoint implements MethodInterceptor {
 
-		@Override
 		public Object invoke(MethodInvocation methodInvocation) throws Throwable {
-			Throwable endpointEx = null;
 			boolean applyDeliveryCalls = !hasBeforeDeliveryBeenCalled();
 			if (applyDeliveryCalls) {
 				try {
 					beforeDelivery(null);
 				}
 				catch (ResourceException ex) {
-					throw adaptExceptionIfNecessary(methodInvocation, ex);
+					if (ReflectionUtils.declaresException(methodInvocation.getMethod(), ex.getClass())) {
+						throw ex;
+					}
+					else {
+						throw new InternalResourceException(ex);
+					}
 				}
 			}
 			try {
 				return methodInvocation.proceed();
 			}
 			catch (Throwable ex) {
-				endpointEx = ex;
 				onEndpointException(ex);
 				throw ex;
 			}
@@ -132,26 +122,20 @@ public class GenericMessageEndpointFactory extends AbstractMessageEndpointFactor
 						afterDelivery();
 					}
 					catch (ResourceException ex) {
-						if (endpointEx == null) {
-							throw adaptExceptionIfNecessary(methodInvocation, ex);
+						if (ReflectionUtils.declaresException(methodInvocation.getMethod(), ex.getClass())) {
+							throw ex;
+						}
+						else {
+							throw new InternalResourceException(ex);
 						}
 					}
 				}
 			}
 		}
 
-		private Exception adaptExceptionIfNecessary(MethodInvocation methodInvocation, ResourceException ex) {
-			if (ReflectionUtils.declaresException(methodInvocation.getMethod(), ex.getClass())) {
-				return ex;
-			}
-			else {
-				return new InternalResourceException(ex);
-			}
-		}
-
 		@Override
 		protected ClassLoader getEndpointClassLoader() {
-			return getMessageListener().getClass().getClassLoader();
+			return messageListener.getClass().getClassLoader();
 		}
 	}
 
@@ -167,7 +151,7 @@ public class GenericMessageEndpointFactory extends AbstractMessageEndpointFactor
 	@SuppressWarnings("serial")
 	public static class InternalResourceException extends RuntimeException {
 
-		public InternalResourceException(ResourceException cause) {
+		protected InternalResourceException(ResourceException cause) {
 			super(cause);
 		}
 	}

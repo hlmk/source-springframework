@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@ import java.util.Set;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.TypeConverter;
-import org.springframework.core.ResolvableType;
-import org.springframework.lang.Nullable;
+import org.springframework.core.GenericCollectionTypeResolver;
 
 /**
  * Simple factory for shared Set instances. Allows for central setup
@@ -33,20 +32,17 @@ import org.springframework.lang.Nullable;
  * @see ListFactoryBean
  * @see MapFactoryBean
  */
-public class SetFactoryBean extends AbstractFactoryBean<Set<Object>> {
+public class SetFactoryBean extends AbstractFactoryBean<Set> {
 
-	@Nullable
-	private Set<?> sourceSet;
+	private Set sourceSet;
 
-	@SuppressWarnings("rawtypes")
-	@Nullable
-	private Class<? extends Set> targetSetClass;
+	private Class targetSetClass;
 
 
 	/**
 	 * Set the source Set, typically populated via XML "set" elements.
 	 */
-	public void setSourceSet(Set<?> sourceSet) {
+	public void setSourceSet(Set sourceSet) {
 		this.sourceSet = sourceSet;
 	}
 
@@ -56,8 +52,7 @@ public class SetFactoryBean extends AbstractFactoryBean<Set<Object>> {
 	 * <p>Default is a linked HashSet, keeping the registration order.
 	 * @see java.util.LinkedHashSet
 	 */
-	@SuppressWarnings("rawtypes")
-	public void setTargetSetClass(@Nullable Class<? extends Set> targetSetClass) {
+	public void setTargetSetClass(Class targetSetClass) {
 		if (targetSetClass == null) {
 			throw new IllegalArgumentException("'targetSetClass' must not be null");
 		}
@@ -69,27 +64,26 @@ public class SetFactoryBean extends AbstractFactoryBean<Set<Object>> {
 
 
 	@Override
-	@SuppressWarnings("rawtypes")
 	public Class<Set> getObjectType() {
 		return Set.class;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected Set<Object> createInstance() {
+	protected Set createInstance() {
 		if (this.sourceSet == null) {
 			throw new IllegalArgumentException("'sourceSet' is required");
 		}
-		Set<Object> result = null;
+		Set result = null;
 		if (this.targetSetClass != null) {
-			result = BeanUtils.instantiateClass(this.targetSetClass);
+			result = (Set) BeanUtils.instantiateClass(this.targetSetClass);
 		}
 		else {
-			result = new LinkedHashSet<>(this.sourceSet.size());
+			result = new LinkedHashSet(this.sourceSet.size());
 		}
-		Class<?> valueType = null;
+		Class valueType = null;
 		if (this.targetSetClass != null) {
-			valueType = ResolvableType.forClass(this.targetSetClass).asCollection().resolveGeneric();
+			valueType = GenericCollectionTypeResolver.getCollectionType(this.targetSetClass);
 		}
 		if (valueType != null) {
 			TypeConverter converter = getBeanTypeConverter();

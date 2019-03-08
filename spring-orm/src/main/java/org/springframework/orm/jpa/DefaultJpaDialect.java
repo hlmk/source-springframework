@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,30 +19,33 @@ package org.springframework.orm.jpa;
 import java.io.Serializable;
 import java.sql.SQLException;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.datasource.ConnectionHandle;
-import org.springframework.lang.Nullable;
 import org.springframework.transaction.InvalidIsolationLevelException;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 
 /**
  * Default implementation of the {@link JpaDialect} interface.
- * Used as default dialect by {@link JpaTransactionManager}.
+ * Used as default dialect by {@link JpaAccessor} and {@link JpaTransactionManager}.
  *
- * <p>Simply begins a standard JPA transaction in {@link #beginTransaction} and
- * performs standard exception translation through {@link EntityManagerFactoryUtils}.
- *
- * <p><b>NOTE: Spring's JPA support requires JPA 2.1 or higher, as of Spring 5.0.</b>
+ * <p>Simply begins a standard JPA transaction in {@link #beginTransaction}
+ * and performs standard exception translation through {@link EntityManagerFactoryUtils}.
  *
  * @author Juergen Hoeller
  * @since 2.0
+ * @see JpaAccessor#setJpaDialect
  * @see JpaTransactionManager#setJpaDialect
  */
 @SuppressWarnings("serial")
 public class DefaultJpaDialect implements JpaDialect, Serializable {
+
+	//-------------------------------------------------------------------------
+	// Hooks for transaction management (used by JpaTransactionManager)
+	//-------------------------------------------------------------------------
 
 	/**
 	 * This implementation invokes the standard JPA {@code Transaction.begin}
@@ -56,8 +59,6 @@ public class DefaultJpaDialect implements JpaDialect, Serializable {
 	 * @see org.springframework.transaction.InvalidIsolationLevelException
 	 * @see #cleanupTransaction
 	 */
-	@Override
-	@Nullable
 	public Object beginTransaction(EntityManager entityManager, TransactionDefinition definition)
 			throws PersistenceException, SQLException, TransactionException {
 
@@ -70,9 +71,7 @@ public class DefaultJpaDialect implements JpaDialect, Serializable {
 		return null;
 	}
 
-	@Override
-	@Nullable
-	public Object prepareTransaction(EntityManager entityManager, boolean readOnly, @Nullable String name)
+	public Object prepareTransaction(EntityManager entityManager, boolean readOnly, String name)
 			throws PersistenceException {
 
 		return null;
@@ -83,16 +82,13 @@ public class DefaultJpaDialect implements JpaDialect, Serializable {
 	 * implementation does not require any cleanup.
 	 * @see #beginTransaction
 	 */
-	@Override
-	public void cleanupTransaction(@Nullable Object transactionData) {
+	public void cleanupTransaction(Object transactionData) {
 	}
 
 	/**
 	 * This implementation always returns {@code null},
 	 * indicating that no JDBC Connection can be provided.
 	 */
-	@Override
-	@Nullable
 	public ConnectionHandle getJdbcConnection(EntityManager entityManager, boolean readOnly)
 			throws PersistenceException, SQLException {
 
@@ -107,24 +103,38 @@ public class DefaultJpaDialect implements JpaDialect, Serializable {
 	 * {@code Connection.close()} (or some other method with similar effect) here.
 	 * @see java.sql.Connection#close()
 	 */
-	@Override
 	public void releaseJdbcConnection(ConnectionHandle conHandle, EntityManager em)
 			throws PersistenceException, SQLException {
 	}
 
 
 	//-----------------------------------------------------------------------------------
-	// Hook for exception translation (used by JpaTransactionManager)
+	// Hook for exception translation (used by JpaTransactionManager and JpaTemplate)
 	//-----------------------------------------------------------------------------------
 
 	/**
 	 * This implementation delegates to EntityManagerFactoryUtils.
 	 * @see EntityManagerFactoryUtils#convertJpaAccessExceptionIfPossible
 	 */
-	@Override
-	@Nullable
 	public DataAccessException translateExceptionIfPossible(RuntimeException ex) {
 		return EntityManagerFactoryUtils.convertJpaAccessExceptionIfPossible(ex);
+	}
+
+
+	public boolean supportsEntityManagerFactoryPlusOperations() {
+		return false;
+	}
+
+	public boolean supportsEntityManagerPlusOperations() {
+		return false;
+	}
+
+	public EntityManagerFactoryPlusOperations getEntityManagerFactoryPlusOperations(EntityManagerFactory rawEntityManager) {
+		throw new UnsupportedOperationException(getClass().getName() + " does not support EntityManagerFactoryPlusOperations");
+	}
+
+	public EntityManagerPlusOperations getEntityManagerPlusOperations(EntityManager rawEntityManager) {
+		throw new UnsupportedOperationException(getClass().getName() + " does not support EntityManagerPlusOperations");
 	}
 
 }

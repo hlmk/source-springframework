@@ -19,7 +19,6 @@ package org.springframework.web.jsf;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.util.WebUtils;
@@ -47,7 +46,6 @@ public abstract class FacesContextUtils {
 	 * @return the root WebApplicationContext for this web app, or {@code null} if none
 	 * @see org.springframework.web.context.WebApplicationContext#ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE
 	 */
-	@Nullable
 	public static WebApplicationContext getWebApplicationContext(FacesContext fc) {
 		Assert.notNull(fc, "FacesContext must not be null");
 		Object attr = fc.getExternalContext().getApplicationMap().get(
@@ -105,7 +103,6 @@ public abstract class FacesContextUtils {
 	 * @see org.springframework.web.util.WebUtils#SESSION_MUTEX_ATTRIBUTE
 	 * @see org.springframework.web.util.HttpSessionMutexListener
 	 */
-	@Nullable
 	public static Object getSessionMutex(FacesContext fc) {
 		Assert.notNull(fc, "FacesContext must not be null");
 		ExternalContext ec = fc.getExternalContext();

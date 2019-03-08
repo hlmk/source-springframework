@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartResolver;
-import org.springframework.web.multipart.support.AbstractMultipartHttpServletRequest;
 import org.springframework.web.multipart.support.DefaultMultipartHttpServletRequest;
 import org.springframework.web.util.WebUtils;
 
@@ -56,6 +55,7 @@ import org.springframework.web.util.WebUtils;
  * @since 29.09.2003
  * @see #CommonsMultipartResolver(ServletContext)
  * @see #setResolveLazily
+ * @see org.springframework.web.portlet.multipart.CommonsPortletMultipartResolver
  * @see org.apache.commons.fileupload.servlet.ServletFileUpload
  * @see org.apache.commons.fileupload.disk.DiskFileItemFactory
  */
@@ -111,7 +111,6 @@ public class CommonsMultipartResolver extends CommonsFileUploadSupport
 		return new ServletFileUpload(fileItemFactory);
 	}
 
-	@Override
 	public void setServletContext(ServletContext servletContext) {
 		if (!isUploadTempDirSpecified()) {
 			getFileItemFactory().setRepository(WebUtils.getTempDir(servletContext));
@@ -119,12 +118,10 @@ public class CommonsMultipartResolver extends CommonsFileUploadSupport
 	}
 
 
-	@Override
 	public boolean isMultipart(HttpServletRequest request) {
-		return ServletFileUpload.isMultipartContent(request);
+		return (request != null && ServletFileUpload.isMultipartContent(request));
 	}
 
-	@Override
 	public MultipartHttpServletRequest resolveMultipart(final HttpServletRequest request) throws MultipartException {
 		Assert.notNull(request, "Request must not be null");
 		if (this.resolveLazily) {
@@ -151,6 +148,7 @@ public class CommonsMultipartResolver extends CommonsFileUploadSupport
 	 * @return the parsing result
 	 * @throws MultipartException if multipart resolution failed.
 	 */
+	@SuppressWarnings("unchecked")
 	protected MultipartParsingResult parseRequest(HttpServletRequest request) throws MultipartException {
 		String encoding = determineEncoding(request);
 		FileUpload fileUpload = prepareFileUpload(encoding);
@@ -161,11 +159,8 @@ public class CommonsMultipartResolver extends CommonsFileUploadSupport
 		catch (FileUploadBase.SizeLimitExceededException ex) {
 			throw new MaxUploadSizeExceededException(fileUpload.getSizeMax(), ex);
 		}
-		catch (FileUploadBase.FileSizeLimitExceededException ex) {
-			throw new MaxUploadSizeExceededException(fileUpload.getFileSizeMax(), ex);
-		}
 		catch (FileUploadException ex) {
-			throw new MultipartException("Failed to parse multipart servlet request", ex);
+			throw new MultipartException("Could not parse multipart servlet request", ex);
 		}
 	}
 
@@ -187,10 +182,8 @@ public class CommonsMultipartResolver extends CommonsFileUploadSupport
 		return encoding;
 	}
 
-	@Override
 	public void cleanupMultipart(MultipartHttpServletRequest request) {
-		if (!(request instanceof AbstractMultipartHttpServletRequest) ||
-				((AbstractMultipartHttpServletRequest) request).isResolved()) {
+		if (request != null) {
 			try {
 				cleanupFileItems(request.getMultiFileMap());
 			}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,13 @@ import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.Topic;
 
 import org.springframework.jms.support.JmsUtils;
-import org.springframework.jms.support.QosSettings;
-import org.springframework.jms.support.converter.MessageConverter;
-import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.ErrorHandler;
 
 /**
@@ -122,14 +119,17 @@ import org.springframework.util.ErrorHandler;
  * runtime processing overhead.
  * </ul>
  *
- * <p>Note that the "sessionTransacted" flag is strongly recommended over
- * {@link org.springframework.jms.connection.JmsTransactionManager}, provided
- * that transactions do not need to be managed externally. As a consequence,
- * set the transaction manager only if you are using JTA or if you need to
- * synchronize with custom external transaction arrangements.
+ * <p>Note that it is also possible to specify a
+ * {@link org.springframework.jms.connection.JmsTransactionManager} as external
+ * "transactionManager", providing fully synchronized Spring transactions based
+ * on local JMS transactions. The effect is similar to "sessionTransacted" set
+ * to "true", the difference being that this external transaction management
+ * will also affect independent JMS access code within the service layer
+ * (e.g. based on {@link org.springframework.jms.core.JmsTemplate} or
+ * {@link org.springframework.jms.connection.TransactionAwareConnectionFactoryProxy}),
+ * not just direct JMS Session usage in a {@link SessionAwareMessageListener}.
  *
  * @author Juergen Hoeller
- * @author Stephane Nicoll
  * @since 2.0
  * @see #setMessageListener
  * @see javax.jms.MessageListener
@@ -139,51 +139,26 @@ import org.springframework.util.ErrorHandler;
  * @see SimpleMessageListenerContainer
  * @see org.springframework.jms.listener.endpoint.JmsMessageEndpointManager
  */
-public abstract class AbstractMessageListenerContainer extends AbstractJmsListeningContainer
-		implements MessageListenerContainer {
+public abstract class AbstractMessageListenerContainer extends AbstractJmsListeningContainer {
 
-	@Nullable
 	private volatile Object destination;
 
-	@Nullable
 	private volatile String messageSelector;
 
-	@Nullable
 	private volatile Object messageListener;
 
 	private boolean subscriptionDurable = false;
 
-	private boolean subscriptionShared = false;
+	private String durableSubscriptionName;
 
-	@Nullable
-	private String subscriptionName;
-
-	@Nullable
-	private Boolean replyPubSubDomain;
-
-	@Nullable
-	private QosSettings replyQosSettings;
-
-	private boolean pubSubNoLocal = false;
-
-	@Nullable
-	private MessageConverter messageConverter;
-
-	@Nullable
 	private ExceptionListener exceptionListener;
 
-	@Nullable
 	private ErrorHandler errorHandler;
 
 	private boolean exposeListenerSession = true;
 
 	private boolean acceptMessagesWhileStopping = false;
 
-
-	/**
-	 * Specify concurrency limits.
-	 */
-	public abstract void setConcurrency(String concurrency);
 
 	/**
 	 * Set the destination to receive messages from.
@@ -195,7 +170,8 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * CACHE_CONSUMER). However, this is considered advanced usage; use it with care!
 	 * @see #setDestinationName(String)
 	 */
-	public void setDestination(@Nullable Destination destination) {
+	public void setDestination(Destination destination) {
+		Assert.notNull(destination, "'destination' must not be null");
 		this.destination = destination;
 		if (destination instanceof Topic && !(destination instanceof Queue)) {
 			// Clearly a Topic: let's set the "pubSubDomain" flag accordingly.
@@ -208,7 +184,6 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * if the configured destination is not an actual {@link Destination} type;
 	 * c.f. {@link #setDestinationName(String) when the destination is a String}.
 	 */
-	@Nullable
 	public Destination getDestination() {
 		return (this.destination instanceof Destination ? (Destination) this.destination : null);
 	}
@@ -222,9 +197,11 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * container picking up the new destination immediately (works e.g. with
 	 * DefaultMessageListenerContainer, as long as the cache level is less than
 	 * CACHE_CONSUMER). However, this is considered advanced usage; use it with care!
+	 * @param destinationName the desired destination (can be {@code null})
 	 * @see #setDestination(javax.jms.Destination)
 	 */
-	public void setDestinationName(@Nullable String destinationName) {
+	public void setDestinationName(String destinationName) {
+		Assert.notNull(destinationName, "'destinationName' must not be null");
 		this.destination = destinationName;
 	}
 
@@ -234,7 +211,6 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * {@link String} type; c.f. {@link #setDestination(Destination) when
 	 * it is an actual Destination}.
 	 */
-	@Nullable
 	public String getDestinationName() {
 		return (this.destination instanceof String ? (String) this.destination : null);
 	}
@@ -244,8 +220,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * (never {@code null}).
 	 */
 	protected String getDestinationDescription() {
-		Object destination = this.destination;
-		return (destination != null ? destination.toString() : "");
+		return this.destination.toString();
 	}
 
 	/**
@@ -257,14 +232,13 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * DefaultMessageListenerContainer, as long as the cache level is less than
 	 * CACHE_CONSUMER). However, this is considered advanced usage; use it with care!
 	 */
-	public void setMessageSelector(@Nullable String messageSelector) {
+	public void setMessageSelector(String messageSelector) {
 		this.messageSelector = messageSelector;
 	}
 
 	/**
 	 * Return the JMS message selector expression (or {@code null} if none).
 	 */
-	@Nullable
 	public String getMessageSelector() {
 		return this.messageSelector;
 	}
@@ -283,18 +257,17 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * @see javax.jms.MessageListener
 	 * @see SessionAwareMessageListener
 	 */
-	public void setMessageListener(@Nullable Object messageListener) {
+	public void setMessageListener(Object messageListener) {
 		checkMessageListener(messageListener);
 		this.messageListener = messageListener;
-		if (messageListener != null && this.subscriptionName == null) {
-			this.subscriptionName = getDefaultSubscriptionName(messageListener);
+		if (this.durableSubscriptionName == null) {
+			this.durableSubscriptionName = getDefaultSubscriptionName(messageListener);
 		}
 	}
 
 	/**
 	 * Return the message listener object to register.
 	 */
-	@Nullable
 	public Object getMessageListener() {
 		return this.messageListener;
 	}
@@ -310,8 +283,8 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * @see javax.jms.MessageListener
 	 * @see SessionAwareMessageListener
 	 */
-	protected void checkMessageListener(@Nullable Object messageListener) {
-		if (messageListener != null && !(messageListener instanceof MessageListener ||
+	protected void checkMessageListener(Object messageListener) {
+		if (!(messageListener instanceof MessageListener ||
 				messageListener instanceof SessionAwareMessageListener)) {
 			throw new IllegalArgumentException(
 					"Message listener needs to be of type [" + MessageListener.class.getName() +
@@ -336,20 +309,15 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 
 	/**
 	 * Set whether to make the subscription durable. The durable subscription name
-	 * to be used can be specified through the "subscriptionName" property.
+	 * to be used can be specified through the "durableSubscriptionName" property.
 	 * <p>Default is "false". Set this to "true" to register a durable subscription,
-	 * typically in combination with a "subscriptionName" value (unless
+	 * typically in combination with a "durableSubscriptionName" value (unless
 	 * your message listener class name is good enough as subscription name).
-	 * <p>Only makes sense when listening to a topic (pub-sub domain),
-	 * therefore this method switches the "pubSubDomain" flag as well.
-	 * @see #setSubscriptionName
-	 * @see #setPubSubDomain
+	 * <p>Only makes sense when listening to a topic (pub-sub domain).
+	 * @see #setDurableSubscriptionName
 	 */
 	public void setSubscriptionDurable(boolean subscriptionDurable) {
 		this.subscriptionDurable = subscriptionDurable;
-		if (subscriptionDurable) {
-			setPubSubDomain(true);
-		}
 	}
 
 	/**
@@ -360,175 +328,32 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	}
 
 	/**
-	 * Set whether to make the subscription shared. The shared subscription name
-	 * to be used can be specified through the "subscriptionName" property.
-	 * <p>Default is "false". Set this to "true" to register a shared subscription,
-	 * typically in combination with a "subscriptionName" value (unless
-	 * your message listener class name is good enough as subscription name).
-	 * Note that shared subscriptions may also be durable, so this flag can
-	 * (and often will) be combined with "subscriptionDurable" as well.
-	 * <p>Only makes sense when listening to a topic (pub-sub domain),
-	 * therefore this method switches the "pubSubDomain" flag as well.
-	 * <p><b>Requires a JMS 2.0 compatible message broker.</b>
-	 * @since 4.1
-	 * @see #setSubscriptionName
-	 * @see #setSubscriptionDurable
-	 * @see #setPubSubDomain
-	 */
-	public void setSubscriptionShared(boolean subscriptionShared) {
-		this.subscriptionShared = subscriptionShared;
-		if (subscriptionShared) {
-			setPubSubDomain(true);
-		}
-	}
-
-	/**
-	 * Return whether to make the subscription shared.
-	 * @since 4.1
-	 */
-	public boolean isSubscriptionShared() {
-		return this.subscriptionShared;
-	}
-
-	/**
-	 * Set the name of a subscription to create. To be applied in case
-	 * of a topic (pub-sub domain) with a shared or durable subscription.
-	 * <p>The subscription name needs to be unique within this client's
-	 * JMS client id. Default is the class name of the specified message listener.
-	 * <p>Note: Only 1 concurrent consumer (which is the default of this
-	 * message listener container) is allowed for each subscription,
-	 * except for a shared subscription (which requires JMS 2.0).
-	 * @since 4.1
-	 * @see #setPubSubDomain
-	 * @see #setSubscriptionDurable
-	 * @see #setSubscriptionShared
-	 * @see #setClientId
-	 * @see #setMessageListener
-	 */
-	public void setSubscriptionName(@Nullable String subscriptionName) {
-		this.subscriptionName = subscriptionName;
-	}
-
-	/**
-	 * Return the name of a subscription to create, if any.
-	 * @since 4.1
-	 */
-	@Nullable
-	public String getSubscriptionName() {
-		return this.subscriptionName;
-	}
-
-	/**
-	 * Set the name of a durable subscription to create. This method switches
-	 * to pub-sub domain mode and activates subscription durability as well.
+	 * Set the name of a durable subscription to create. To be applied in case
+	 * of a topic (pub-sub domain) with subscription durability activated.
 	 * <p>The durable subscription name needs to be unique within this client's
 	 * JMS client id. Default is the class name of the specified message listener.
 	 * <p>Note: Only 1 concurrent consumer (which is the default of this
-	 * message listener container) is allowed for each durable subscription,
-	 * except for a shared durable subscription (which requires JMS 2.0).
-	 * @see #setPubSubDomain
+	 * message listener container) is allowed for each durable subscription.
 	 * @see #setSubscriptionDurable
-	 * @see #setSubscriptionShared
 	 * @see #setClientId
 	 * @see #setMessageListener
 	 */
-	public void setDurableSubscriptionName(@Nullable String durableSubscriptionName) {
-		this.subscriptionName = durableSubscriptionName;
-		this.subscriptionDurable = (durableSubscriptionName != null);
+	public void setDurableSubscriptionName(String durableSubscriptionName) {
+		this.durableSubscriptionName = durableSubscriptionName;
 	}
 
 	/**
 	 * Return the name of a durable subscription to create, if any.
 	 */
-	@Nullable
 	public String getDurableSubscriptionName() {
-		return (this.subscriptionDurable ? this.subscriptionName : null);
-	}
-
-	/**
-	 * Set whether to inhibit the delivery of messages published by its own connection.
-	 * Default is "false".
-	 * @since 4.1
-	 * @see javax.jms.Session#createConsumer(javax.jms.Destination, String, boolean)
-	 */
-	public void setPubSubNoLocal(boolean pubSubNoLocal) {
-		this.pubSubNoLocal = pubSubNoLocal;
-	}
-
-	/**
-	 * Return whether to inhibit the delivery of messages published by its own connection.
-	 * @since 4.1
-	 */
-	public boolean isPubSubNoLocal() {
-		return this.pubSubNoLocal;
-	}
-
-	/**
-	 * Configure the reply destination type. By default, the configured {@code pubSubDomain}
-	 * value is used (see {@link #isPubSubDomain()}.
-	 * <p>This setting primarily indicates what type of destination to resolve if dynamic
-	 * destinations are enabled.
-	 * @param replyPubSubDomain "true" for the Publish/Subscribe domain ({@link Topic Topics}),
-	 * "false" for the Point-to-Point domain ({@link Queue Queues})
-	 * @since 4.2
-	 * @see #setDestinationResolver
-	 */
-	public void setReplyPubSubDomain(boolean replyPubSubDomain) {
-		this.replyPubSubDomain = replyPubSubDomain;
-	}
-
-	/**
-	 * Return whether the Publish/Subscribe domain ({@link javax.jms.Topic Topics}) is used
-	 * for replies. Otherwise, the Point-to-Point domain ({@link javax.jms.Queue Queues})
-	 * is used.
-	 * @since 4.2
-	 */
-	@Override
-	public boolean isReplyPubSubDomain() {
-		if (this.replyPubSubDomain != null) {
-			return this.replyPubSubDomain;
-		}
-		else {
-			return isPubSubDomain();
-		}
-	}
-
-	/**
-	 * Configure the {@link QosSettings} to use when sending a reply. Can be set to
-	 * {@code null} to indicate that the broker's defaults should be used.
-	 * @param replyQosSettings the QoS settings to use when sending a reply or {@code null}
-	 * to use the default vas.
-	 * @since 5.0
-	 */
-	public void setReplyQosSettings(@Nullable QosSettings replyQosSettings) {
-		this.replyQosSettings = replyQosSettings;
-	}
-
-	@Override
-	@Nullable
-	public QosSettings getReplyQosSettings() {
-		return this.replyQosSettings;
-	}
-
-	/**
-	 * Set the {@link MessageConverter} strategy for converting JMS Messages.
-	 * @since 4.1
-	 */
-	public void setMessageConverter(@Nullable MessageConverter messageConverter) {
-		this.messageConverter = messageConverter;
-	}
-
-	@Override
-	@Nullable
-	public MessageConverter getMessageConverter() {
-		return this.messageConverter;
+		return this.durableSubscriptionName;
 	}
 
 	/**
 	 * Set the JMS ExceptionListener to notify in case of a JMSException thrown
 	 * by the registered message listener or the invocation infrastructure.
 	 */
-	public void setExceptionListener(@Nullable ExceptionListener exceptionListener) {
+	public void setExceptionListener(ExceptionListener exceptionListener) {
 		this.exceptionListener = exceptionListener;
 	}
 
@@ -536,29 +361,17 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * Return the JMS ExceptionListener to notify in case of a JMSException thrown
 	 * by the registered message listener or the invocation infrastructure, if any.
 	 */
-	@Nullable
 	public ExceptionListener getExceptionListener() {
 		return this.exceptionListener;
 	}
 
 	/**
-	 * Set the ErrorHandler to be invoked in case of any uncaught exceptions thrown
-	 * while processing a Message.
-	 * <p>By default, there will be <b>no</b> ErrorHandler so that error-level
-	 * logging is the only result.
+	 * Set an ErrorHandler to be invoked in case of any uncaught exceptions thrown
+	 * while processing a Message. By default there will be <b>no</b> ErrorHandler
+	 * so that error-level logging is the only result.
 	 */
-	public void setErrorHandler(@Nullable ErrorHandler errorHandler) {
+	public void setErrorHandler(ErrorHandler errorHandler) {
 		this.errorHandler = errorHandler;
-	}
-
-	/**
-	 * Return the ErrorHandler to be invoked in case of any uncaught exceptions thrown
-	 * while processing a Message.
-	 * @since 4.1
-	 */
-	@Nullable
-	public ErrorHandler getErrorHandler() {
-		return this.errorHandler;
 	}
 
 	/**
@@ -618,11 +431,9 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 		if (this.destination == null) {
 			throw new IllegalArgumentException("Property 'destination' or 'destinationName' is required");
 		}
-	}
-
-	@Override
-	public void setupMessageListener(Object messageListener) {
-		setMessageListener(messageListener);
+		if (isSubscriptionDurable() && !isPubSubDomain()) {
+			throw new IllegalArgumentException("A durable subscription requires a topic (pub-sub domain)");
+		}
 	}
 
 
@@ -673,9 +484,17 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 		try {
 			invokeListener(session, message);
 		}
-		catch (JMSException | RuntimeException | Error ex) {
+		catch (JMSException ex) {
 			rollbackOnExceptionIfNecessary(session, ex);
 			throw ex;
+		}
+		catch (RuntimeException ex) {
+			rollbackOnExceptionIfNecessary(session, ex);
+			throw ex;
+		}
+		catch (Error err) {
+			rollbackOnExceptionIfNecessary(session, err);
+			throw err;
 		}
 		commitIfNecessary(session, message);
 	}
@@ -767,7 +586,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * @param message the Message to acknowledge
 	 * @throws javax.jms.JMSException in case of commit failure
 	 */
-	protected void commitIfNecessary(Session session, @Nullable Message message) throws JMSException {
+	protected void commitIfNecessary(Session session, Message message) throws JMSException {
 		// Commit session or acknowledge message.
 		if (session.getTransacted()) {
 			// Commit necessary - but avoid commit call within a JTA transaction.
@@ -822,9 +641,17 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 		catch (IllegalStateException ex2) {
 			logger.debug("Could not roll back because Session already closed", ex2);
 		}
-		catch (JMSException | RuntimeException | Error ex2) {
-			logger.error("Application exception overridden by rollback error", ex);
+		catch (JMSException ex2) {
+			logger.error("Application exception overridden by rollback exception", ex);
 			throw ex2;
+		}
+		catch (RuntimeException ex2) {
+			logger.error("Application exception overridden by rollback exception", ex);
+			throw ex2;
+		}
+		catch (Error err) {
+			logger.error("Application exception overridden by rollback error", ex);
+			throw err;
 		}
 	}
 
@@ -842,37 +669,6 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 */
 	protected boolean isSessionLocallyTransacted(Session session) {
 		return isSessionTransacted();
-	}
-
-	/**
-	 * Create a JMS MessageConsumer for the given Session and Destination.
-	 * <p>This implementation uses JMS 1.1 API.
-	 * @param session the JMS Session to create a MessageConsumer for
-	 * @param destination the JMS Destination to create a MessageConsumer for
-	 * @return the new JMS MessageConsumer
-	 * @throws javax.jms.JMSException if thrown by JMS API methods
-	 */
-	protected MessageConsumer createConsumer(Session session, Destination destination) throws JMSException {
-		if (isPubSubDomain() && destination instanceof Topic) {
-			if (isSubscriptionShared()) {
-				return (isSubscriptionDurable() ?
-						session.createSharedDurableConsumer((Topic) destination, getSubscriptionName(), getMessageSelector()) :
-						session.createSharedConsumer((Topic) destination, getSubscriptionName(), getMessageSelector()));
-			}
-			else if (isSubscriptionDurable()) {
-				return session.createDurableSubscriber(
-						(Topic) destination, getSubscriptionName(), getMessageSelector(), isPubSubNoLocal());
-			}
-			else {
-				// Only pass in the NoLocal flag in case of a Topic (pub-sub mode):
-				// Some JMS providers, such as WebSphere MQ 6.0, throw IllegalStateException
-				// in case of the NoLocal flag being specified for a Queue.
-				return session.createConsumer(destination, getMessageSelector(), isPubSubNoLocal());
-			}
-		}
-		else {
-			return session.createConsumer(destination, getMessageSelector());
-		}
 	}
 
 	/**
@@ -921,9 +717,8 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * @see #setErrorHandler
 	 */
 	protected void invokeErrorHandler(Throwable ex) {
-		ErrorHandler errorHandler = getErrorHandler();
-		if (errorHandler != null) {
-			errorHandler.handleError(ex);
+		if (this.errorHandler != null) {
+			this.errorHandler.handleError(ex);
 		}
 		else {
 			logger.warn("Execution of JMS message listener failed, and no ErrorHandler has been set.", ex);

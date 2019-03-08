@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,24 +21,22 @@ import java.io.Serializable;
 import org.springframework.aop.ClassFilter;
 
 /**
- * Simple ClassFilter implementation that passes classes (and optionally subclasses).
- *
+ * Simple ClassFilter implementation that passes classes (and optionally subclasses)
  * @author Rod Johnson
  */
 @SuppressWarnings("serial")
 public class RootClassFilter implements ClassFilter, Serializable {
 
-	private Class<?> clazz;
+	private Class clazz;
 
+	// TODO inheritance
 
-	public RootClassFilter(Class<?> clazz) {
+	public RootClassFilter(Class clazz) {
 		this.clazz = clazz;
 	}
 
-
-	@Override
-	public boolean matches(Class<?> candidate) {
-		return this.clazz.isAssignableFrom(candidate);
+	public boolean matches(Class candidate) {
+		return clazz.isAssignableFrom(candidate);
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.orm.jpa;
 
+import javax.persistence.PersistenceException;
+
 import org.springframework.dao.UncategorizedDataAccessException;
 
 /**
@@ -30,7 +32,7 @@ import org.springframework.dao.UncategorizedDataAccessException;
 @SuppressWarnings("serial")
 public class JpaSystemException extends UncategorizedDataAccessException {
 
-	public JpaSystemException(RuntimeException ex) {
+	public JpaSystemException(PersistenceException ex) {
 		super(ex.getMessage(), ex);
 	}
 

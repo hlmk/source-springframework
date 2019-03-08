@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,33 +29,19 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
 
 /**
- * JavaBean that allows for configuring a {@link java.util.concurrent.ThreadPoolExecutor}
+ * JavaBean that allows for configuring a JDK 1.5 {@link java.util.concurrent.ThreadPoolExecutor}
  * in bean style (through its "corePoolSize", "maxPoolSize", "keepAliveSeconds",
  * "queueCapacity" properties) and exposing it as a bean reference of its native
  * {@link java.util.concurrent.ExecutorService} type.
  *
- * <p>The default configuration is a core pool size of 1, with unlimited max pool size
- * and unlimited queue capacity. This is roughly equivalent to
- * {@link java.util.concurrent.Executors#newSingleThreadExecutor()}, sharing a single
- * thread for all tasks. Setting {@link #setQueueCapacity "queueCapacity"} to 0 mimics
- * {@link java.util.concurrent.Executors#newCachedThreadPool()}, with immediate scaling
- * of threads in the pool to a potentially very high number. Consider also setting a
- * {@link #setMaxPoolSize "maxPoolSize"} at that point, as well as possibly a higher
- * {@link #setCorePoolSize "corePoolSize"} (see also the
- * {@link #setAllowCoreThreadTimeOut "allowCoreThreadTimeOut"} mode of scaling).
- *
- * <p>For an alternative, you may set up a {@link ThreadPoolExecutor} instance directly
- * using constructor injection, or use a factory method definition that points to the
+ * <p>For an alternative, you may set up a ThreadPoolExecutor instance directly using
+ * constructor injection, or use a factory method definition that points to the JDK 1.5
  * {@link java.util.concurrent.Executors} class.
- * <b>This is strongly recommended in particular for common {@code @Bean} methods in
- * configuration classes, where this {@code FactoryBean} variant would force you to
- * return the {@code FactoryBean} type instead of the actual {@code Executor} type.</b>
  *
- * <p>If you need a timing-based {@link java.util.concurrent.ScheduledExecutorService}
- * instead, consider {@link ScheduledExecutorFactoryBean}.
+ * <p><b>If you need a timing-based {@link java.util.concurrent.ScheduledExecutorService}
+ * instead, consider {@link ScheduledExecutorFactoryBean}.</b>
 
  * @author Juergen Hoeller
  * @since 3.0
@@ -79,7 +65,6 @@ public class ThreadPoolExecutorFactoryBean extends ExecutorConfigurationSupport
 
 	private boolean exposeUnconfigurableExecutor = false;
 
-	@Nullable
 	private ExecutorService exposedExecutor;
 
 
@@ -111,7 +96,9 @@ public class ThreadPoolExecutorFactoryBean extends ExecutorConfigurationSupport
 	 * Specify whether to allow core threads to time out. This enables dynamic
 	 * growing and shrinking even in combination with a non-zero queue (since
 	 * the max pool size will only grow once the queue is full).
-	 * <p>Default is "false".
+	 * <p>Default is "false". Note that this feature is only available on Java 6
+	 * or above. On Java 5, consider switching to the backport-concurrent
+	 * version of ThreadPoolTaskExecutor which also supports this feature.
 	 * @see java.util.concurrent.ThreadPoolExecutor#allowCoreThreadTimeOut(boolean)
 	 */
 	public void setAllowCoreThreadTimeOut(boolean allowCoreThreadTimeOut) {
@@ -143,7 +130,6 @@ public class ThreadPoolExecutorFactoryBean extends ExecutorConfigurationSupport
 	}
 
 
-	@Override
 	protected ExecutorService initializeExecutor(
 			ThreadFactory threadFactory, RejectedExecutionHandler rejectedExecutionHandler) {
 
@@ -193,26 +179,22 @@ public class ThreadPoolExecutorFactoryBean extends ExecutorConfigurationSupport
 	 */
 	protected BlockingQueue<Runnable> createQueue(int queueCapacity) {
 		if (queueCapacity > 0) {
-			return new LinkedBlockingQueue<>(queueCapacity);
+			return new LinkedBlockingQueue<Runnable>(queueCapacity);
 		}
 		else {
-			return new SynchronousQueue<>();
+			return new SynchronousQueue<Runnable>();
 		}
 	}
 
 
-	@Override
-	@Nullable
-	public ExecutorService getObject() {
+	public ExecutorService getObject() throws Exception {
 		return this.exposedExecutor;
 	}
 
-	@Override
 	public Class<? extends ExecutorService> getObjectType() {
 		return (this.exposedExecutor != null ? this.exposedExecutor.getClass() : ExecutorService.class);
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}

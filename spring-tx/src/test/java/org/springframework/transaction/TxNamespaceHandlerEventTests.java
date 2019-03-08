@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.springframework.transaction;
 
-import org.junit.Before;
-import org.junit.Test;
+import junit.framework.TestCase;
 
 import org.springframework.beans.factory.parsing.BeanComponentDefinition;
 import org.springframework.beans.factory.parsing.ComponentDefinition;
@@ -26,31 +25,27 @@ import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.tests.beans.CollectingReaderEventListener;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-
 /**
  * @author Torsten Juergeleit
  * @author Juergen Hoeller
  */
-public class TxNamespaceHandlerEventTests {
+public class TxNamespaceHandlerEventTests extends TestCase {
 
 	private DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
 
 	private CollectingReaderEventListener eventListener = new CollectingReaderEventListener();
 
 
-	@Before
+	@Override
 	public void setUp() throws Exception {
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(this.beanFactory);
 		reader.setEventListener(this.eventListener);
 		reader.loadBeanDefinitions(new ClassPathResource("txNamespaceHandlerTests.xml", getClass()));
 	}
 
-	@Test
-	public void componentEventReceived() {
+	public void testComponentEventReceived() {
 		ComponentDefinition component = this.eventListener.getComponentDefinition("txAdvice");
-		assertThat(component, instanceOf(BeanComponentDefinition.class));
+		assertTrue(component instanceof BeanComponentDefinition);
 	}
 
 }

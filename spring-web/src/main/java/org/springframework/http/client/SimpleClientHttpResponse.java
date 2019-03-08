@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.lang.Nullable;
-import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -31,18 +29,13 @@ import org.springframework.util.StringUtils;
  * {@link SimpleStreamingClientHttpRequest#execute()}.
  *
  * @author Arjen Poutsma
- * @author Brian Clozel
  * @since 3.0
  */
 final class SimpleClientHttpResponse extends AbstractClientHttpResponse {
 
 	private final HttpURLConnection connection;
 
-	@Nullable
 	private HttpHeaders headers;
-
-	@Nullable
-	private InputStream responseStream;
 
 
 	SimpleClientHttpResponse(HttpURLConnection connection) {
@@ -50,18 +43,14 @@ final class SimpleClientHttpResponse extends AbstractClientHttpResponse {
 	}
 
 
-	@Override
 	public int getRawStatusCode() throws IOException {
 		return this.connection.getResponseCode();
 	}
 
-	@Override
 	public String getStatusText() throws IOException {
-		String result = this.connection.getResponseMessage();
-		return (result != null) ? result : "";
+		return this.connection.getResponseMessage();
 	}
 
-	@Override
 	public HttpHeaders getHeaders() {
 		if (this.headers == null) {
 			this.headers = new HttpHeaders();
@@ -83,25 +72,13 @@ final class SimpleClientHttpResponse extends AbstractClientHttpResponse {
 		return this.headers;
 	}
 
-	@Override
 	public InputStream getBody() throws IOException {
 		InputStream errorStream = this.connection.getErrorStream();
-		this.responseStream = (errorStream != null ? errorStream : this.connection.getInputStream());
-		return this.responseStream;
+		return (errorStream != null ? errorStream : this.connection.getInputStream());
 	}
 
-	@Override
 	public void close() {
-		try {
-			if (this.responseStream == null) {
-				getBody();
-			}
-			StreamUtils.drain(this.responseStream);
-			this.responseStream.close();
-		}
-		catch (Exception ex) {
-			// ignore
-		}
+		this.connection.disconnect();
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,15 @@ public class SimpleConnectionHandle implements ConnectionHandle {
 	/**
 	 * Return the specified Connection as-is.
 	 */
-	@Override
 	public Connection getConnection() {
 		return this.connection;
+	}
+
+	/**
+	 * This implementation is empty, as we're using a standard
+	 * Connection handle that does not have to be released.
+	 */
+	public void releaseConnection(Connection con) {
 	}
 
 

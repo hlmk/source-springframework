@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.springframework.core.NestedIOException;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.ClassMetadata;
-import org.springframework.lang.Nullable;
 
 /**
  * {@link MetadataReader} implementation based on an ASM
@@ -47,7 +46,7 @@ final class SimpleMetadataReader implements MetadataReader {
 	private final AnnotationMetadata annotationMetadata;
 
 
-	SimpleMetadataReader(Resource resource, @Nullable ClassLoader classLoader) throws IOException {
+	SimpleMetadataReader(Resource resource, ClassLoader classLoader) throws IOException {
 		InputStream is = new BufferedInputStream(resource.getInputStream());
 		ClassReader classReader;
 		try {
@@ -71,17 +70,14 @@ final class SimpleMetadataReader implements MetadataReader {
 	}
 
 
-	@Override
 	public Resource getResource() {
 		return this.resource;
 	}
 
-	@Override
 	public ClassMetadata getClassMetadata() {
 		return this.classMetadata;
 	}
 
-	@Override
 	public AnnotationMetadata getAnnotationMetadata() {
 		return this.annotationMetadata;
 	}

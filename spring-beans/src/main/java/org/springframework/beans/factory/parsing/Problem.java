@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.beans.factory.parsing;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -36,16 +35,14 @@ public class Problem {
 
 	private final Location location;
 
-	@Nullable
 	private final ParseState parseState;
 
-	@Nullable
 	private final Throwable rootCause;
 
 
 	/**
 	 * Create a new instance of the {@link Problem} class.
-	 * @param message a message detailing the problem
+	 * @param message	a message detailing the problem
 	 * @param location the location within a bean configuration source that triggered the error
 	 */
 	public Problem(String message, Location location) {
@@ -54,7 +51,7 @@ public class Problem {
 
 	/**
 	 * Create a new instance of the {@link Problem} class.
-	 * @param message a message detailing the problem
+	 * @param message	a message detailing the problem
 	 * @param parseState the {@link ParseState} at the time of the error
 	 * @param location the location within a bean configuration source that triggered the error
 	 */
@@ -64,12 +61,12 @@ public class Problem {
 
 	/**
 	 * Create a new instance of the {@link Problem} class.
-	 * @param message a message detailing the problem
-	 * @param rootCause the underlying exception that caused the error (may be {@code null})
+	 * @param message    a message detailing the problem
+	 * @param rootCause the underlying expection that caused the error (may be {@code null})
 	 * @param parseState the {@link ParseState} at the time of the error
 	 * @param location the location within a bean configuration source that triggered the error
 	 */
-	public Problem(String message, Location location, @Nullable ParseState parseState, @Nullable Throwable rootCause) {
+	public Problem(String message, Location location, ParseState parseState, Throwable rootCause) {
 		Assert.notNull(message, "Message must not be null");
 		Assert.notNull(location, "Location must not be null");
 		this.message = message;
@@ -105,15 +102,13 @@ public class Problem {
 	/**
 	 * Get the {@link ParseState} at the time of the error (may be {@code null}).
 	 */
-	@Nullable
 	public ParseState getParseState() {
 		return this.parseState;
 	}
 
 	/**
-	 * Get the underlying exception that caused the error (may be {@code null}).
+	 * Get the underlying expection that caused the error (may be {@code null}).
 	 */
-	@Nullable
 	public Throwable getRootCause() {
 		return this.rootCause;
 	}

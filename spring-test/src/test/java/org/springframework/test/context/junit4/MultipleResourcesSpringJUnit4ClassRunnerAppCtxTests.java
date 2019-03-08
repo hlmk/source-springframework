@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.test.context.junit4;
 
+import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.util.ResourceUtils;
 
@@ -27,13 +28,14 @@ import org.springframework.util.ResourceUtils;
  * As of Spring 3.0,
  * {@code MultipleResourcesSpringJUnit4ClassRunnerAppCtxTests} is also used
  * to verify support for the new {@code value} attribute alias for
- * {@code @ContextConfiguration}'s {@code locations} attribute.
+ * {@code &#064;ContextConfiguration}'s {@code locations} attribute.
  * </p>
  *
  * @author Sam Brannen
  * @since 2.5
  * @see SpringJUnit4ClassRunnerAppCtxTests
  */
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration( { MultipleResourcesSpringJUnit4ClassRunnerAppCtxTests.CLASSPATH_RESOURCE_PATH,
 	MultipleResourcesSpringJUnit4ClassRunnerAppCtxTests.LOCAL_RESOURCE_PATH,
 	MultipleResourcesSpringJUnit4ClassRunnerAppCtxTests.ABSOLUTE_RESOURCE_PATH })

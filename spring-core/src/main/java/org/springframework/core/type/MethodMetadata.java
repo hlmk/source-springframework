@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.core.type;
 
+import java.util.Map;
+
 /**
  * Interface that defines abstract access to the annotations of a specific
  * class, in a form that does not require that class to be loaded yet.
@@ -23,13 +25,11 @@ package org.springframework.core.type;
  * @author Juergen Hoeller
  * @author Mark Pollack
  * @author Chris Beams
- * @author Phillip Webb
  * @since 3.0
  * @see StandardMethodMetadata
  * @see AnnotationMetadata#getAnnotatedMethods
- * @see AnnotatedTypeMetadata
  */
-public interface MethodMetadata extends AnnotatedTypeMetadata {
+public interface MethodMetadata {
 
 	/**
 	 * Return the name of the method.
@@ -39,21 +39,7 @@ public interface MethodMetadata extends AnnotatedTypeMetadata {
 	/**
 	 * Return the fully-qualified name of the class that declares this method.
 	 */
-	String getDeclaringClassName();
-
-	/**
-	 * Return the fully-qualified name of this method's declared return type.
-	 * @since 4.2
-	 */
-	String getReturnTypeName();
-
-	/**
-	 * Return whether the underlying method is effectively abstract:
-	 * i.e. marked as abstract on a class or declared as a regular,
-	 * non-default method in an interface.
-	 * @since 4.2
-	 */
-	boolean isAbstract();
+	public String getDeclaringClassName();
 
 	/**
 	 * Return whether the underlying method is declared as 'static'.
@@ -70,5 +56,24 @@ public interface MethodMetadata extends AnnotatedTypeMetadata {
 	 * i.e. not marked as static, final or private.
 	 */
 	boolean isOverridable();
+
+	/**
+	 * Determine whether the underlying method has an annotation or
+	 * meta-annotation of the given type defined.
+	 * @param annotationType the annotation type to look for
+	 * @return whether a matching annotation is defined
+	 */
+	boolean isAnnotated(String annotationType);
+
+	/**
+	 * Retrieve the attributes of the annotation of the given type,
+	 * if any (i.e. if defined on the underlying method, as direct
+	 * annotation or as meta-annotation).
+	 * @param annotationType the annotation type to look for
+	 * @return a Map of attributes, with the attribute name as key (e.g. "value")
+	 * and the defined attribute value as Map value. This return value will be
+	 * {@code null} if no matching annotation is defined.
+	 */
+	Map<String, Object> getAnnotationAttributes(String annotationType);
 
 }

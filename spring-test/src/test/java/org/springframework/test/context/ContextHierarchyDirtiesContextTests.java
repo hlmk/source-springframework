@@ -23,7 +23,6 @@ import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -50,19 +49,10 @@ public class ContextHierarchyDirtiesContextTests {
 
 	private static ApplicationContext context;
 
-	private static String foo;
-
-	private static String bar;
-
-	private static String baz;
-
 
 	@After
 	public void cleanUp() {
 		ContextHierarchyDirtiesContextTests.context = null;
-		ContextHierarchyDirtiesContextTests.foo = null;
-		ContextHierarchyDirtiesContextTests.bar = null;
-		ContextHierarchyDirtiesContextTests.baz = null;
 	}
 
 	@Test
@@ -95,17 +85,17 @@ public class ContextHierarchyDirtiesContextTests {
 		assertThat(ContextHierarchyDirtiesContextTests.context, notNullValue());
 
 		ConfigurableApplicationContext bazContext = (ConfigurableApplicationContext) ContextHierarchyDirtiesContextTests.context;
-		assertEquals("baz", ContextHierarchyDirtiesContextTests.baz);
+		assertEquals("baz", bazContext.getBean("bean", String.class));
 		assertThat("bazContext#isActive()", bazContext.isActive(), is(isBazContextActive));
 
 		ConfigurableApplicationContext barContext = (ConfigurableApplicationContext) bazContext.getParent();
 		assertThat(barContext, notNullValue());
-		assertEquals("bar", ContextHierarchyDirtiesContextTests.bar);
+		assertEquals("bar", barContext.getBean("bean", String.class));
 		assertThat("barContext#isActive()", barContext.isActive(), is(isBarContextActive));
 
 		ConfigurableApplicationContext fooContext = (ConfigurableApplicationContext) barContext.getParent();
 		assertThat(fooContext, notNullValue());
-		assertEquals("foo", ContextHierarchyDirtiesContextTests.foo);
+		assertEquals("foo", fooContext.getBean("bean", String.class));
 		assertThat("fooContext#isActive()", fooContext.isActive(), is(isFooContextActive));
 	}
 
@@ -125,12 +115,9 @@ public class ContextHierarchyDirtiesContextTests {
 			}
 		}
 
-		@Override
+
 		public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 			ContextHierarchyDirtiesContextTests.context = applicationContext;
-			ContextHierarchyDirtiesContextTests.baz = applicationContext.getBean("bean", String.class);
-			ContextHierarchyDirtiesContextTests.bar = applicationContext.getParent().getBean("bean", String.class);
-			ContextHierarchyDirtiesContextTests.foo = applicationContext.getParent().getParent().getBean("bean", String.class);
 		}
 	}
 

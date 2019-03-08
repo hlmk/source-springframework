@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,148 +16,71 @@
 
 package org.springframework.http.converter;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 
-import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.ContentDisposition;
 import org.springframework.http.MediaType;
 import org.springframework.http.MockHttpInputMessage;
 import org.springframework.http.MockHttpOutputMessage;
 import org.springframework.util.FileCopyUtils;
 
-import static org.hamcrest.core.Is.*;
-import static org.hamcrest.core.IsInstanceOf.*;
 import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.any;
-import static org.mockito.BDDMockito.*;
 
 /**
  * @author Arjen Poutsma
- * @author Kazuki Shimizu
- * @author Brian Clozel
  */
 public class ResourceHttpMessageConverterTests {
 
-	private final ResourceHttpMessageConverter converter = new ResourceHttpMessageConverter();
+	private ResourceHttpMessageConverter converter;
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
-
+	@Before
+	public void setUp() {
+		converter = new ResourceHttpMessageConverter();
+	}
 
 	@Test
-	public void canReadResource() {
+	public void canRead() {
 		assertTrue(converter.canRead(Resource.class, new MediaType("application", "octet-stream")));
 	}
 
 	@Test
-	public void canWriteResource() {
+	public void canWrite() {
 		assertTrue(converter.canWrite(Resource.class, new MediaType("application", "octet-stream")));
 		assertTrue(converter.canWrite(Resource.class, MediaType.ALL));
 	}
 
 	@Test
-	public void shouldReadImageResource() throws IOException {
+	public void read() throws IOException {
 		byte[] body = FileCopyUtils.copyToByteArray(getClass().getResourceAsStream("logo.jpg"));
 		MockHttpInputMessage inputMessage = new MockHttpInputMessage(body);
 		inputMessage.getHeaders().setContentType(MediaType.IMAGE_JPEG);
-		inputMessage.getHeaders().setContentDisposition(
-				ContentDisposition.builder("attachment").filename("yourlogo.jpg").build());
-		Resource actualResource = converter.read(Resource.class, inputMessage);
-		assertThat(FileCopyUtils.copyToByteArray(actualResource.getInputStream()), is(body));
-		assertEquals("yourlogo.jpg", actualResource.getFilename());
-	}
-
-	@Test  // SPR-13443
-	public void shouldReadInputStreamResource() throws IOException {
-		try (InputStream body = getClass().getResourceAsStream("logo.jpg") ) {
-			MockHttpInputMessage inputMessage = new MockHttpInputMessage(body);
-			inputMessage.getHeaders().setContentType(MediaType.IMAGE_JPEG);
-			inputMessage.getHeaders().setContentDisposition(
-					ContentDisposition.builder("attachment").filename("yourlogo.jpg").build());
-			Resource actualResource = converter.read(InputStreamResource.class, inputMessage);
-			assertThat(actualResource, instanceOf(InputStreamResource.class));
-			assertThat(actualResource.getInputStream(), is(body));
-			assertEquals("yourlogo.jpg", actualResource.getFilename());
-		}
-	}
-
-	@Test  // SPR-14882
-	public void shouldNotReadInputStreamResource() throws IOException {
-		ResourceHttpMessageConverter noStreamConverter = new ResourceHttpMessageConverter(false);
-		try (InputStream body = getClass().getResourceAsStream("logo.jpg") ) {
-			this.thrown.expect(HttpMessageNotReadableException.class);
-			MockHttpInputMessage inputMessage = new MockHttpInputMessage(body);
-			inputMessage.getHeaders().setContentType(MediaType.IMAGE_JPEG);
-			noStreamConverter.read(InputStreamResource.class, inputMessage);
-		}
+		converter.read(Resource.class, inputMessage);
 	}
 
 	@Test
-	public void shouldWriteImageResource() throws IOException {
+	public void write() throws IOException {
 		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
 		Resource body = new ClassPathResource("logo.jpg", getClass());
 		converter.write(body, null, outputMessage);
-
 		assertEquals("Invalid content-type", MediaType.IMAGE_JPEG,
 				outputMessage.getHeaders().getContentType());
 		assertEquals("Invalid content-length", body.getFile().length(), outputMessage.getHeaders().getContentLength());
 	}
 
-	@Test  // SPR-10848
+	// SPR-10848
+
+	@Test
 	public void writeByteArrayNullMediaType() throws IOException {
 		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
 		byte[] byteArray = {1, 2, 3};
 		Resource body = new ByteArrayResource(byteArray);
 		converter.write(body, null, outputMessage);
-
 		assertTrue(Arrays.equals(byteArray, outputMessage.getBodyAsBytes()));
-	}
-
-	@Test  // SPR-12999
-	@SuppressWarnings("unchecked")
-	public void writeContentNotGettingInputStream() throws Exception {
-		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
-		Resource resource = mock(Resource.class);
-		given(resource.getInputStream()).willThrow(FileNotFoundException.class);
-		converter.write(resource, MediaType.APPLICATION_OCTET_STREAM, outputMessage);
-
-		assertEquals(0, outputMessage.getHeaders().getContentLength());
-	}
-
-	@Test  // SPR-12999
-	public void writeContentNotClosingInputStream() throws Exception {
-		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
-		Resource resource = mock(Resource.class);
-		InputStream inputStream = mock(InputStream.class);
-		given(resource.getInputStream()).willReturn(inputStream);
-		given(inputStream.read(any())).willReturn(-1);
-		doThrow(new NullPointerException()).when(inputStream).close();
-		converter.write(resource, MediaType.APPLICATION_OCTET_STREAM, outputMessage);
-
-		assertEquals(0, outputMessage.getHeaders().getContentLength());
-	}
-
-	@Test  // SPR-13620
-	@SuppressWarnings("unchecked")
-	public void writeContentInputStreamThrowingNullPointerException() throws Exception {
-		MockHttpOutputMessage outputMessage = new MockHttpOutputMessage();
-		Resource resource = mock(Resource.class);
-		InputStream in = mock(InputStream.class);
-		given(resource.getInputStream()).willReturn(in);
-		given(in.read(any())).willThrow(NullPointerException.class);
-		converter.write(resource, MediaType.APPLICATION_OCTET_STREAM, outputMessage);
-
-		assertEquals(0, outputMessage.getHeaders().getContentLength());
 	}
 
 }

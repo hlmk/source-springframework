@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.support.ArgumentConvertingMethodInvoker;
-import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -36,6 +35,7 @@ import org.springframework.util.ClassUtils;
  *
  * @author Juergen Hoeller
  * @since 1.2.4
+ * @see org.springframework.scheduling.timer.ScheduledTimerTask#setRunnable(Runnable)
  * @see java.util.concurrent.Executor#execute(Runnable)
  */
 public class MethodInvokingRunnable extends ArgumentConvertingMethodInvoker
@@ -43,27 +43,23 @@ public class MethodInvokingRunnable extends ArgumentConvertingMethodInvoker
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	@Nullable
 	private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
 
-	@Override
 	public void setBeanClassLoader(ClassLoader classLoader) {
 		this.beanClassLoader = classLoader;
 	}
 
 	@Override
-	protected Class<?> resolveClassName(String className) throws ClassNotFoundException {
+	protected Class resolveClassName(String className) throws ClassNotFoundException {
 		return ClassUtils.forName(className, this.beanClassLoader);
 	}
 
-	@Override
 	public void afterPropertiesSet() throws ClassNotFoundException, NoSuchMethodException {
 		prepare();
 	}
 
 
-	@Override
 	public void run() {
 		try {
 			invoke();

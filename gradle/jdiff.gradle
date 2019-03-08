@@ -43,7 +43,6 @@ task jdiff {
 		ant.mkdir(dir: outputDir)
 		ant.jdiff(
 				destdir: outputDir,
-				source: "1.8",
 				verbose: "off",
 				stats: "on",
 				docchanges: "off") {

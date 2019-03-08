@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,12 @@ import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
  * Abstract base class for SAX {@code XMLReader} implementations that use StAX as a basis.
  *
  * @author Arjen Poutsma
- * @author Juergen Hoeller
  * @since 3.0
  * @see #setContentHandler(org.xml.sax.ContentHandler)
  * @see #setDTDHandler(org.xml.sax.DTDHandler)
@@ -56,11 +54,9 @@ abstract class AbstractStaxXMLReader extends AbstractXMLReader {
 
 	private boolean namespacePrefixesFeature = false;
 
-	@Nullable
 	private Boolean isStandalone;
 
-	private final Map<String, String> namespaces = new LinkedHashMap<>();
-
+	private final Map<String, String> namespaces = new LinkedHashMap<String, String>();
 
 	@Override
 	public boolean getFeature(String name) throws SAXNotRecognizedException, SAXNotSupportedException {
@@ -138,7 +134,6 @@ abstract class AbstractStaxXMLReader extends AbstractXMLReader {
 	 * @param ignored is ignored
 	 * @throws SAXException a SAX exception, possibly wrapping a {@code XMLStreamException}
 	 */
-	@Override
 	public final void parse(InputSource ignored) throws SAXException {
 		parse();
 	}
@@ -147,9 +142,8 @@ abstract class AbstractStaxXMLReader extends AbstractXMLReader {
 	 * Parse the StAX XML reader passed at construction-time.
 	 * <p><b>NOTE:</b>: The given system identifier is not read, but ignored.
 	 * @param ignored is ignored
-	 * @throws SAXException a SAX exception, possibly wrapping a {@code XMLStreamException}
+	 * @throws SAXException A SAX exception, possibly wrapping a {@code XMLStreamException}
 	 */
-	@Override
 	public final void parse(String ignored) throws SAXException {
 		parse();
 	}
@@ -174,70 +168,69 @@ abstract class AbstractStaxXMLReader extends AbstractXMLReader {
 	}
 
 	/**
-	 * Template method that parses the StAX reader passed at construction-time.
+	 * Template-method that parses the StAX reader passed at construction-time.
 	 */
 	protected abstract void parseInternal() throws SAXException, XMLStreamException;
 
-
 	/**
-	 * Start the prefix mapping for the given prefix.
+	 * Starts the prefix mapping for the given prefix.
 	 * @see org.xml.sax.ContentHandler#startPrefixMapping(String, String)
 	 */
-	protected void startPrefixMapping(@Nullable String prefix, String namespace) throws SAXException {
-		if (getContentHandler() != null && StringUtils.hasLength(namespace)) {
+	protected void startPrefixMapping(String prefix, String namespace) throws SAXException {
+		if (getContentHandler() != null) {
 			if (prefix == null) {
 				prefix = "";
 			}
-			if (!namespace.equals(this.namespaces.get(prefix))) {
+			if (!StringUtils.hasLength(namespace)) {
+				return;
+			}
+			if (!namespace.equals(namespaces.get(prefix))) {
 				getContentHandler().startPrefixMapping(prefix, namespace);
-				this.namespaces.put(prefix, namespace);
+				namespaces.put(prefix, namespace);
 			}
 		}
 	}
 
 	/**
-	 * End the prefix mapping for the given prefix.
+	 * Ends the prefix mapping for the given prefix.
 	 * @see org.xml.sax.ContentHandler#endPrefixMapping(String)
 	 */
 	protected void endPrefixMapping(String prefix) throws SAXException {
-		if (getContentHandler() != null && this.namespaces.containsKey(prefix)) {
-			getContentHandler().endPrefixMapping(prefix);
-			this.namespaces.remove(prefix);
+		if (getContentHandler() != null) {
+			if (namespaces.containsKey(prefix)) {
+				getContentHandler().endPrefixMapping(prefix);
+				namespaces.remove(prefix);
+			}
 		}
 	}
 
-
 	/**
-	 * Implementation of the {@code Locator} interface based on a given StAX {@code Location}.
+	 * Implementation of the {@code Locator} interface that is based on a StAX {@code Location}.
 	 * @see Locator
 	 * @see Location
 	 */
 	private static class StaxLocator implements Locator {
 
-		private final Location location;
+		private Location location;
 
-		public StaxLocator(Location location) {
+		protected StaxLocator(Location location) {
 			this.location = location;
 		}
 
-		@Override
 		public String getPublicId() {
-			return this.location.getPublicId();
+			return location.getPublicId();
 		}
 
-		@Override
 		public String getSystemId() {
-			return this.location.getSystemId();
+			return location.getSystemId();
 		}
 
-		@Override
 		public int getLineNumber() {
-			return this.location.getLineNumber();
+			return location.getLineNumber();
 		}
 
-		@Override
 		public int getColumnNumber() {
-			return this.location.getColumnNumber();
+			return location.getColumnNumber();
 		}
 	}
 

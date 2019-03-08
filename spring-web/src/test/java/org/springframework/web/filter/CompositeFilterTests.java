@@ -1,5 +1,6 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2004, 2005 Acegi Technology Pty Limited
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +17,13 @@
 
 package org.springframework.web.filter;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import java.io.IOException;
 import java.util.Arrays;
+
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -27,13 +33,10 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 import org.junit.Test;
-
 import org.springframework.mock.web.test.MockFilterConfig;
 import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.mock.web.test.MockHttpServletResponse;
 import org.springframework.mock.web.test.MockServletContext;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Dave Syer
@@ -43,7 +46,9 @@ public class CompositeFilterTests {
 	@Test
 	public void testCompositeFilter() throws ServletException, IOException {
 		ServletContext sc = new MockServletContext();
+
 		MockFilter targetFilter = new MockFilter();
+
 		MockFilterConfig proxyConfig = new MockFilterConfig(sc);
 
 		CompositeFilter filterProxy = new CompositeFilter();
@@ -72,7 +77,7 @@ public class CompositeFilterTests {
 		}
 
 		@Override
-		public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) {
+		public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
 			request.setAttribute("called", Boolean.TRUE);
 		}
 

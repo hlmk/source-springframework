@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,14 @@
 
 package org.springframework.remoting.support;
 
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import junit.framework.TestCase;
 
 /**
  * @author Rick Evans
  */
-public class RemoteInvocationUtilsTests {
+public class RemoteInvocationUtilsTests extends TestCase {
 
-	@Test
-	public void fillInClientStackTraceIfPossibleSunnyDay() throws Exception {
+	public void testFillInClientStackTraceIfPossibleSunnyDay() throws Exception {
 		try {
 			throw new IllegalStateException("Mmm");
 		}
@@ -38,8 +35,7 @@ public class RemoteInvocationUtilsTests {
 		}
 	}
 
-	@Test
-	public void fillInClientStackTraceIfPossibleWithNullThrowable() throws Exception {
+	public void testFillInClientStackTraceIfPossibleWithNullThrowable() throws Exception {
 		// just want to ensure that it doesn't bomb
 		RemoteInvocationUtils.fillInClientStackTraceIfPossible(null);
 	}

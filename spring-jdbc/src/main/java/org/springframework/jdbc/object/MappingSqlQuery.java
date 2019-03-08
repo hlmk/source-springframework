@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.sql.SQLException;
 import java.util.Map;
 import javax.sql.DataSource;
 
-import org.springframework.lang.Nullable;
-
 /**
  * Reusable query in which concrete subclasses must implement the abstract
  * mapRow(ResultSet, int) method to convert each row of the JDBC ResultSet
@@ -35,7 +33,6 @@ import org.springframework.lang.Nullable;
  * @author Rod Johnson
  * @author Thomas Risberg
  * @author Jean-Pierre Pawlak
- * @param <T> the result type
  * @see MappingSqlQueryWithParameters
  */
 public abstract class MappingSqlQuery<T> extends MappingSqlQueryWithParameters<T> {
@@ -48,8 +45,8 @@ public abstract class MappingSqlQuery<T> extends MappingSqlQueryWithParameters<T
 
 	/**
 	 * Convenient constructor with DataSource and SQL string.
-	 * @param ds the DataSource to use to obtain connections
-	 * @param sql the SQL to run
+	 * @param ds DataSource to use to obtain connections
+	 * @param sql SQL to run
 	 */
 	public MappingSqlQuery(DataSource ds, String sql) {
 		super(ds, sql);
@@ -62,8 +59,7 @@ public abstract class MappingSqlQuery<T> extends MappingSqlQueryWithParameters<T
 	 * @see #mapRow(ResultSet, int)
 	 */
 	@Override
-	@Nullable
-	protected final T mapRow(ResultSet rs, int rowNum, @Nullable Object[] parameters, @Nullable Map<?, ?> context)
+	protected final T mapRow(ResultSet rs, int rowNum, Object[] parameters, Map context)
 			throws SQLException {
 
 		return mapRow(rs, rowNum);
@@ -75,14 +71,13 @@ public abstract class MappingSqlQuery<T> extends MappingSqlQueryWithParameters<T
 	 * <p>Subclasses of this class, as opposed to direct subclasses of
 	 * MappingSqlQueryWithParameters, don't need to concern themselves
 	 * with the parameters to the execute method of the query object.
-	 * @param rs the ResultSet we're working through
+	 * @param rs ResultSet we're working through
 	 * @param rowNum row number (from 0) we're up to
 	 * @return an object of the result type
 	 * @throws SQLException if there's an error extracting data.
 	 * Subclasses can simply not catch SQLExceptions, relying on the
 	 * framework to clean up.
 	 */
-	@Nullable
 	protected abstract T mapRow(ResultSet rs, int rowNum) throws SQLException;
 
 }

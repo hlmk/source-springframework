@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.UncategorizedSQLException;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -36,10 +34,9 @@ import org.springframework.util.Assert;
  */
 public abstract class AbstractFallbackSQLExceptionTranslator implements SQLExceptionTranslator {
 
-	/** Logger available to subclasses. */
+	/** Logger available to subclasses */
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	@Nullable
 	private SQLExceptionTranslator fallbackTranslator;
 
 
@@ -47,14 +44,13 @@ public abstract class AbstractFallbackSQLExceptionTranslator implements SQLExcep
 	 * Override the default SQL state fallback translator
 	 * (typically a {@link SQLStateSQLExceptionTranslator}).
 	 */
-	public void setFallbackTranslator(@Nullable SQLExceptionTranslator fallback) {
+	public void setFallbackTranslator(SQLExceptionTranslator fallback) {
 		this.fallbackTranslator = fallback;
 	}
 
 	/**
 	 * Return the fallback exception translator, if any.
 	 */
-	@Nullable
 	public SQLExceptionTranslator getFallbackTranslator() {
 		return this.fallbackTranslator;
 	}
@@ -64,27 +60,25 @@ public abstract class AbstractFallbackSQLExceptionTranslator implements SQLExcep
 	 * Pre-checks the arguments, calls {@link #doTranslate}, and invokes the
 	 * {@link #getFallbackTranslator() fallback translator} if necessary.
 	 */
-	@Override
-	@NonNull
-	public DataAccessException translate(String task, @Nullable String sql, SQLException ex) {
+	public DataAccessException translate(String task, String sql, SQLException ex) {
 		Assert.notNull(ex, "Cannot translate a null SQLException");
-
-		DataAccessException dae = doTranslate(task, sql, ex);
-		if (dae != null) {
-			// Specific exception match found.
-			return dae;
+		if (task == null) {
+			task = "";
+		}
+		if (sql == null) {
+			sql = "";
 		}
 
+		DataAccessException dex = doTranslate(task, sql, ex);
+		if (dex != null) {
+			// Specific exception match found.
+			return dex;
+		}
 		// Looking for a fallback...
 		SQLExceptionTranslator fallback = getFallbackTranslator();
 		if (fallback != null) {
-			dae = fallback.translate(task, sql, ex);
-			if (dae != null) {
-				// Fallback exception match found.
-				return dae;
-			}
+			return fallback.translate(task, sql, ex);
 		}
-
 		// We couldn't identify it more precisely.
 		return new UncategorizedSQLException(task, sql, ex);
 	}
@@ -95,13 +89,12 @@ public abstract class AbstractFallbackSQLExceptionTranslator implements SQLExcep
 	 * is allowed to return {@code null} to indicate that no exception match has
 	 * been found and that fallback translation should kick in.
 	 * @param task readable text describing the task being attempted
-	 * @param sql the SQL query or update that caused the problem (if known)
+	 * @param sql SQL query or update that caused the problem (may be {@code null})
 	 * @param ex the offending {@code SQLException}
 	 * @return the DataAccessException, wrapping the {@code SQLException};
 	 * or {@code null} if no exception match found
 	 */
-	@Nullable
-	protected abstract DataAccessException doTranslate(String task, @Nullable String sql, SQLException ex);
+	protected abstract DataAccessException doTranslate(String task, String sql, SQLException ex);
 
 
 	/**
@@ -109,12 +102,12 @@ public abstract class AbstractFallbackSQLExceptionTranslator implements SQLExcep
 	 * <p>To be called by translator subclasses when creating an instance of a generic
 	 * {@link org.springframework.dao.DataAccessException} class.
 	 * @param task readable text describing the task being attempted
-	 * @param sql the SQL statement that caused the problem
+	 * @param sql the SQL statement that caused the problem (may be {@code null})
 	 * @param ex the offending {@code SQLException}
 	 * @return the message {@code String} to use
 	 */
-	protected String buildMessage(String task, @Nullable String sql, SQLException ex) {
-		return task + "; " + (sql != null ? ("SQL [" + sql + "]; ") : "") + ex.getMessage();
+	protected String buildMessage(String task, String sql, SQLException ex) {
+		return task + "; SQL [" + sql + "]; " + ex.getMessage();
 	}
 
 }

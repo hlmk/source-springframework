@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,12 @@ import java.net.MalformedURLException;
 
 import com.caucho.hessian.HessianException;
 import com.caucho.hessian.client.HessianConnectionException;
-import com.caucho.hessian.client.HessianConnectionFactory;
 import com.caucho.hessian.client.HessianProxyFactory;
 import com.caucho.hessian.client.HessianRuntimeException;
 import com.caucho.hessian.io.SerializerFactory;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
-import org.springframework.lang.Nullable;
 import org.springframework.remoting.RemoteAccessException;
 import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.remoting.RemoteLookupFailureException;
@@ -46,7 +44,6 @@ import org.springframework.util.Assert;
  * <p>Hessian is a slim, binary RPC protocol.
  * For information on Hessian, see the
  * <a href="http://www.caucho.com/hessian">Hessian website</a>
- * <b>Note: As of Spring 4.0, this client requires Hessian 4.0 or above.</b>
  *
  * <p>Note: There is no requirement for services accessed with this proxy factory
  * to have been exported using Spring's {@link HessianServiceExporter}, as there is
@@ -68,7 +65,6 @@ public class HessianClientInterceptor extends UrlBasedRemoteAccessor implements 
 
 	private HessianProxyFactory proxyFactory = new HessianProxyFactory();
 
-	@Nullable
 	private Object hessianProxy;
 
 
@@ -78,7 +74,7 @@ public class HessianClientInterceptor extends UrlBasedRemoteAccessor implements 
 	 * <p>Allows to use an externally configured factory instance,
 	 * in particular a custom HessianProxyFactory subclass.
 	 */
-	public void setProxyFactory(@Nullable HessianProxyFactory proxyFactory) {
+	public void setProxyFactory(HessianProxyFactory proxyFactory) {
 		this.proxyFactory = (proxyFactory != null ? proxyFactory : new HessianProxyFactory());
 	}
 
@@ -98,14 +94,6 @@ public class HessianClientInterceptor extends UrlBasedRemoteAccessor implements 
 	 */
 	public void setSendCollectionType(boolean sendCollectionType) {
 		this.proxyFactory.getSerializerFactory().setSendCollectionType(sendCollectionType);
-	}
-
-	/**
-	 * Set whether to allow non-serializable types as Hessian arguments
-	 * and return values. Default is "true".
-	 */
-	public void setAllowNonSerializable(boolean allowNonSerializable) {
-		this.proxyFactory.getSerializerFactory().setAllowNonSerializable(allowNonSerializable);
 	}
 
 	/**
@@ -152,21 +140,6 @@ public class HessianClientInterceptor extends UrlBasedRemoteAccessor implements 
 	 */
 	public void setChunkedPost(boolean chunkedPost) {
 		this.proxyFactory.setChunkedPost(chunkedPost);
-	}
-
-	/**
-	 * Specify a custom HessianConnectionFactory to use for the Hessian client.
-	 */
-	public void setConnectionFactory(HessianConnectionFactory connectionFactory) {
-		this.proxyFactory.setConnectionFactory(connectionFactory);
-	}
-
-	/**
-	 * Set the socket connect timeout to use for the Hessian client.
-	 * @see com.caucho.hessian.client.HessianProxyFactory#setConnectTimeout
-	 */
-	public void setConnectTimeout(long timeout) {
-		this.proxyFactory.setConnectTimeout(timeout);
 	}
 
 	/**
@@ -234,12 +207,10 @@ public class HessianClientInterceptor extends UrlBasedRemoteAccessor implements 
 	 */
 	protected Object createHessianProxy(HessianProxyFactory proxyFactory) throws MalformedURLException {
 		Assert.notNull(getServiceInterface(), "'serviceInterface' is required");
-		return proxyFactory.create(getServiceInterface(), getServiceUrl(), getBeanClassLoader());
+		return proxyFactory.create(getServiceInterface(), getServiceUrl());
 	}
 
 
-	@Override
-	@Nullable
 	public Object invoke(MethodInvocation invocation) throws Throwable {
 		if (this.hessianProxy == null) {
 			throw new IllegalStateException("HessianClientInterceptor is not properly initialized - " +

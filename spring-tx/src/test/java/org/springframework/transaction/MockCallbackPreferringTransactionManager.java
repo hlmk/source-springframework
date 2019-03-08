@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.transaction;
 
-import org.springframework.lang.Nullable;
 import org.springframework.transaction.support.CallbackPreferringPlatformTransactionManager;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
@@ -32,7 +31,7 @@ public class MockCallbackPreferringTransactionManager implements CallbackPreferr
 
 
 	@Override
-	public <T> T execute(TransactionDefinition definition, TransactionCallback<T> callback) throws TransactionException {
+	public Object execute(TransactionDefinition definition, TransactionCallback callback) throws TransactionException {
 		this.definition = definition;
 		this.status = new SimpleTransactionStatus();
 		return callback.doInTransaction(this.status);
@@ -48,7 +47,7 @@ public class MockCallbackPreferringTransactionManager implements CallbackPreferr
 
 
 	@Override
-	public TransactionStatus getTransaction(@Nullable TransactionDefinition definition) throws TransactionException {
+	public TransactionStatus getTransaction(TransactionDefinition definition) throws TransactionException {
 		throw new UnsupportedOperationException();
 	}
 

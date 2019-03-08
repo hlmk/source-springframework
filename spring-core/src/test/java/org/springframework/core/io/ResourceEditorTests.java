@@ -18,11 +18,9 @@ package org.springframework.core.io;
 
 import java.beans.PropertyEditor;
 
-import org.junit.Test;
-
-import org.springframework.core.env.StandardEnvironment;
-
 import static org.junit.Assert.*;
+import org.junit.Test;
+import org.springframework.core.env.StandardEnvironment;
 
 /**
  * Unit tests for the {@link ResourceEditor} class.
@@ -31,7 +29,7 @@ import static org.junit.Assert.*;
  * @author Arjen Poutsma
  * @author Dave Syer
  */
-public class ResourceEditorTests {
+public final class ResourceEditorTests {
 
 	@Test
 	public void sunnyDay() throws Exception {
@@ -75,7 +73,7 @@ public class ResourceEditorTests {
 		}
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected=IllegalArgumentException.class)
 	public void testStrictSystemPropertyReplacement() {
 		PropertyEditor editor = new ResourceEditor(new DefaultResourceLoader(), new StandardEnvironment(), false);
 		System.setProperty("test.prop", "foo");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,21 +27,21 @@ import org.aspectj.lang.reflect.SourceLocation;
 import org.aspectj.runtime.internal.AroundClosure;
 
 import org.springframework.aop.ProxyMethodInvocation;
-import org.springframework.core.DefaultParameterNameDiscoverer;
-import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.lang.Nullable;
+import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.util.Assert;
 
 /**
- * An implementation of the AspectJ {@link ProceedingJoinPoint} interface
- * wrapping an AOP Alliance {@link org.aopalliance.intercept.MethodInvocation}.
+ * Implementation of AspectJ ProceedingJoinPoint interface
+ * wrapping an AOP Alliance MethodInvocation.
  *
- * <p><b>Note</b>: The {@code getThis()} method returns the current Spring AOP proxy.
+ * <p><b>Note</b>: the {@code getThis()} method returns the current Spring AOP proxy.
  * The {@code getTarget()} method returns the current Spring AOP target (which may be
- * {@code null} if there is no target instance) as a plain POJO without any advice.
- * <b>If you want to call the object and have the advice take effect, use {@code getThis()}.</b>
- * A common example is casting the object to an introduced interface in the implementation of
- * an introduction. There is no such distinction between target and proxy in AspectJ itself.
+ * {@code null} if there is no target), and is a plain POJO without any advice.
+ * <b>If you want to call the object and have the advice take effect, use
+ * {@code getThis()}.</b> A common example is casting the object to an
+ * introduced interface in the implementation of an introduction.
+ *
+ * <p>Of course there is no such distinction between target and proxy in AspectJ.
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -51,19 +51,14 @@ import org.springframework.util.Assert;
  */
 public class MethodInvocationProceedingJoinPoint implements ProceedingJoinPoint, JoinPoint.StaticPart {
 
-	private static final ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
-
 	private final ProxyMethodInvocation methodInvocation;
 
-	@Nullable
-	private Object[] args;
+	private Object[] defensiveCopyOfArgs;
 
-	/** Lazily initialized signature object. */
-	@Nullable
+	/** Lazily initialized signature object */
 	private Signature signature;
 
-	/** Lazily initialized source location object. */
-	@Nullable
+	/** Lazily initialized source location object */
 	private SourceLocation sourceLocation;
 
 
@@ -77,18 +72,14 @@ public class MethodInvocationProceedingJoinPoint implements ProceedingJoinPoint,
 		this.methodInvocation = methodInvocation;
 	}
 
-
-	@Override
 	public void set$AroundClosure(AroundClosure aroundClosure) {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public Object proceed() throws Throwable {
 		return this.methodInvocation.invocableClone().proceed();
 	}
 
-	@Override
 	public Object proceed(Object[] arguments) throws Throwable {
 		Assert.notNull(arguments, "Argument array passed to proceed cannot be null");
 		if (arguments.length != this.methodInvocation.getArguments().length) {
@@ -103,7 +94,6 @@ public class MethodInvocationProceedingJoinPoint implements ProceedingJoinPoint,
 	/**
 	 * Returns the Spring AOP proxy. Cannot be {@code null}.
 	 */
-	@Override
 	public Object getThis() {
 		return this.methodInvocation.getProxy();
 	}
@@ -111,29 +101,26 @@ public class MethodInvocationProceedingJoinPoint implements ProceedingJoinPoint,
 	/**
 	 * Returns the Spring AOP target. May be {@code null} if there is no target.
 	 */
-	@Override
-	@Nullable
 	public Object getTarget() {
 		return this.methodInvocation.getThis();
 	}
 
-	@Override
 	public Object[] getArgs() {
-		if (this.args == null) {
-			this.args = this.methodInvocation.getArguments().clone();
+		if (this.defensiveCopyOfArgs == null) {
+			Object[] argsSource = this.methodInvocation.getArguments();
+			this.defensiveCopyOfArgs = new Object[argsSource.length];
+			System.arraycopy(argsSource, 0, this.defensiveCopyOfArgs, 0, argsSource.length);
 		}
-		return this.args;
+		return this.defensiveCopyOfArgs;
 	}
 
-	@Override
 	public Signature getSignature() {
 		if (this.signature == null) {
 			this.signature = new MethodSignatureImpl();
 		}
-		return this.signature;
+		return signature;
 	}
 
-	@Override
 	public SourceLocation getSourceLocation() {
 		if (this.sourceLocation == null) {
 			this.sourceLocation = new SourceLocationImpl();
@@ -141,33 +128,27 @@ public class MethodInvocationProceedingJoinPoint implements ProceedingJoinPoint,
 		return this.sourceLocation;
 	}
 
-	@Override
 	public String getKind() {
 		return ProceedingJoinPoint.METHOD_EXECUTION;
 	}
 
-	@Override
 	public int getId() {
 		// TODO: It's just an adapter but returning 0 might still have side effects...
 		return 0;
 	}
 
-	@Override
 	public JoinPoint.StaticPart getStaticPart() {
 		return this;
 	}
 
-	@Override
 	public String toShortString() {
 		return "execution(" + getSignature().toShortString() + ")";
 	}
 
-	@Override
 	public String toLongString() {
 		return "execution(" + getSignature().toLongString() + ")";
 	}
 
-	@Override
 	public String toString() {
 		return "execution(" + getSignature().toString() + ")";
 	}
@@ -178,76 +159,61 @@ public class MethodInvocationProceedingJoinPoint implements ProceedingJoinPoint,
 	 */
 	private class MethodSignatureImpl implements MethodSignature {
 
-		@Nullable
 		private volatile String[] parameterNames;
 
-		@Override
 		public String getName() {
 			return methodInvocation.getMethod().getName();
 		}
 
-		@Override
 		public int getModifiers() {
 			return methodInvocation.getMethod().getModifiers();
 		}
 
-		@Override
-		public Class<?> getDeclaringType() {
+		public Class getDeclaringType() {
 			return methodInvocation.getMethod().getDeclaringClass();
 		}
 
-		@Override
 		public String getDeclaringTypeName() {
 			return methodInvocation.getMethod().getDeclaringClass().getName();
 		}
 
-		@Override
-		public Class<?> getReturnType() {
+		public Class getReturnType() {
 			return methodInvocation.getMethod().getReturnType();
 		}
 
-		@Override
 		public Method getMethod() {
 			return methodInvocation.getMethod();
 		}
 
-		@Override
-		public Class<?>[] getParameterTypes() {
+		public Class[] getParameterTypes() {
 			return methodInvocation.getMethod().getParameterTypes();
 		}
 
-		@Override
-		@Nullable
 		public String[] getParameterNames() {
 			if (this.parameterNames == null) {
-				this.parameterNames = parameterNameDiscoverer.getParameterNames(getMethod());
+				this.parameterNames = (new LocalVariableTableParameterNameDiscoverer()).getParameterNames(getMethod());
 			}
 			return this.parameterNames;
 		}
 
-		@Override
-		public Class<?>[] getExceptionTypes() {
+		public Class[] getExceptionTypes() {
 			return methodInvocation.getMethod().getExceptionTypes();
 		}
 
-		@Override
 		public String toShortString() {
 			return toString(false, false, false, false);
 		}
 
-		@Override
 		public String toLongString() {
 			return toString(true, true, true, true);
 		}
 
-		@Override
 		public String toString() {
 			return toString(false, true, false, true);
 		}
 
 		private String toString(boolean includeModifier, boolean includeReturnTypeAndArgs,
 				boolean useLongReturnAndArgumentTypeName, boolean useLongTypeName) {
-
 			StringBuilder sb = new StringBuilder();
 			if (includeModifier) {
 				sb.append(Modifier.toString(getModifiers()));
@@ -261,15 +227,14 @@ public class MethodInvocationProceedingJoinPoint implements ProceedingJoinPoint,
 			sb.append(".");
 			sb.append(getMethod().getName());
 			sb.append("(");
-			Class<?>[] parametersTypes = getParameterTypes();
+			Class[] parametersTypes = getParameterTypes();
 			appendTypes(sb, parametersTypes, includeReturnTypeAndArgs, useLongReturnAndArgumentTypeName);
 			sb.append(")");
 			return sb.toString();
 		}
 
-		private void appendTypes(StringBuilder sb, Class<?>[] types, boolean includeArgs,
-				boolean useLongReturnAndArgumentTypeName) {
-
+		private void appendTypes(StringBuilder sb, Class<?>[] types,
+				boolean includeArgs, boolean useLongReturnAndArgumentTypeName) {
 			if (includeArgs) {
 				for (int size = types.length, i = 0; i < size; i++) {
 					appendType(sb, types[i], useLongReturnAndArgumentTypeName);
@@ -302,26 +267,21 @@ public class MethodInvocationProceedingJoinPoint implements ProceedingJoinPoint,
 	 */
 	private class SourceLocationImpl implements SourceLocation {
 
-		@Override
-		public Class<?> getWithinType() {
+		public Class getWithinType() {
 			if (methodInvocation.getThis() == null) {
 				throw new UnsupportedOperationException("No source location joinpoint available: target is null");
 			}
 			return methodInvocation.getThis().getClass();
 		}
 
-		@Override
 		public String getFileName() {
 			throw new UnsupportedOperationException();
 		}
 
-		@Override
 		public int getLine() {
 			throw new UnsupportedOperationException();
 		}
 
-		@Override
-		@Deprecated
 		public int getColumn() {
 			throw new UnsupportedOperationException();
 		}

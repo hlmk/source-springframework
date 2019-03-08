@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Hashtable;
 
-import org.springframework.lang.Nullable;
-
 /**
  * Adapter that implements WebLogic ClassPreProcessor interface, delegating to a
  * standard JDK {@link ClassFileTransformer} underneath.
@@ -43,16 +41,15 @@ class WebLogicClassPreProcessorAdapter implements InvocationHandler {
 
 
 	/**
-	 * Construct a new {@link WebLogicClassPreProcessorAdapter}.
+	 * Creates a new {@link WebLogicClassPreProcessorAdapter}.
+	 * @param transformer the {@link ClassFileTransformer} to be adapted
+	 * (must not be {@code null})
 	 */
 	public WebLogicClassPreProcessorAdapter(ClassFileTransformer transformer, ClassLoader loader) {
 		this.transformer = transformer;
 		this.loader = loader;
 	}
 
-
-	@Override
-	@Nullable
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		String name = method.getName();
 		if ("equals".equals(name)) {

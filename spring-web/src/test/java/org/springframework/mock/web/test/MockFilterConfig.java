@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,12 @@ import java.util.Map;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletContext;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
  * Mock implementation of the {@link javax.servlet.FilterConfig} interface.
  *
- * <p>Used for testing the web framework; also useful for testing
+ * <p>Used for testing the web framework; also usefol for testing
  * custom {@link javax.servlet.Filter} implementations.
  *
  * @author Juergen Hoeller
@@ -43,7 +42,7 @@ public class MockFilterConfig implements FilterConfig {
 
 	private final String filterName;
 
-	private final Map<String, String> initParameters = new LinkedHashMap<>();
+	private final Map<String, String> initParameters = new LinkedHashMap<String, String>();
 
 
 	/**
@@ -65,7 +64,7 @@ public class MockFilterConfig implements FilterConfig {
 	 * Create a new MockFilterConfig.
 	 * @param servletContext the ServletContext that the servlet runs in
 	 */
-	public MockFilterConfig(@Nullable ServletContext servletContext) {
+	public MockFilterConfig(ServletContext servletContext) {
 		this(servletContext, "");
 	}
 
@@ -74,7 +73,7 @@ public class MockFilterConfig implements FilterConfig {
 	 * @param servletContext the ServletContext that the servlet runs in
 	 * @param filterName the name of the filter
 	 */
-	public MockFilterConfig(@Nullable ServletContext servletContext, String filterName) {
+	public MockFilterConfig(ServletContext servletContext, String filterName) {
 		this.servletContext = (servletContext != null ? servletContext : new MockServletContext());
 		this.filterName = filterName;
 	}
@@ -82,12 +81,12 @@ public class MockFilterConfig implements FilterConfig {
 
 	@Override
 	public String getFilterName() {
-		return this.filterName;
+		return filterName;
 	}
 
 	@Override
 	public ServletContext getServletContext() {
-		return this.servletContext;
+		return servletContext;
 	}
 
 	public void addInitParameter(String name, String value) {

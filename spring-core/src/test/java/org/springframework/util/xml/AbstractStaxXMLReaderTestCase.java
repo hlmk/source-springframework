@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.sax.SAXSource;
 
+import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
+import static org.mockito.BDDMockito.*;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.w3c.dom.Node;
@@ -37,18 +39,13 @@ import org.xml.sax.Locator;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.tests.MockitoUtils;
 import org.springframework.tests.MockitoUtils.InvocationArgumentsAdapter;
 
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
-
-/**
- * @author Arjen Poutsma
- */
 public abstract class AbstractStaxXMLReaderTestCase {
 
 	protected static XMLInputFactory inputFactory;
@@ -57,16 +54,13 @@ public abstract class AbstractStaxXMLReaderTestCase {
 
 	private ContentHandler standardContentHandler;
 
-
 	@Before
-	@SuppressWarnings("deprecation")  // on JDK 9
 	public void setUp() throws Exception {
 		inputFactory = XMLInputFactory.newInstance();
-		standardReader = org.xml.sax.helpers.XMLReaderFactory.createXMLReader();
+		standardReader = XMLReaderFactory.createXMLReader();
 		standardContentHandler = mockContentHandler();
 		standardReader.setContentHandler(standardContentHandler);
 	}
-
 
 	@Test
 	public void contentHandlerNamespacesNoPrefixes() throws Exception {
@@ -149,16 +143,17 @@ public abstract class AbstractStaxXMLReaderTestCase {
 		inputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", Boolean.FALSE);
 
 		LexicalHandler actualLexicalHandler = mockLexicalHandler();
-		willAnswer(invocation -> invocation.getArguments()[0] = "element").
-				given(actualLexicalHandler).startDTD(anyString(), anyString(), anyString());
+		willAnswer(new Answer<Object>() {
+			public Object answer(InvocationOnMock invocation) throws Throwable {
+				return invocation.getArguments()[0] = "element";
+			}
+		}).given(actualLexicalHandler).startDTD(anyString(), anyString(), anyString());
 		AbstractStaxXMLReader staxXmlReader = createStaxXmlReader(testLexicalHandlerXml.getInputStream());
 		staxXmlReader.setProperty("http://xml.org/sax/properties/lexical-handler", actualLexicalHandler);
 		staxXmlReader.parse(new InputSource());
 
-		// TODO: broken comparison since Mockito 2.2 upgrade
-		// verifyIdenticalInvocations(expectedLexicalHandler, actualLexicalHandler);
+		verifyIdenticalInvocations(expectedLexicalHandler, actualLexicalHandler);
 	}
-
 
 	private LexicalHandler mockLexicalHandler() throws Exception {
 		LexicalHandler lexicalHandler = mock(LexicalHandler.class);
@@ -170,12 +165,13 @@ public abstract class AbstractStaxXMLReaderTestCase {
 		return getClass().getResourceAsStream("testContentHandler.xml");
 	}
 
+	protected abstract AbstractStaxXMLReader createStaxXmlReader(InputStream inputStream) throws XMLStreamException;
+
 	protected final ContentHandler mockContentHandler() throws Exception {
 		ContentHandler contentHandler = mock(ContentHandler.class);
 		willAnswer(new CopyCharsAnswer()).given(contentHandler).characters(any(char[].class), anyInt(), anyInt());
 		willAnswer(new CopyCharsAnswer()).given(contentHandler).ignorableWhitespace(any(char[].class), anyInt(), anyInt());
 		willAnswer(new Answer<Object>() {
-			@Override
 			public Object answer(InvocationOnMock invocation) throws Throwable {
 				invocation.getArguments()[3] = new AttributesImpl((Attributes) invocation.getArguments()[3]);
 				return null;
@@ -189,15 +185,10 @@ public abstract class AbstractStaxXMLReaderTestCase {
 				new SkipLocatorArgumentsAdapter(), new CharArrayToStringAdapter(), new PartialAttributesAdapter());
 	}
 
-	protected abstract AbstractStaxXMLReader createStaxXmlReader(InputStream inputStream) throws XMLStreamException;
-
-
 	private static class SkipLocatorArgumentsAdapter implements InvocationArgumentsAdapter {
-
-		@Override
 		public Object[] adaptArguments(Object[] arguments) {
-			for (int i = 0; i < arguments.length; i++) {
-				if (arguments[i] instanceof Locator) {
+			for(int i=0; i<arguments.length; i++) {
+				if(arguments[i] instanceof Locator) {
 					arguments[i] = null;
 				}
 			}
@@ -205,12 +196,9 @@ public abstract class AbstractStaxXMLReaderTestCase {
 		}
 	}
 
-
 	private static class CharArrayToStringAdapter implements InvocationArgumentsAdapter {
-
-		@Override
 		public Object[] adaptArguments(Object[] arguments) {
-			if (arguments.length == 3 && arguments[0] instanceof char[]
+			if(arguments.length == 3 && arguments[0] instanceof char[]
 					&& arguments[1] instanceof Integer && arguments[2] instanceof Integer) {
 				return new Object[] {new String((char[]) arguments[0], (Integer) arguments[1], (Integer) arguments[2])};
 			}
@@ -218,24 +206,18 @@ public abstract class AbstractStaxXMLReaderTestCase {
 		}
 	}
 
-
 	private static class PartialAttributesAdapter implements InvocationArgumentsAdapter {
-
-		@Override
 		public Object[] adaptArguments(Object[] arguments) {
 			for (int i = 0; i < arguments.length; i++) {
-				if (arguments[i] instanceof Attributes) {
+				if(arguments[i] instanceof Attributes) {
 					arguments[i] = new PartialAttributes((Attributes) arguments[i]);
 				}
-			}
+			};
 			return arguments;
 		}
 	}
 
-
 	private static class CopyCharsAnswer implements Answer<Object> {
-
-		@Override
 		public Object answer(InvocationOnMock invocation) throws Throwable {
 			char[] chars = (char[]) invocation.getArguments()[0];
 			char[] copy = new char[chars.length];
@@ -245,13 +227,17 @@ public abstract class AbstractStaxXMLReaderTestCase {
 		}
 	}
 
-
 	private static class PartialAttributes {
 
-		private final Attributes attributes;
+		private Attributes attributes;
 
 		public PartialAttributes(Attributes attributes) {
 			this.attributes = attributes;
+		}
+
+		@Override
+		public int hashCode() {
+			return 1;
 		}
 
 		@Override
@@ -277,11 +263,5 @@ public abstract class AbstractStaxXMLReaderTestCase {
 			}
 			return true;
 		}
-
-		@Override
-		public int hashCode() {
-			return 1;
-		}
 	}
-
 }

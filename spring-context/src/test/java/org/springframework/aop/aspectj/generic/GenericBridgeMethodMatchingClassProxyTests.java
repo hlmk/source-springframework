@@ -16,9 +16,9 @@
 
 package org.springframework.aop.aspectj.generic;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * Tests for AspectJ pointcut expression matching when working with bridge methods.
@@ -30,7 +30,7 @@ import static org.junit.Assert.*;
  * @author Ramnivas Laddad
  * @author Chris Beams
  */
-public class GenericBridgeMethodMatchingClassProxyTests extends GenericBridgeMethodMatchingTests {
+public final class GenericBridgeMethodMatchingClassProxyTests extends GenericBridgeMethodMatchingTests {
 
 	@Test
 	public void testGenericDerivedInterfaceMethodThroughClass() {

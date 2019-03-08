@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,19 +22,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Locale;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.AbstractListableBeanFactoryTests;
 import org.springframework.tests.sample.beans.LifecycleBean;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Rod Johnson
  * @author Juergen Hoeller
- * @author Sam Brannen
  */
 public abstract class AbstractApplicationContextTests extends AbstractListableBeanFactoryTests {
 
@@ -48,8 +44,8 @@ public abstract class AbstractApplicationContextTests extends AbstractListableBe
 
 	protected TestListener parentListener = new TestListener();
 
-	@Before
-	public void setUp() throws Exception {
+	@Override
+	protected void setUp() throws Exception {
 		this.applicationContext = createContext();
 	}
 
@@ -70,8 +66,7 @@ public abstract class AbstractApplicationContextTests extends AbstractListableBe
 	 */
 	protected abstract ConfigurableApplicationContext createContext() throws Exception;
 
-	@Test
-	public void contextAwareSingletonWasCalledBack() throws Exception {
+	public void testContextAwareSingletonWasCalledBack() throws Exception {
 		ACATester aca = (ACATester) applicationContext.getBean("aca");
 		assertTrue("has had context set", aca.getApplicationContext() == applicationContext);
 		Object aca2 = applicationContext.getBean("aca");
@@ -79,8 +74,7 @@ public abstract class AbstractApplicationContextTests extends AbstractListableBe
 		assertTrue("Says is singleton", applicationContext.isSingleton("aca"));
 	}
 
-	@Test
-	public void contextAwarePrototypeWasCalledBack() throws Exception {
+	public void testContextAwarePrototypeWasCalledBack() throws Exception {
 		ACATester aca = (ACATester) applicationContext.getBean("aca-prototype");
 		assertTrue("has had context set", aca.getApplicationContext() == applicationContext);
 		Object aca2 = applicationContext.getBean("aca-prototype");
@@ -88,36 +82,30 @@ public abstract class AbstractApplicationContextTests extends AbstractListableBe
 		assertTrue("Says is prototype", !applicationContext.isSingleton("aca-prototype"));
 	}
 
-	@Test
-	public void parentNonNull() {
+	public void testParentNonNull() {
 		assertTrue("parent isn't null", applicationContext.getParent() != null);
 	}
 
-	@Test
-	public void grandparentNull() {
+	public void testGrandparentNull() {
 		assertTrue("grandparent is null", applicationContext.getParent().getParent() == null);
 	}
 
-	@Test
-	public void overrideWorked() throws Exception {
+	public void testOverrideWorked() throws Exception {
 		TestBean rod = (TestBean) applicationContext.getParent().getBean("rod");
 		assertTrue("Parent's name differs", rod.getName().equals("Roderick"));
 	}
 
-	@Test
-	public void grandparentDefinitionFound() throws Exception {
+	public void testGrandparentDefinitionFound() throws Exception {
 		TestBean dad = (TestBean) applicationContext.getBean("father");
 		assertTrue("Dad has correct name", dad.getName().equals("Albert"));
 	}
 
-	@Test
-	public void grandparentTypedDefinitionFound() throws Exception {
+	public void testGrandparentTypedDefinitionFound() throws Exception {
 		TestBean dad = applicationContext.getBean("father", TestBean.class);
 		assertTrue("Dad has correct name", dad.getName().equals("Albert"));
 	}
 
-	@Test
-	public void closeTriggersDestroy() {
+	public void testCloseTriggersDestroy() {
 		LifecycleBean lb = (LifecycleBean) applicationContext.getBean("lifecycle");
 		assertTrue("Not destroyed", !lb.isDestroyed());
 		applicationContext.close();
@@ -132,21 +120,25 @@ public abstract class AbstractApplicationContextTests extends AbstractListableBe
 		assertTrue("Destroyed", lb.isDestroyed());
 	}
 
-	@Test(expected = NoSuchMessageException.class)
-	public void messageSource() throws NoSuchMessageException {
+	public void testMessageSource() throws NoSuchMessageException {
 		assertEquals("message1", applicationContext.getMessage("code1", null, Locale.getDefault()));
 		assertEquals("message2", applicationContext.getMessage("code2", null, Locale.getDefault()));
 
-		applicationContext.getMessage("code0", null, Locale.getDefault());
+		try {
+			applicationContext.getMessage("code0", null, Locale.getDefault());
+			fail("looking for code0 should throw a NoSuchMessageException");
+		}
+		catch (NoSuchMessageException ex) {
+			// that's how it should be
+		}
 	}
 
-	@Test
-	public void events() throws Exception {
+	public void testEvents() throws Exception {
 		doTestEvents(this.listener, this.parentListener, new MyEvent(this));
 	}
 
 	@Test
-	public void eventsWithNoSource() throws Exception {
+	public void testEventsWithNoSource() throws Exception {
 		// See SPR-10945 Serialized events result in a null source
 		MyEvent event = new MyEvent(this);
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -169,8 +161,7 @@ public abstract class AbstractApplicationContextTests extends AbstractListableBe
 		assertTrue("1 parent events after publication", parentListener.getEventCount() == 1);
 	}
 
-	@Test
-	public void beanAutomaticallyHearsEvents() throws Exception {
+	public void testBeanAutomaticallyHearsEvents() throws Exception {
 		//String[] listenerNames = ((ListableBeanFactory) applicationContext).getBeanDefinitionNames(ApplicationListener.class);
 		//assertTrue("listeners include beanThatListens", Arrays.asList(listenerNames).contains("beanThatListens"));
 		BeanThatListens b = (BeanThatListens) applicationContext.getBean("beanThatListens");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package org.springframework.core.type;
 import java.lang.reflect.Modifier;
 import java.util.LinkedHashSet;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 /**
  * {@link ClassMetadata} implementation that uses standard reflection
@@ -32,14 +30,14 @@ import org.springframework.util.StringUtils;
  */
 public class StandardClassMetadata implements ClassMetadata {
 
-	private final Class<?> introspectedClass;
+	private final Class introspectedClass;
 
 
 	/**
 	 * Create a new StandardClassMetadata wrapper for the given Class.
 	 * @param introspectedClass the Class to introspect
 	 */
-	public StandardClassMetadata(Class<?> introspectedClass) {
+	public StandardClassMetadata(Class introspectedClass) {
 		Assert.notNull(introspectedClass, "Class must not be null");
 		this.introspectedClass = introspectedClass;
 	}
@@ -47,75 +45,57 @@ public class StandardClassMetadata implements ClassMetadata {
 	/**
 	 * Return the underlying Class.
 	 */
-	public final Class<?> getIntrospectedClass() {
+	public final Class getIntrospectedClass() {
 		return this.introspectedClass;
 	}
 
 
-	@Override
 	public String getClassName() {
 		return this.introspectedClass.getName();
 	}
 
-	@Override
 	public boolean isInterface() {
 		return this.introspectedClass.isInterface();
 	}
 
-	@Override
-	public boolean isAnnotation() {
-		return this.introspectedClass.isAnnotation();
-	}
-
-	@Override
 	public boolean isAbstract() {
 		return Modifier.isAbstract(this.introspectedClass.getModifiers());
 	}
 
-	@Override
 	public boolean isConcrete() {
 		return !(isInterface() || isAbstract());
 	}
 
-	@Override
 	public boolean isFinal() {
 		return Modifier.isFinal(this.introspectedClass.getModifiers());
 	}
 
-	@Override
 	public boolean isIndependent() {
 		return (!hasEnclosingClass() ||
 				(this.introspectedClass.getDeclaringClass() != null &&
 						Modifier.isStatic(this.introspectedClass.getModifiers())));
 	}
 
-	@Override
 	public boolean hasEnclosingClass() {
 		return (this.introspectedClass.getEnclosingClass() != null);
 	}
 
-	@Override
-	@Nullable
 	public String getEnclosingClassName() {
-		Class<?> enclosingClass = this.introspectedClass.getEnclosingClass();
+		Class enclosingClass = this.introspectedClass.getEnclosingClass();
 		return (enclosingClass != null ? enclosingClass.getName() : null);
 	}
 
-	@Override
 	public boolean hasSuperClass() {
 		return (this.introspectedClass.getSuperclass() != null);
 	}
 
-	@Override
-	@Nullable
 	public String getSuperClassName() {
-		Class<?> superClass = this.introspectedClass.getSuperclass();
+		Class superClass = this.introspectedClass.getSuperclass();
 		return (superClass != null ? superClass.getName() : null);
 	}
 
-	@Override
 	public String[] getInterfaceNames() {
-		Class<?>[] ifcs = this.introspectedClass.getInterfaces();
+		Class[] ifcs = this.introspectedClass.getInterfaces();
 		String[] ifcNames = new String[ifcs.length];
 		for (int i = 0; i < ifcs.length; i++) {
 			ifcNames[i] = ifcs[i].getName();
@@ -123,13 +103,12 @@ public class StandardClassMetadata implements ClassMetadata {
 		return ifcNames;
 	}
 
-	@Override
 	public String[] getMemberClassNames() {
-		LinkedHashSet<String> memberClassNames = new LinkedHashSet<>(4);
+		LinkedHashSet<String> memberClassNames = new LinkedHashSet<String>();
 		for (Class<?> nestedClass : this.introspectedClass.getDeclaredClasses()) {
 			memberClassNames.add(nestedClass.getName());
 		}
-		return StringUtils.toStringArray(memberClassNames);
+		return memberClassNames.toArray(new String[memberClassNames.size()]);
 	}
 
 }

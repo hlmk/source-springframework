@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class ReplaceOverride extends MethodOverride {
 
 	private final String methodReplacerBeanName;
 
-	private List<String> typeIdentifiers = new LinkedList<>();
+	private List<String> typeIdentifiers = new LinkedList<String>();
 
 
 	/**
@@ -79,13 +79,12 @@ public class ReplaceOverride extends MethodOverride {
 			return true;
 		}
 		// If we get here, we need to insist on precise argument matching...
-		if (this.typeIdentifiers.size() != method.getParameterCount()) {
+		if (this.typeIdentifiers.size() != method.getParameterTypes().length) {
 			return false;
 		}
-		Class<?>[] parameterTypes = method.getParameterTypes();
 		for (int i = 0; i < this.typeIdentifiers.size(); i++) {
 			String identifier = this.typeIdentifiers.get(i);
-			if (!parameterTypes[i].getName().contains(identifier)) {
+			if (!method.getParameterTypes()[i].getName().contains(identifier)) {
 				return false;
 			}
 		}
@@ -113,7 +112,8 @@ public class ReplaceOverride extends MethodOverride {
 
 	@Override
 	public String toString() {
-		return "Replace override for method '" + getMethodName() + "'";
+		return "Replace override for method '" + getMethodName() + "; will call bean '" +
+				this.methodReplacerBeanName + "'";
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,9 +36,9 @@ import org.springframework.util.Assert;
 public abstract class StaticMethodMatcherPointcutAdvisor extends StaticMethodMatcherPointcut
 		implements PointcutAdvisor, Ordered, Serializable {
 
-	private Advice advice = EMPTY_ADVICE;
+	private int order = Integer.MAX_VALUE;
 
-	private int order = Ordered.LOWEST_PRECEDENCE;
+	private Advice advice;
 
 
 	/**
@@ -63,7 +63,6 @@ public abstract class StaticMethodMatcherPointcutAdvisor extends StaticMethodMat
 		this.order = order;
 	}
 
-	@Override
 	public int getOrder() {
 		return this.order;
 	}
@@ -72,17 +71,14 @@ public abstract class StaticMethodMatcherPointcutAdvisor extends StaticMethodMat
 		this.advice = advice;
 	}
 
-	@Override
 	public Advice getAdvice() {
 		return this.advice;
 	}
 
-	@Override
 	public boolean isPerInstance() {
 		return true;
 	}
 
-	@Override
 	public Pointcut getPointcut() {
 		return this;
 	}

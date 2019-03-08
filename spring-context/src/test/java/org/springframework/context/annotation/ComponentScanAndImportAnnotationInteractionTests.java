@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.context.annotation;
 import org.junit.Test;
 
 import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.context.annotation.componentscan.importing.ImportingConfig;
 import org.springframework.context.annotation.componentscan.simple.SimpleComponent;
 
 /**
@@ -59,7 +58,7 @@ public class ComponentScanAndImportAnnotationInteractionTests {
 	@Test
 	public void componentScanViaImportUsingAsm() {
 		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-		ctx.registerBeanDefinition("config", new RootBeanDefinition(Config3.class.getName()));
+		ctx.registerBeanDefinition("config4", new RootBeanDefinition(Config3.class.getName()));
 		ctx.refresh();
 		ctx.getBean(SimpleComponent.class);
 	}
@@ -72,33 +71,28 @@ public class ComponentScanAndImportAnnotationInteractionTests {
 		ctx.getBean(SimpleComponent.class);
 	}
 
-	@Test
-	public void circularImportViaComponentScan() {
-		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-		ctx.registerBeanDefinition("config", new RootBeanDefinition(ImportingConfig.class.getName()));
-		ctx.refresh();
-		ctx.getBean(SimpleComponent.class);
-	}
 
-
+	@Configuration
 	@ComponentScan("org.springframework.context.annotation.componentscan.simple")
-	static final class Config1 {
+	static class Config1 {
 	}
 
 
+	@Configuration
 	@Import(org.springframework.context.annotation.componentscan.simple.SimpleComponent.class)
-	static final class Config2 {
+	static class Config2 {
 	}
 
 
+	@Configuration
 	@Import(ImportedConfig.class)
-	static final class Config3 {
+	static class Config3 {
 	}
 
 
+	@Configuration
 	@ComponentScan("org.springframework.context.annotation.componentscan.simple")
-	@ComponentScan("org.springframework.context.annotation.componentscan.importing")
-	public static final class ImportedConfig {
+	public static class ImportedConfig {
 	}
 
 }

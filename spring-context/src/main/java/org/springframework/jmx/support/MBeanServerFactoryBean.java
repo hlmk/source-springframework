@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.jmx.MBeanServerNotFoundException;
-import org.springframework.lang.Nullable;
 
 /**
  * {@link FactoryBean} that obtains an {@link javax.management.MBeanServer} reference
@@ -58,15 +57,12 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 
 	private boolean locateExistingServerIfPossible = false;
 
-	@Nullable
 	private String agentId;
 
-	@Nullable
 	private String defaultDomain;
 
 	private boolean registerWithFactory = true;
 
-	@Nullable
 	private MBeanServer server;
 
 	private boolean newlyRegistered = false;
@@ -122,7 +118,6 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 	/**
 	 * Creates the {@code MBeanServer} instance.
 	 */
-	@Override
 	public void afterPropertiesSet() throws MBeanServerNotFoundException {
 		// Try to locate existing MBeanServer, if desired.
 		if (this.locateExistingServerIfPossible || this.agentId != null) {
@@ -135,7 +130,7 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 				if (this.agentId != null) {
 					throw ex;
 				}
-				logger.debug("No existing MBeanServer found - creating new one");
+				logger.info("No existing MBeanServer found - creating new one");
 			}
 		}
 
@@ -161,7 +156,7 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 	 * @see JmxUtils#locateMBeanServer(String)
 	 * @see javax.management.MBeanServerFactory#findMBeanServer(String)
 	 */
-	protected MBeanServer locateMBeanServer(@Nullable String agentId) throws MBeanServerNotFoundException {
+	protected MBeanServer locateMBeanServer(String agentId) throws MBeanServerNotFoundException {
 		return JmxUtils.locateMBeanServer(agentId);
 	}
 
@@ -174,7 +169,7 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 	 * @see javax.management.MBeanServerFactory#createMBeanServer
 	 * @see javax.management.MBeanServerFactory#newMBeanServer
 	 */
-	protected MBeanServer createMBeanServer(@Nullable String defaultDomain, boolean registerWithFactory) {
+	protected MBeanServer createMBeanServer(String defaultDomain, boolean registerWithFactory) {
 		if (registerWithFactory) {
 			return MBeanServerFactory.createMBeanServer(defaultDomain);
 		}
@@ -184,18 +179,14 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 	}
 
 
-	@Override
-	@Nullable
 	public MBeanServer getObject() {
 		return this.server;
 	}
 
-	@Override
 	public Class<? extends MBeanServer> getObjectType() {
 		return (this.server != null ? this.server.getClass() : MBeanServer.class);
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}
@@ -204,7 +195,6 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 	/**
 	 * Unregisters the {@code MBeanServer} instance, if necessary.
 	 */
-	@Override
 	public void destroy() {
 		if (this.newlyRegistered) {
 			MBeanServerFactory.releaseMBeanServer(this.server);

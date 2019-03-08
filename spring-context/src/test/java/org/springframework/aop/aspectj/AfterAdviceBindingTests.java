@@ -18,7 +18,6 @@ package org.springframework.aop.aspectj;
 
 import org.junit.Before;
 import org.junit.Test;
-
 import org.springframework.aop.aspectj.AdviceBindingTestAspect.AdviceBindingCollaborator;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
@@ -36,7 +35,7 @@ import static org.mockito.BDDMockito.*;
  * @author Rod Johnson
  * @author Chris Beams
  */
-public class AfterAdviceBindingTests {
+public final class AfterAdviceBindingTests {
 
 	private AdviceBindingCollaborator mockCollaborator;
 
@@ -44,11 +43,10 @@ public class AfterAdviceBindingTests {
 
 	private TestBean testBeanTarget;
 
-
 	@Before
-	public void setup() throws Exception {
+	public void setUp() throws Exception {
 		ClassPathXmlApplicationContext ctx =
-				new ClassPathXmlApplicationContext(getClass().getSimpleName() + ".xml", getClass());
+			new ClassPathXmlApplicationContext(getClass().getSimpleName() + ".xml", getClass());
 		AdviceBindingTestAspect afterAdviceAspect = (AdviceBindingTestAspect) ctx.getBean("testAspect");
 
 		testBeanProxy = (ITestBean) ctx.getBean("testBean");
@@ -60,7 +58,6 @@ public class AfterAdviceBindingTests {
 		mockCollaborator = mock(AdviceBindingCollaborator.class);
 		afterAdviceAspect.setCollaborator(mockCollaborator);
 	}
-
 
 	@Test
 	public void testOneIntArg() {

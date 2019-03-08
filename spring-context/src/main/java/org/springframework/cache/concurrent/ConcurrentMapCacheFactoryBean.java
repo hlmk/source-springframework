@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -42,12 +41,10 @@ public class ConcurrentMapCacheFactoryBean
 
 	private String name = "";
 
-	@Nullable
 	private ConcurrentMap<Object, Object> store;
 
 	private boolean allowNullValues = true;
 
-	@Nullable
 	private ConcurrentMapCache cache;
 
 
@@ -77,32 +74,26 @@ public class ConcurrentMapCacheFactoryBean
 		this.allowNullValues = allowNullValues;
 	}
 
-	@Override
 	public void setBeanName(String beanName) {
 		if (!StringUtils.hasLength(this.name)) {
 			setName(beanName);
 		}
 	}
 
-	@Override
 	public void afterPropertiesSet() {
 		this.cache = (this.store != null ? new ConcurrentMapCache(this.name, this.store, this.allowNullValues) :
 				new ConcurrentMapCache(this.name, this.allowNullValues));
 	}
 
 
-	@Override
-	@Nullable
 	public ConcurrentMapCache getObject() {
 		return this.cache;
 	}
 
-	@Override
 	public Class<?> getObjectType() {
 		return ConcurrentMapCache.class;
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}

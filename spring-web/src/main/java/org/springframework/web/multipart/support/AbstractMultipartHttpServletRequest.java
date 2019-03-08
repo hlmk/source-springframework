@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import javax.servlet.http.HttpServletRequestWrapper;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.lang.Nullable;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,7 +42,6 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 public abstract class AbstractMultipartHttpServletRequest extends HttpServletRequestWrapper
 		implements MultipartHttpServletRequest {
 
-	@Nullable
 	private MultiValueMap<String, MultipartFile> multipartFiles;
 
 
@@ -61,12 +59,10 @@ public abstract class AbstractMultipartHttpServletRequest extends HttpServletReq
 		return (HttpServletRequest) super.getRequest();
 	}
 
-	@Override
 	public HttpMethod getRequestMethod() {
-		return HttpMethod.resolve(getRequest().getMethod());
+		return HttpMethod.valueOf(getRequest().getMethod());
 	}
 
-	@Override
 	public HttpHeaders getRequestHeaders() {
 		HttpHeaders headers = new HttpHeaders();
 		Enumeration<String> headerNames = getHeaderNames();
@@ -77,17 +73,14 @@ public abstract class AbstractMultipartHttpServletRequest extends HttpServletReq
 		return headers;
 	}
 
-	@Override
 	public Iterator<String> getFileNames() {
 		return getMultipartFiles().keySet().iterator();
 	}
 
-	@Override
 	public MultipartFile getFile(String name) {
 		return getMultipartFiles().getFirst(name);
 	}
 
-	@Override
 	public List<MultipartFile> getFiles(String name) {
 		List<MultipartFile> multipartFiles = getMultipartFiles().get(name);
 		if (multipartFiles != null) {
@@ -98,26 +91,12 @@ public abstract class AbstractMultipartHttpServletRequest extends HttpServletReq
 		}
 	}
 
-	@Override
 	public Map<String, MultipartFile> getFileMap() {
 		return getMultipartFiles().toSingleValueMap();
 	}
 
-	@Override
 	public MultiValueMap<String, MultipartFile> getMultiFileMap() {
 		return getMultipartFiles();
-	}
-
-	/**
-	 * Determine whether the underlying multipart request has been resolved.
-	 * @return {@code true} when eagerly initialized or lazily triggered,
-	 * {@code false} in case of a lazy-resolution request that got aborted
-	 * before any parameters or multipart files have been accessed
-	 * @since 4.3.15
-	 * @see #getMultipartFiles()
-	 */
-	public boolean isResolved() {
-		return (this.multipartFiles != null);
 	}
 
 
@@ -127,7 +106,7 @@ public abstract class AbstractMultipartHttpServletRequest extends HttpServletReq
 	 */
 	protected final void setMultipartFiles(MultiValueMap<String, MultipartFile> multipartFiles) {
 		this.multipartFiles =
-				new LinkedMultiValueMap<>(Collections.unmodifiableMap(multipartFiles));
+				new LinkedMultiValueMap<String, MultipartFile>(Collections.unmodifiableMap(multipartFiles));
 	}
 
 	/**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.jdbc.core.namedparam;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -31,9 +30,9 @@ import org.springframework.util.Assert;
  */
 public abstract class AbstractSqlParameterSource implements SqlParameterSource {
 
-	private final Map<String, Integer> sqlTypes = new HashMap<>();
+	private final Map<String, Integer> sqlTypes = new HashMap<String, Integer>();
 
-	private final Map<String, String> typeNames = new HashMap<>();
+	private final Map<String, String> typeNames = new HashMap<String, String>();
 
 
 	/**
@@ -62,10 +61,13 @@ public abstract class AbstractSqlParameterSource implements SqlParameterSource {
 	 * @return the SQL type of the parameter,
 	 * or {@code TYPE_UNKNOWN} if not registered
 	 */
-	@Override
 	public int getSqlType(String paramName) {
 		Assert.notNull(paramName, "Parameter name must not be null");
-		return this.sqlTypes.getOrDefault(paramName, TYPE_UNKNOWN);
+		Integer sqlType = this.sqlTypes.get(paramName);
+		if (sqlType != null) {
+			return sqlType;
+		}
+		return TYPE_UNKNOWN;
 	}
 
 	/**
@@ -74,8 +76,6 @@ public abstract class AbstractSqlParameterSource implements SqlParameterSource {
 	 * @return the type name of the parameter,
 	 * or {@code null} if not registered
 	 */
-	@Override
-	@Nullable
 	public String getTypeName(String paramName) {
 		Assert.notNull(paramName, "Parameter name must not be null");
 		return this.typeNames.get(paramName);

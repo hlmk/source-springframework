@@ -16,19 +16,18 @@
 
 package org.springframework.expression.spel;
 
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
 
+import org.junit.Test;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests the evaluation of basic literals: boolean, integer, hex integer, long, real, null, date
  *
  * @author Andy Clement
  */
-public class LiteralTests extends AbstractExpressionTests {
+public class LiteralTests extends ExpressionTestCase {
 
 	@Test
 	public void testLiteralBoolean01() {

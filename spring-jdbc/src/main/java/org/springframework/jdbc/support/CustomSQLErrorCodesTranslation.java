@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.jdbc.support;
 
 import org.springframework.dao.DataAccessException;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -33,14 +32,13 @@ public class CustomSQLErrorCodesTranslation {
 
 	private String[] errorCodes = new String[0];
 
-	@Nullable
-	private Class<?> exceptionClass;
+	private Class exceptionClass;
 
 
 	/**
 	 * Set the SQL error codes to match.
 	 */
-	public void setErrorCodes(String... errorCodes) {
+	public void setErrorCodes(String[] errorCodes) {
 		this.errorCodes = StringUtils.sortStringArray(errorCodes);
 	}
 
@@ -54,8 +52,8 @@ public class CustomSQLErrorCodesTranslation {
 	/**
 	 * Set the exception class for the specified error codes.
 	 */
-	public void setExceptionClass(@Nullable Class<?> exceptionClass) {
-		if (exceptionClass != null && !DataAccessException.class.isAssignableFrom(exceptionClass)) {
+	public void setExceptionClass(Class exceptionClass) {
+		if (!DataAccessException.class.isAssignableFrom(exceptionClass)) {
 			throw new IllegalArgumentException("Invalid exception class [" + exceptionClass +
 					"]: needs to be a subclass of [org.springframework.dao.DataAccessException]");
 		}
@@ -65,8 +63,7 @@ public class CustomSQLErrorCodesTranslation {
 	/**
 	 * Return the exception class for the specified error codes.
 	 */
-	@Nullable
-	public Class<?> getExceptionClass() {
+	public Class getExceptionClass() {
 		return this.exceptionClass;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.springframework.expression.spel.support;
 
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
-
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.EvaluationException;
 import org.springframework.expression.Operation;
@@ -28,42 +28,45 @@ import org.springframework.expression.TypeComparator;
 import org.springframework.expression.TypeConverter;
 import org.springframework.expression.TypeLocator;
 
-import static org.junit.Assert.*;
-
 public class StandardComponentsTests {
 
 	@Test
 	public void testStandardEvaluationContext() {
 		StandardEvaluationContext context = new StandardEvaluationContext();
-		assertNotNull(context.getTypeComparator());
+		Assert.assertNotNull(context.getTypeComparator());
 
 		TypeComparator tc = new StandardTypeComparator();
 		context.setTypeComparator(tc);
-		assertEquals(tc, context.getTypeComparator());
+		Assert.assertEquals(tc,context.getTypeComparator());
 
 		TypeLocator tl = new StandardTypeLocator();
 		context.setTypeLocator(tl);
-		assertEquals(tl, context.getTypeLocator());
+		Assert.assertEquals(tl,context.getTypeLocator());
 	}
 
-	@Test(expected = EvaluationException.class)
+	@Test
 	public void testStandardOperatorOverloader() throws EvaluationException {
 		OperatorOverloader oo = new StandardOperatorOverloader();
-		assertFalse(oo.overridesOperation(Operation.ADD, null, null));
-		oo.operate(Operation.ADD, 2, 3);
+		Assert.assertFalse(oo.overridesOperation(Operation.ADD, null, null));
+		try {
+			oo.operate(Operation.ADD, 2, 3);
+			Assert.fail("should have failed");
+		} catch (EvaluationException e) {
+			// success
+		}
 	}
 
 	@Test
 	public void testStandardTypeLocator() {
 		StandardTypeLocator tl = new StandardTypeLocator();
 		List<String> prefixes = tl.getImportPrefixes();
-		assertEquals(1, prefixes.size());
+		Assert.assertEquals(1,prefixes.size());
 		tl.registerImport("java.util");
 		prefixes = tl.getImportPrefixes();
-		assertEquals(2, prefixes.size());
+		Assert.assertEquals(2,prefixes.size());
 		tl.removeImport("java.util");
 		prefixes = tl.getImportPrefixes();
-		assertEquals(1, prefixes.size());
+		Assert.assertEquals(1,prefixes.size());
 	}
 
 	@Test
@@ -73,3 +76,4 @@ public class StandardComponentsTests {
 	}
 
 }
+

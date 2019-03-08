@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 import javax.resource.cci.Connection;
@@ -30,7 +31,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -56,15 +56,13 @@ public class SingleConnectionFactory extends DelegatingConnectionFactory impleme
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	/** Wrapped Connection. */
-	@Nullable
+	/** Wrapped Connection */
 	private Connection target;
 
-	/** Proxy Connection. */
-	@Nullable
+	/** Proxy Connection */
 	private Connection connection;
 
-	/** Synchronization monitor for the shared Connection. */
+	/** Synchronization monitor for the shared Connection */
 	private final Object connectionMonitor = new Object();
 
 
@@ -131,7 +129,6 @@ public class SingleConnectionFactory extends DelegatingConnectionFactory impleme
 	 * <p>As this bean implements DisposableBean, a bean factory will
 	 * automatically invoke this on destruction of its cached singletons.
 	 */
-	@Override
 	public void destroy() {
 		resetConnection();
 	}
@@ -154,8 +151,8 @@ public class SingleConnectionFactory extends DelegatingConnectionFactory impleme
 			}
 			this.target = doCreateConnection();
 			prepareConnection(this.target);
-			if (logger.isDebugEnabled()) {
-				logger.debug("Established shared CCI Connection: " + this.target);
+			if (logger.isInfoEnabled()) {
+				logger.info("Established shared CCI Connection: " + this.target);
 			}
 			this.connection = getCloseSuppressingConnectionProxy(this.target);
 		}
@@ -180,9 +177,7 @@ public class SingleConnectionFactory extends DelegatingConnectionFactory impleme
 	 * @throws javax.resource.ResourceException if thrown by CCI API methods
 	 */
 	protected Connection doCreateConnection() throws ResourceException {
-		ConnectionFactory connectionFactory = getTargetConnectionFactory();
-		Assert.state(connectionFactory != null, "No 'targetConnectionFactory' set");
-		return connectionFactory.getConnection();
+		return getTargetConnectionFactory().getConnection();
 	}
 
 	/**
@@ -217,7 +212,7 @@ public class SingleConnectionFactory extends DelegatingConnectionFactory impleme
 	protected Connection getCloseSuppressingConnectionProxy(Connection target) {
 		return (Connection) Proxy.newProxyInstance(
 				Connection.class.getClassLoader(),
-				new Class<?>[] {Connection.class},
+				new Class[] {Connection.class},
 				new CloseSuppressingInvocationHandler(target));
 	}
 
@@ -225,7 +220,7 @@ public class SingleConnectionFactory extends DelegatingConnectionFactory impleme
 	/**
 	 * Invocation handler that suppresses close calls on CCI Connections.
 	 */
-	private static final class CloseSuppressingInvocationHandler implements InvocationHandler {
+	private static class CloseSuppressingInvocationHandler implements InvocationHandler {
 
 		private final Connection target;
 
@@ -233,8 +228,6 @@ public class SingleConnectionFactory extends DelegatingConnectionFactory impleme
 			this.target = target;
 		}
 
-		@Override
-		@Nullable
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			if (method.getName().equals("equals")) {
 				// Only consider equal when proxies are identical.

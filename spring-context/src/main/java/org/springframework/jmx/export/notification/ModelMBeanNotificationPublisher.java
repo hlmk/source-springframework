@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,6 @@ public class ModelMBeanNotificationPublisher implements NotificationPublisher {
 	 * @throws IllegalArgumentException if the supplied {@code notification} is {@code null}
 	 * @throws UnableToSendNotificationException if the supplied {@code notification} could not be sent
 	 */
-	@Override
 	public void sendNotification(Notification notification) {
 		Assert.notNull(notification, "Notification must not be null");
 		replaceNotificationSourceIfNecessary(notification);
@@ -103,9 +102,8 @@ public class ModelMBeanNotificationPublisher implements NotificationPublisher {
 	}
 
 	/**
-	 * Replaces the notification source if necessary to do so.
 	 * From the {@link Notification javadoc}:
-	 * <i>"It is strongly recommended that notification senders use the object name
+	 * <p><i>"It is strongly recommended that notification senders use the object name
 	 * rather than a reference to the MBean object as the source."</i>
 	 * @param notification the {@link Notification} whose
 	 * {@link javax.management.Notification#getSource()} might need massaging

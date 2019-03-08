@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.aop.aspectj.generic;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -24,12 +26,10 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.tests.sample.beans.Employee;
 import org.springframework.tests.sample.beans.TestBean;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import static org.junit.Assert.*;
+import org.springframework.tests.sample.beans.Employee;
 
 /**
  * Tests ensuring that after-returning advice for generic parameters bound to
@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
  * @author Ramnivas Laddad
  * @author Chris Beams
  */
-public class AfterReturningGenericTypeMatchingTests {
+public final class AfterReturningGenericTypeMatchingTests {
 
 	private GenericReturnTypeVariationClass testBean;
 
@@ -48,16 +48,15 @@ public class AfterReturningGenericTypeMatchingTests {
 
 
 	@Before
-	public void setup() {
+	public void setUp() {
 		ClassPathXmlApplicationContext ctx =
-				new ClassPathXmlApplicationContext(getClass().getSimpleName() + "-context.xml", getClass());
+			new ClassPathXmlApplicationContext(getClass().getSimpleName() + "-context.xml", getClass());
 
 		counterAspect = (CounterAspect) ctx.getBean("counterAspect");
 		counterAspect.reset();
 
 		testBean = (GenericReturnTypeVariationClass) ctx.getBean("testBean");
 	}
-
 
 	@Test
 	public void testReturnTypeExactMatching() {
@@ -106,19 +105,19 @@ public class AfterReturningGenericTypeMatchingTests {
 class GenericReturnTypeVariationClass {
 
 	public Collection<String> getStrings() {
-		return new ArrayList<>();
+		return new ArrayList<String>();
 	}
 
 	public Collection<Integer> getIntegers() {
-		return new ArrayList<>();
+		return new ArrayList<Integer>();
 	}
 
 	public Collection<TestBean> getTestBeans() {
-		return new ArrayList<>();
+		return new ArrayList<TestBean>();
 	}
 
 	public Collection<Employee> getEmployees() {
-		return new ArrayList<>();
+		return new ArrayList<Employee>();
 	}
 }
 

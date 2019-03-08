@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,22 @@
 
 package org.springframework.aop.aspectj;
 
+import static org.junit.Assert.assertEquals;
+
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests for target selection matching (see SPR-3783).
- * <p>Thanks to Tomasz Blachowicz for the bug report!
+ * Thanks to Tomasz Blachowicz for the bug report!
  *
  * @author Ramnivas Laddad
  * @author Chris Beams
  */
-public class TargetPointcutSelectionTests {
+public final class TargetPointcutSelectionTests {
 
 	public TestInterface testImpl1;
 
@@ -46,9 +45,10 @@ public class TargetPointcutSelectionTests {
 
 
 	@Before
-	public void setup() {
+	public void setUp() {
 		ClassPathXmlApplicationContext ctx =
 				new ClassPathXmlApplicationContext(getClass().getSimpleName() + ".xml", getClass());
+
 		testImpl1 = (TestInterface) ctx.getBean("testImpl1");
 		testImpl2 = (TestInterface) ctx.getBean("testImpl2");
 		testAspectForTestImpl1 = (TestAspect) ctx.getBean("testAspectForTestImpl1");
@@ -62,7 +62,7 @@ public class TargetPointcutSelectionTests {
 
 
 	@Test
-	public void targetSelectionForMatchedType() {
+	public void testTargetSelectionForMatchedType() {
 		testImpl1.interfaceMethod();
 		assertEquals("Should have been advised by POJO advice for impl", 1, testAspectForTestImpl1.count);
 		assertEquals("Should have been advised by POJO advice for base type", 1, testAspectForAbstractTestImpl.count);
@@ -70,7 +70,7 @@ public class TargetPointcutSelectionTests {
 	}
 
 	@Test
-	public void targetNonSelectionForMismatchedType() {
+	public void testTargetNonSelectionForMismatchedType() {
 		testImpl2.interfaceMethod();
 		assertEquals("Shouldn't have been advised by POJO advice for impl", 0, testAspectForTestImpl1.count);
 		assertEquals("Should have been advised by POJO advice for base type", 1, testAspectForAbstractTestImpl.count);

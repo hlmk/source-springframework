@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.tests.sample.beans;
 
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -39,11 +38,9 @@ public class HasMap {
 
 	private Object[] objectArray;
 
-	private Integer[] intArray;
-
 	private Class<?>[] classArray;
 
-	private List<Class<?>> classList;
+	private Integer[] intArray;
 
 	private IdentityHashMap identityMap;
 
@@ -84,14 +81,6 @@ public class HasMap {
 		this.objectArray = objectArray;
 	}
 
-	public Integer[] getIntegerArray() {
-		return intArray;
-	}
-
-	public void setIntegerArray(Integer[] is) {
-		intArray = is;
-	}
-
 	public Class<?>[] getClassArray() {
 		return classArray;
 	}
@@ -100,12 +89,12 @@ public class HasMap {
 		this.classArray = classArray;
 	}
 
-	public List<Class<?>> getClassList() {
-		return classList;
+	public Integer[] getIntegerArray() {
+		return intArray;
 	}
 
-	public void setClassList(List<Class<?>> classList) {
-		this.classList = classList;
+	public void setIntegerArray(Integer[] is) {
+		intArray = is;
 	}
 
 	public IdentityHashMap getIdentityMap() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.validation;
 import java.beans.PropertyEditor;
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -28,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.PropertyEditorRegistry;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -50,13 +48,9 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 
 	private MessageCodesResolver messageCodesResolver = new DefaultMessageCodesResolver();
 
-	private final List<ObjectError> errors = new LinkedList<>();
+	private final List<ObjectError> errors = new LinkedList<ObjectError>();
 
-	private final Map<String, Class<?>> fieldTypes = new HashMap<>();
-
-	private final Map<String, Object> fieldValues = new HashMap<>();
-
-	private final Set<String> suppressedFields = new HashSet<>();
+	private final Set<String> suppressedFields = new HashSet<String>();
 
 
 	/**
@@ -67,7 +61,6 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	protected AbstractBindingResult(String objectName) {
 		this.objectName = objectName;
 	}
-
 
 	/**
 	 * Set the strategy to use for resolving errors into message codes.
@@ -91,20 +84,16 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	// Implementation of the Errors interface
 	//---------------------------------------------------------------------
 
-	@Override
 	public String getObjectName() {
 		return this.objectName;
 	}
 
-	@Override
-	public void reject(String errorCode, @Nullable Object[] errorArgs, @Nullable String defaultMessage) {
+
+	public void reject(String errorCode, Object[] errorArgs, String defaultMessage) {
 		addError(new ObjectError(getObjectName(), resolveMessageCodes(errorCode), errorArgs, defaultMessage));
 	}
 
-	@Override
-	public void rejectValue(@Nullable String field, String errorCode, @Nullable Object[] errorArgs,
-			@Nullable String defaultMessage) {
-
+	public void rejectValue(String field, String errorCode, Object[] errorArgs, String defaultMessage) {
 		if ("".equals(getNestedPath()) && !StringUtils.hasLength(field)) {
 			// We're at the top of the nested object hierarchy,
 			// so the present level is not a field but rather the top object.
@@ -112,21 +101,35 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 			reject(errorCode, errorArgs, defaultMessage);
 			return;
 		}
-
 		String fixedField = fixedField(field);
 		Object newVal = getActualFieldValue(fixedField);
-		FieldError fe = new FieldError(getObjectName(), fixedField, newVal, false,
+		FieldError fe = new FieldError(
+				getObjectName(), fixedField, newVal, false,
 				resolveMessageCodes(errorCode, field), errorArgs, defaultMessage);
 		addError(fe);
 	}
 
-	@Override
+	public void addError(ObjectError error) {
+		this.errors.add(error);
+	}
+
 	public void addAllErrors(Errors errors) {
 		if (!errors.getObjectName().equals(getObjectName())) {
 			throw new IllegalArgumentException("Errors object needs to have same object name");
 		}
 		this.errors.addAll(errors.getAllErrors());
 	}
+
+	public String[] resolveMessageCodes(String errorCode) {
+		return getMessageCodesResolver().resolveMessageCodes(errorCode, getObjectName());
+	}
+
+	public String[] resolveMessageCodes(String errorCode, String field) {
+		Class<?> fieldType = getFieldType(field);
+		return getMessageCodesResolver().resolveMessageCodes(
+				errorCode, getObjectName(), fixedField(field), fieldType);
+	}
+
 
 	@Override
 	public boolean hasErrors() {
@@ -143,9 +146,8 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 		return Collections.unmodifiableList(this.errors);
 	}
 
-	@Override
 	public List<ObjectError> getGlobalErrors() {
-		List<ObjectError> result = new LinkedList<>();
+		List<ObjectError> result = new LinkedList<ObjectError>();
 		for (ObjectError objectError : this.errors) {
 			if (!(objectError instanceof FieldError)) {
 				result.add(objectError);
@@ -155,7 +157,6 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	}
 
 	@Override
-	@Nullable
 	public ObjectError getGlobalError() {
 		for (ObjectError objectError : this.errors) {
 			if (!(objectError instanceof FieldError)) {
@@ -165,9 +166,8 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 		return null;
 	}
 
-	@Override
 	public List<FieldError> getFieldErrors() {
-		List<FieldError> result = new LinkedList<>();
+		List<FieldError> result = new LinkedList<FieldError>();
 		for (ObjectError objectError : this.errors) {
 			if (objectError instanceof FieldError) {
 				result.add((FieldError) objectError);
@@ -177,7 +177,6 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	}
 
 	@Override
-	@Nullable
 	public FieldError getFieldError() {
 		for (ObjectError objectError : this.errors) {
 			if (objectError instanceof FieldError) {
@@ -189,7 +188,7 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 
 	@Override
 	public List<FieldError> getFieldErrors(String field) {
-		List<FieldError> result = new LinkedList<>();
+		List<FieldError> result = new LinkedList<FieldError>();
 		String fixedField = fixedField(field);
 		for (ObjectError objectError : this.errors) {
 			if (objectError instanceof FieldError && isMatchingFieldError(fixedField, (FieldError) objectError)) {
@@ -200,7 +199,6 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	}
 
 	@Override
-	@Nullable
 	public FieldError getFieldError(String field) {
 		String fixedField = fixedField(field);
 		for (ObjectError objectError : this.errors) {
@@ -214,23 +212,16 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 		return null;
 	}
 
-	@Override
-	@Nullable
 	public Object getFieldValue(String field) {
 		FieldError fieldError = getFieldError(field);
-		// Use rejected value in case of error, current field value otherwise.
-		if (fieldError != null) {
-			Object value = fieldError.getRejectedValue();
-			// Do not apply formatting on binding failures like type mismatches.
-			return (fieldError.isBindingFailure() || getTarget() == null ? value : formatFieldValue(field, value));
+		// Use rejected value in case of error, current bean property value else.
+		Object value = (fieldError != null ? fieldError.getRejectedValue() :
+				getActualFieldValue(fixedField(field)));
+		// Apply formatting, but not on binding failures like type mismatches.
+		if (fieldError == null || !fieldError.isBindingFailure()) {
+			value = formatFieldValue(field, value);
 		}
-		else if (getTarget() != null) {
-			Object value = getActualFieldValue(fixedField(field));
-			return formatFieldValue(field, value);
-		}
-		else {
-			return this.fieldValues.get(field);
-		}
+		return value;
 	}
 
 	/**
@@ -240,15 +231,12 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	 * @see #getActualFieldValue
 	 */
 	@Override
-	@Nullable
-	public Class<?> getFieldType(@Nullable String field) {
-		if (getTarget() != null) {
-			Object value = getActualFieldValue(fixedField(field));
-			if (value != null) {
-				return value.getClass();
-			}
+	public Class<?> getFieldType(String field) {
+		Object value = getActualFieldValue(fixedField(field));
+		if (value != null) {
+			return value.getClass();
 		}
-		return this.fieldTypes.get(field);
+		return null;
 	}
 
 
@@ -264,13 +252,18 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	 * Adding things to the map and then re-calling this method will not work.
 	 * <p>The attributes in the model Map returned by this method are usually
 	 * included in the ModelAndView for a form view that uses Spring's bind tag,
-	 * which needs access to the Errors instance.
+	 * which needs access to the Errors instance. Spring's SimpleFormController
+	 * will do this for you when rendering its form or success view. When
+	 * building the ModelAndView yourself, you need to include the attributes
+	 * from the model Map returned by this method yourself.
 	 * @see #getObjectName
 	 * @see #MODEL_KEY_PREFIX
+	 * @see org.springframework.web.servlet.ModelAndView
+	 * @see org.springframework.web.servlet.tags.BindTag
+	 * @see org.springframework.web.servlet.mvc.SimpleFormController
 	 */
-	@Override
 	public Map<String, Object> getModel() {
-		Map<String, Object> model = new LinkedHashMap<>(2);
+		Map<String, Object> model = new LinkedHashMap<String, Object>(2);
 		// Mapping from name to target object.
 		model.put(getObjectName(), getTarget());
 		// Errors instance, even if no errors.
@@ -278,10 +271,8 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 		return model;
 	}
 
-	@Override
-	@Nullable
 	public Object getRawFieldValue(String field) {
-		return (getTarget() != null ? getActualFieldValue(fixedField(field)) : null);
+		return getActualFieldValue(fixedField(field));
 	}
 
 	/**
@@ -289,9 +280,7 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	 * {@link #getPropertyEditorRegistry() PropertyEditorRegistry}'s
 	 * editor lookup facility, if available.
 	 */
-	@Override
-	@Nullable
-	public PropertyEditor findEditor(@Nullable String field, @Nullable Class<?> valueType) {
+	public PropertyEditor findEditor(String field, Class<?> valueType) {
 		PropertyEditorRegistry editorRegistry = getPropertyEditorRegistry();
 		if (editorRegistry != null) {
 			Class<?> valueTypeToUse = valueType;
@@ -308,32 +297,8 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	/**
 	 * This implementation returns {@code null}.
 	 */
-	@Override
-	@Nullable
 	public PropertyEditorRegistry getPropertyEditorRegistry() {
 		return null;
-	}
-
-	@Override
-	public String[] resolveMessageCodes(String errorCode) {
-		return getMessageCodesResolver().resolveMessageCodes(errorCode, getObjectName());
-	}
-
-	@Override
-	public String[] resolveMessageCodes(String errorCode, @Nullable String field) {
-		return getMessageCodesResolver().resolveMessageCodes(
-				errorCode, getObjectName(), fixedField(field), getFieldType(field));
-	}
-
-	@Override
-	public void addError(ObjectError error) {
-		this.errors.add(error);
-	}
-
-	@Override
-	public void recordFieldValue(String field, Class<?> type, @Nullable Object value) {
-		this.fieldTypes.put(field, type);
-		this.fieldValues.put(field, value);
 	}
 
 	/**
@@ -342,18 +307,16 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	 * detected to target a disallowed field.
 	 * @see DataBinder#setAllowedFields
 	 */
-	@Override
 	public void recordSuppressedField(String field) {
 		this.suppressedFields.add(field);
 	}
 
 	/**
 	 * Return the list of fields that were suppressed during the bind process.
-	 * <p>Can be used to determine whether any field values were targeting
+	 * <p>Can be used to determine whether any field values were targetting
 	 * disallowed fields.
 	 * @see DataBinder#setAllowedFields
 	 */
-	@Override
 	public String[] getSuppressedFields() {
 		return StringUtils.toStringArray(this.suppressedFields);
 	}
@@ -386,8 +349,6 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	/**
 	 * Return the wrapped target object.
 	 */
-	@Override
-	@Nullable
 	public abstract Object getTarget();
 
 	/**
@@ -395,7 +356,6 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	 * @param field the field to check
 	 * @return the current value of the field
 	 */
-	@Nullable
 	protected abstract Object getActualFieldValue(String field);
 
 	/**
@@ -406,8 +366,7 @@ public abstract class AbstractBindingResult extends AbstractErrors implements Bi
 	 * other than from a binding error, or an actual field value)
 	 * @return the formatted value
 	 */
-	@Nullable
-	protected Object formatFieldValue(String field, @Nullable Object value) {
+	protected Object formatFieldValue(String field, Object value) {
 		return value;
 	}
 

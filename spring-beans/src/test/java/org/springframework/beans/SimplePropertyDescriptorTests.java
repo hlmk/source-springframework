@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.beans;
 import java.beans.IndexedPropertyDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
+
 import java.lang.reflect.Method;
 
 import org.junit.Test;
@@ -27,6 +28,9 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 /**
+ * Unit tests for {@link SimplePropertyDescriptor} and
+ * {@link SimpleIndexedPropertyDescriptor}.
+ *
  * @author Chris Beams
  * @see ExtendedBeanInfoTests
  */
@@ -35,7 +39,7 @@ public class SimplePropertyDescriptorTests {
 	@Test
 	public void toStringOutput() throws IntrospectionException, SecurityException, NoSuchMethodException {
 		{
-			Object pd = new ExtendedBeanInfo.SimplePropertyDescriptor("foo", null, null);
+			Object pd = new SimplePropertyDescriptor("foo", null, null);
 			assertThat(pd.toString(), containsString(
 					"PropertyDescriptor[name=foo, propertyType=null, readMethod=null"));
 		}
@@ -45,14 +49,14 @@ public class SimplePropertyDescriptorTests {
 				public Object setFoo(String foo) { return null; }
 			}
 			Method m = C.class.getMethod("setFoo", String.class);
-			Object pd = new ExtendedBeanInfo.SimplePropertyDescriptor("foo", null, m);
+			Object pd = new SimplePropertyDescriptor("foo", null, m);
 			assertThat(pd.toString(), allOf(
 					containsString("PropertyDescriptor[name=foo"),
 					containsString("propertyType=class java.lang.String"),
 					containsString("readMethod=null, writeMethod=public java.lang.Object")));
 		}
 		{
-			Object pd = new ExtendedBeanInfo.SimpleIndexedPropertyDescriptor("foo", null, null, null, null);
+			Object pd = new SimpleIndexedPropertyDescriptor("foo", null, null, null, null);
 			assertThat(pd.toString(), containsString(
 					"PropertyDescriptor[name=foo, propertyType=null, indexedPropertyType=null"));
 		}
@@ -62,7 +66,7 @@ public class SimplePropertyDescriptorTests {
 				public Object setFoo(int i, String foo) { return null; }
 			}
 			Method m = C.class.getMethod("setFoo", int.class, String.class);
-			Object pd = new ExtendedBeanInfo.SimpleIndexedPropertyDescriptor("foo", null, null, null, m);
+			Object pd = new SimpleIndexedPropertyDescriptor("foo", null, null, null, m);
 			assertThat(pd.toString(), allOf(
 					containsString("PropertyDescriptor[name=foo, propertyType=null"),
 					containsString("indexedPropertyType=class java.lang.String"),
@@ -72,10 +76,10 @@ public class SimplePropertyDescriptorTests {
 
 	@Test
 	public void nonIndexedEquality() throws IntrospectionException, SecurityException, NoSuchMethodException {
-		Object pd1 = new ExtendedBeanInfo.SimplePropertyDescriptor("foo", null, null);
+		Object pd1 = new SimplePropertyDescriptor("foo", null, null);
 		assertThat(pd1, equalTo(pd1));
 
-		Object pd2 = new ExtendedBeanInfo.SimplePropertyDescriptor("foo", null, null);
+		Object pd2 = new SimplePropertyDescriptor("foo", null, null);
 		assertThat(pd1, equalTo(pd2));
 		assertThat(pd2, equalTo(pd1));
 
@@ -85,12 +89,12 @@ public class SimplePropertyDescriptorTests {
 			public String getFoo() { return null; }
 		}
 		Method wm1 = C.class.getMethod("setFoo", String.class);
-		Object pd3 = new ExtendedBeanInfo.SimplePropertyDescriptor("foo", null, wm1);
+		Object pd3 = new SimplePropertyDescriptor("foo", null, wm1);
 		assertThat(pd1, not(equalTo(pd3)));
 		assertThat(pd3, not(equalTo(pd1)));
 
 		Method rm1 = C.class.getMethod("getFoo");
-		Object pd4 = new ExtendedBeanInfo.SimplePropertyDescriptor("foo", rm1, null);
+		Object pd4 = new SimplePropertyDescriptor("foo", rm1, null);
 		assertThat(pd1, not(equalTo(pd4)));
 		assertThat(pd4, not(equalTo(pd1)));
 
@@ -109,10 +113,10 @@ public class SimplePropertyDescriptorTests {
 
 	@Test
 	public void indexedEquality() throws IntrospectionException, SecurityException, NoSuchMethodException {
-		Object pd1 = new ExtendedBeanInfo.SimpleIndexedPropertyDescriptor("foo", null, null, null, null);
+		Object pd1 = new SimpleIndexedPropertyDescriptor("foo", null, null, null, null);
 		assertThat(pd1, equalTo(pd1));
 
-		Object pd2 = new ExtendedBeanInfo.SimpleIndexedPropertyDescriptor("foo", null, null, null, null);
+		Object pd2 = new SimpleIndexedPropertyDescriptor("foo", null, null, null, null);
 		assertThat(pd1, equalTo(pd2));
 		assertThat(pd2, equalTo(pd1));
 
@@ -122,12 +126,12 @@ public class SimplePropertyDescriptorTests {
 			public String getFoo(int i) { return null; }
 		}
 		Method wm1 = C.class.getMethod("setFoo", int.class, String.class);
-		Object pd3 = new ExtendedBeanInfo.SimpleIndexedPropertyDescriptor("foo", null, null, null, wm1);
+		Object pd3 = new SimpleIndexedPropertyDescriptor("foo", null, null, null, wm1);
 		assertThat(pd1, not(equalTo(pd3)));
 		assertThat(pd3, not(equalTo(pd1)));
 
 		Method rm1 = C.class.getMethod("getFoo", int.class);
-		Object pd4 = new ExtendedBeanInfo.SimpleIndexedPropertyDescriptor("foo", null, null, rm1, null);
+		Object pd4 = new SimpleIndexedPropertyDescriptor("foo", null, null, rm1, null);
 		assertThat(pd1, not(equalTo(pd4)));
 		assertThat(pd4, not(equalTo(pd1)));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.jmx.JmxException;
-import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -50,31 +49,29 @@ import org.springframework.util.CollectionUtils;
  * @author Rob Harrop
  * @author Juergen Hoeller
  * @since 1.2
+ * @see    FactoryBean
  * @see JMXConnectorServer
  * @see MBeanServer
  */
 public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 		implements FactoryBean<JMXConnectorServer>, InitializingBean, DisposableBean {
 
-	/** The default service URL. */
+	/** The default service URL */
 	public static final String DEFAULT_SERVICE_URL = "service:jmx:jmxmp://localhost:9875";
 
 
 	private String serviceUrl = DEFAULT_SERVICE_URL;
 
-	private Map<String, Object> environment = new HashMap<>();
+	private Map<String, Object> environment = new HashMap<String, Object>();
 
-	@Nullable
 	private MBeanServerForwarder forwarder;
 
-	@Nullable
 	private ObjectName objectName;
 
 	private boolean threaded = false;
 
 	private boolean daemon = false;
 
-	@Nullable
 	private JMXConnectorServer connectorServer;
 
 
@@ -89,7 +86,7 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 	 * Set the environment properties used to construct the {@code JMXConnectorServer}
 	 * as {@code java.util.Properties} (String key/value pairs).
 	 */
-	public void setEnvironment(@Nullable Properties environment) {
+	public void setEnvironment(Properties environment) {
 		CollectionUtils.mergePropertiesIntoMap(environment, this.environment);
 	}
 
@@ -97,7 +94,7 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 	 * Set the environment properties used to construct the {@code JMXConnector}
 	 * as a {@code Map} of String keys and arbitrary Object values.
 	 */
-	public void setEnvironmentMap(@Nullable Map<String, ?> environment) {
+	public void setEnvironmentMap(Map<String, ?> environment) {
 		if (environment != null) {
 			this.environment.putAll(environment);
 		}
@@ -145,7 +142,6 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 	 * with the {@code MBeanServer}
 	 * @throws IOException if there is a problem starting the connector server
 	 */
-	@Override
 	public void afterPropertiesSet() throws JMException, IOException {
 		if (this.server == null) {
 			this.server = JmxUtils.locateMBeanServer();
@@ -170,12 +166,11 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 		try {
 			if (this.threaded) {
 				// Start the connector server asynchronously (in a separate thread).
-				final JMXConnectorServer serverToStart = this.connectorServer;
 				Thread connectorThread = new Thread() {
 					@Override
 					public void run() {
 						try {
-							serverToStart.start();
+							connectorServer.start();
 						}
 						catch (IOException ex) {
 							throw new JmxException("Could not start JMX connector server after delay", ex);
@@ -205,18 +200,14 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 	}
 
 
-	@Override
-	@Nullable
 	public JMXConnectorServer getObject() {
 		return this.connectorServer;
 	}
 
-	@Override
 	public Class<? extends JMXConnectorServer> getObjectType() {
 		return (this.connectorServer != null ? this.connectorServer.getClass() : JMXConnectorServer.class);
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}
@@ -227,15 +218,12 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 	 * Automatically called on {@code ApplicationContext} shutdown.
 	 * @throws IOException if there is an error stopping the connector server
 	 */
-	@Override
 	public void destroy() throws IOException {
+		if (logger.isInfoEnabled()) {
+			logger.info("Stopping JMX connector server: " + this.connectorServer);
+		}
 		try {
-			if (this.connectorServer != null) {
-				if (logger.isInfoEnabled()) {
-					logger.info("Stopping JMX connector server: " + this.connectorServer);
-				}
-				this.connectorServer.stop();
-			}
+			this.connectorServer.stop();
 		}
 		finally {
 			unregisterBeans();

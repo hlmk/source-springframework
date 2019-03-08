@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,9 @@ import org.springframework.aop.MethodMatcher;
 /**
  * Convenient abstract superclass for dynamic method matchers,
  * which do care about arguments at runtime.
- *
- * @author Rod Johnson
  */
 public abstract class DynamicMethodMatcher implements MethodMatcher {
 
-	@Override
 	public final boolean isRuntime() {
 		return true;
 	}
@@ -37,7 +34,6 @@ public abstract class DynamicMethodMatcher implements MethodMatcher {
 	 * Can override to add preconditions for dynamic matching. This implementation
 	 * always returns true.
 	 */
-	@Override
 	public boolean matches(Method method, Class<?> targetClass) {
 		return true;
 	}

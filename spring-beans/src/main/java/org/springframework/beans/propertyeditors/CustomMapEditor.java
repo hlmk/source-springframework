@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
-
 /**
  * Property editor for Maps, converting any source Map
  * to a given target Map type.
@@ -37,8 +33,7 @@ import org.springframework.util.ReflectionUtils;
  */
 public class CustomMapEditor extends PropertyEditorSupport {
 
-	@SuppressWarnings("rawtypes")
-	private final Class<? extends Map> mapType;
+	private final Class mapType;
 
 	private final boolean nullAsEmptyMap;
 
@@ -53,8 +48,7 @@ public class CustomMapEditor extends PropertyEditorSupport {
 	 * @see java.util.TreeMap
 	 * @see java.util.LinkedHashMap
 	 */
-	@SuppressWarnings("rawtypes")
-	public CustomMapEditor(Class<? extends Map> mapType) {
+	public CustomMapEditor(Class mapType) {
 		this(mapType, false);
 	}
 
@@ -75,9 +69,10 @@ public class CustomMapEditor extends PropertyEditorSupport {
 	 * @see java.util.TreeMap
 	 * @see java.util.LinkedHashMap
 	 */
-	@SuppressWarnings("rawtypes")
-	public CustomMapEditor(Class<? extends Map> mapType, boolean nullAsEmptyMap) {
-		Assert.notNull(mapType, "Map type is required");
+	public CustomMapEditor(Class mapType, boolean nullAsEmptyMap) {
+		if (mapType == null) {
+			throw new IllegalArgumentException("Map type is required");
+		}
 		if (!Map.class.isAssignableFrom(mapType)) {
 			throw new IllegalArgumentException(
 					"Map type [" + mapType.getName() + "] does not implement [java.util.Map]");
@@ -99,7 +94,7 @@ public class CustomMapEditor extends PropertyEditorSupport {
 	 * Convert the given value to a Map of the target type.
 	 */
 	@Override
-	public void setValue(@Nullable Object value) {
+	public void setValue(Object value) {
 		if (value == null && this.nullAsEmptyMap) {
 			super.setValue(createMap(this.mapType, 0));
 		}
@@ -109,9 +104,11 @@ public class CustomMapEditor extends PropertyEditorSupport {
 		}
 		else if (value instanceof Map) {
 			// Convert Map elements.
-			Map<?, ?> source = (Map<?, ?>) value;
-			Map<Object, Object> target = createMap(this.mapType, source.size());
-			source.forEach((key, val) -> target.put(convertKey(key), convertValue(val)));
+			Map<?, ?> source = (Map) value;
+			Map target = createMap(this.mapType, source.size());
+			for (Map.Entry entry : source.entrySet()) {
+				target.put(convertKey(entry.getKey()), convertValue(entry.getValue()));
+			}
 			super.setValue(target);
 		}
 		else {
@@ -126,22 +123,21 @@ public class CustomMapEditor extends PropertyEditorSupport {
 	 * @param initialCapacity the initial capacity
 	 * @return the new Map instance
 	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	protected Map<Object, Object> createMap(Class<? extends Map> mapType, int initialCapacity) {
+	protected Map createMap(Class mapType, int initialCapacity) {
 		if (!mapType.isInterface()) {
 			try {
-				return ReflectionUtils.accessibleConstructor(mapType).newInstance();
+				return (Map) mapType.newInstance();
 			}
-			catch (Throwable ex) {
+			catch (Exception ex) {
 				throw new IllegalArgumentException(
-						"Could not instantiate map class: " + mapType.getName(), ex);
+						"Could not instantiate map class [" + mapType.getName() + "]: " + ex.getMessage());
 			}
 		}
-		else if (SortedMap.class == mapType) {
-			return new TreeMap<>();
+		else if (SortedMap.class.equals(mapType)) {
+			return new TreeMap();
 		}
 		else {
-			return new LinkedHashMap<>(initialCapacity);
+			return new LinkedHashMap(initialCapacity);
 		}
 	}
 
@@ -197,7 +193,6 @@ public class CustomMapEditor extends PropertyEditorSupport {
 	 * there is no appropriate text representation.
 	 */
 	@Override
-	@Nullable
 	public String getAsText() {
 		return null;
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.aop.framework;
 
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,21 +28,19 @@ import org.junit.Test;
 
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Rod Johnson
  * @author Chris Beams
  * @since 14.03.2003
  */
-public class MethodInvocationTests {
+public final class MethodInvocationTests {
 
 	@Test
 	public void testValidInvocation() throws Throwable {
-		Method m = Object.class.getMethod("hashCode");
+		Method m = Object.class.getMethod("hashCode", (Class[]) null);
 		Object proxy = new Object();
 		final Object returnValue = new Object();
-		List<Object> is = new LinkedList<>();
+		List<Object> is = new LinkedList<Object>();
 		is.add(new MethodInterceptor() {
 			@Override
 			public Object invoke(MethodInvocation invocation) throws Throwable {
@@ -60,14 +60,13 @@ public class MethodInvocationTests {
 	@Test
 	public void testToStringDoesntHitTarget() throws Throwable {
 		Object target = new TestBean() {
-			@Override
 			public String toString() {
 				throw new UnsupportedOperationException("toString");
 			}
 		};
-		List<Object> is = new LinkedList<>();
+		List<Object> is = new LinkedList<Object>();
 
-		Method m = Object.class.getMethod("hashCode");
+		Method m = Object.class.getMethod("hashCode", (Class[]) null);
 		Object proxy = new Object();
 		ReflectiveMethodInvocation invocation =
 			new ReflectiveMethodInvocation(proxy, target, m, null, null, is);

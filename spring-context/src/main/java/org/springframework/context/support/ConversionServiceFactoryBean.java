@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,15 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.ConversionServiceFactory;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
-import org.springframework.lang.Nullable;
 
 /**
  * A factory providing convenient access to a ConversionService configured with
- * converters appropriate for most environments. Set the
- * {@link #setConverters "converters"} property to supplement the default converters.
+ * converters appropriate for most environments. Set the {@link #setConverters
+ * "converters"} property to supplement the default converters.
  *
- * <p>This implementation creates a {@link DefaultConversionService}.
- * Subclasses may override {@link #createConversionService()} in order to return
- * a {@link GenericConversionService} instance of their choosing.
+ * <p>This implementation creates a {@link DefaultConversionService}. Subclasses
+ * may override {@link #createConversionService()} in order to return a
+ * {@link GenericConversionService} instance of their choosing.
  *
  * <p>Like all {@code FactoryBean} implementations, this class is suitable for
  * use when configuring a Spring application context using Spring {@code <beans>}
@@ -50,10 +49,8 @@ import org.springframework.lang.Nullable;
  */
 public class ConversionServiceFactoryBean implements FactoryBean<ConversionService>, InitializingBean {
 
-	@Nullable
 	private Set<?> converters;
 
-	@Nullable
 	private GenericConversionService conversionService;
 
 
@@ -67,7 +64,6 @@ public class ConversionServiceFactoryBean implements FactoryBean<ConversionServi
 		this.converters = converters;
 	}
 
-	@Override
 	public void afterPropertiesSet() {
 		this.conversionService = createConversionService();
 		ConversionServiceFactory.registerConverters(this.converters, this.conversionService);
@@ -86,18 +82,14 @@ public class ConversionServiceFactoryBean implements FactoryBean<ConversionServi
 
 	// implementing FactoryBean
 
-	@Override
-	@Nullable
 	public ConversionService getObject() {
 		return this.conversionService;
 	}
 
-	@Override
 	public Class<? extends ConversionService> getObjectType() {
 		return GenericConversionService.class;
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}

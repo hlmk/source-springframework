@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,11 @@ import org.quartz.utils.DBConnectionManager;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.jdbc.support.MetaDataAccessException;
-import org.springframework.lang.Nullable;
 
 /**
- * Subclass of Quartz's {@link JobStoreCMT} class that delegates to a Spring-managed
- * {@link DataSource} instead of using a Quartz-managed JDBC connection pool.
- * This JobStore will be used if SchedulerFactoryBean's "dataSource" property is set.
+ * Subclass of Quartz's JobStoreCMT class that delegates to a Spring-managed
+ * DataSource instead of using a Quartz-managed connection pool. This JobStore
+ * will be used if SchedulerFactoryBean's "dataSource" property is set.
  *
  * <p>Supports both transactional and non-transactional DataSource access.
  * With a non-XA DataSource and local Spring transactions, a single DataSource
@@ -59,7 +58,6 @@ import org.springframework.lang.Nullable;
  * @see org.springframework.jdbc.datasource.DataSourceUtils#doGetConnection
  * @see org.springframework.jdbc.datasource.DataSourceUtils#releaseConnection
  */
-@SuppressWarnings("unchecked")  // due to a warning in Quartz 2.2's JobStoreCMT
 public class LocalDataSourceJobStore extends JobStoreCMT {
 
 	/**
@@ -79,17 +77,19 @@ public class LocalDataSourceJobStore extends JobStoreCMT {
 	public static final String NON_TX_DATA_SOURCE_PREFIX = "springNonTxDataSource.";
 
 
-	@Nullable
 	private DataSource dataSource;
 
 
 	@Override
-	public void initialize(ClassLoadHelper loadHelper, SchedulerSignaler signaler) throws SchedulerConfigException {
+	public void initialize(ClassLoadHelper loadHelper, SchedulerSignaler signaler)
+			throws SchedulerConfigException {
+
 		// Absolutely needs thread-bound DataSource to initialize.
 		this.dataSource = SchedulerFactoryBean.getConfigTimeDataSource();
 		if (this.dataSource == null) {
-			throw new SchedulerConfigException("No local DataSource found for configuration - " +
-					"'dataSource' property must be set on SchedulerFactoryBean");
+			throw new SchedulerConfigException(
+				"No local DataSource found for configuration - " +
+				"'dataSource' property must be set on SchedulerFactoryBean");
 		}
 
 		// Configure transactional connection settings for Quartz.
@@ -100,12 +100,10 @@ public class LocalDataSourceJobStore extends JobStoreCMT {
 		DBConnectionManager.getInstance().addConnectionProvider(
 				TX_DATA_SOURCE_PREFIX + getInstanceName(),
 				new ConnectionProvider() {
-					@Override
 					public Connection getConnection() throws SQLException {
 						// Return a transactional Connection, if any.
 						return DataSourceUtils.doGetConnection(dataSource);
 					}
-					@Override
 					public void shutdown() {
 						// Do nothing - a Spring-managed DataSource has its own lifecycle.
 					}
@@ -128,12 +126,10 @@ public class LocalDataSourceJobStore extends JobStoreCMT {
 		DBConnectionManager.getInstance().addConnectionProvider(
 				NON_TX_DATA_SOURCE_PREFIX + getInstanceName(),
 				new ConnectionProvider() {
-					@Override
 					public Connection getConnection() throws SQLException {
 						// Always return a non-transactional Connection.
 						return nonTxDataSourceToUse.getConnection();
 					}
-					@Override
 					public void shutdown() {
 						// Do nothing - a Spring-managed DataSource has its own lifecycle.
 					}
@@ -146,7 +142,7 @@ public class LocalDataSourceJobStore extends JobStoreCMT {
 
 		// No, if HSQL is the platform, we really don't want to use locks...
 		try {
-			String productName = JdbcUtils.extractDatabaseMetaData(this.dataSource, "getDatabaseProductName");
+			String productName = JdbcUtils.extractDatabaseMetaData(this.dataSource, "getDatabaseProductName").toString();
 			productName = JdbcUtils.commonDatabaseName(productName);
 			if (productName != null && productName.toLowerCase().contains("hsql")) {
 				setUseDBLocks(false);

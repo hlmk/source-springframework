@@ -16,8 +16,6 @@
 
 package org.springframework.ui.context;
 
-import org.springframework.lang.Nullable;
-
 /**
  * Sub-interface of ThemeSource to be implemented by objects that
  * can resolve theme messages hierarchically.
@@ -34,12 +32,11 @@ public interface HierarchicalThemeSource extends ThemeSource {
 	 * resolve messages that this object can't resolve.
 	 * May be {@code null}, in which case no further resolution is possible.
 	 */
-	void setParentThemeSource(@Nullable ThemeSource parent);
+	void setParentThemeSource(ThemeSource parent);
 
 	/**
 	 * Return the parent of this ThemeSource, or {@code null} if none.
 	 */
-	@Nullable
 	ThemeSource getParentThemeSource();
 
 }

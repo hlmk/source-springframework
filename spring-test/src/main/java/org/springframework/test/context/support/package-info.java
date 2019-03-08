@@ -1,9 +1,6 @@
 /**
- * Support classes for the <em>Spring TestContext Framework</em>.
+ * <p>Support classes for the <em>Spring TestContext Framework</em>.</p>
  */
-@NonNullApi
-@NonNullFields
+
 package org.springframework.test.context.support;
 
-import org.springframework.lang.NonNullApi;
-import org.springframework.lang.NonNullFields;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
@@ -60,7 +59,7 @@ public class CollectionToCollectionConverterTests {
 
 	@Test
 	public void scalarList() throws Exception {
-		List<String> list = new ArrayList<>();
+		List<String> list = new ArrayList<String>();
 		list.add("9");
 		list.add("37");
 		TypeDescriptor sourceType = TypeDescriptor.forObject(list);
@@ -85,7 +84,7 @@ public class CollectionToCollectionConverterTests {
 	public void emptyListToList() throws Exception {
 		conversionService.addConverter(new CollectionToCollectionConverter(conversionService));
 		conversionService.addConverterFactory(new StringToNumberConverterFactory());
-		List<String> list = new ArrayList<>();
+		List<String> list = new ArrayList<String>();
 		TypeDescriptor sourceType = TypeDescriptor.forObject(list);
 		TypeDescriptor targetType = new TypeDescriptor(getClass().getField("emptyListTarget"));
 		assertTrue(conversionService.canConvert(sourceType, targetType));
@@ -96,7 +95,7 @@ public class CollectionToCollectionConverterTests {
 	public void emptyListToListDifferentTargetType() throws Exception {
 		conversionService.addConverter(new CollectionToCollectionConverter(conversionService));
 		conversionService.addConverterFactory(new StringToNumberConverterFactory());
-		List<String> list = new ArrayList<>();
+		List<String> list = new ArrayList<String>();
 		TypeDescriptor sourceType = TypeDescriptor.forObject(list);
 		TypeDescriptor targetType = new TypeDescriptor(getClass().getField("emptyListDifferentTarget"));
 		assertTrue(conversionService.canConvert(sourceType, targetType));
@@ -108,7 +107,7 @@ public class CollectionToCollectionConverterTests {
 
 	@Test
 	public void collectionToObjectInteraction() throws Exception {
-		List<List<String>> list = new ArrayList<>();
+		List<List<String>> list = new ArrayList<List<String>>();
 		list.add(Arrays.asList("9", "12"));
 		list.add(Arrays.asList("37", "23"));
 		conversionService.addConverter(new CollectionToObjectConverter(conversionService));
@@ -131,7 +130,7 @@ public class CollectionToCollectionConverterTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void objectToCollection() throws Exception {
-		List<List<String>> list = new ArrayList<>();
+		List<List<String>> list = new ArrayList<List<String>>();
 		list.add(Arrays.asList("9", "12"));
 		list.add(Arrays.asList("37", "23"));
 		conversionService.addConverterFactory(new StringToNumberConverterFactory());
@@ -150,7 +149,7 @@ public class CollectionToCollectionConverterTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void stringToCollection() throws Exception {
-		List<List<String>> list = new ArrayList<>();
+		List<List<String>> list = new ArrayList<List<String>>();
 		list.add(Arrays.asList("9,12"));
 		list.add(Arrays.asList("37,23"));
 		conversionService.addConverterFactory(new StringToNumberConverterFactory());
@@ -169,14 +168,14 @@ public class CollectionToCollectionConverterTests {
 
 	@Test
 	public void convertEmptyVector_shouldReturnEmptyArrayList() {
-		Vector<String> vector = new Vector<>();
+		Vector<String> vector = new Vector<String>();
 		vector.add("Element");
 		testCollectionConversionToArrayList(vector);
 	}
 
 	@Test
 	public void convertNonEmptyVector_shouldReturnNonEmptyArrayList() {
-		Vector<String> vector = new Vector<>();
+		Vector<String> vector = new Vector<String>();
 		vector.add("Element");
 		testCollectionConversionToArrayList(vector);
 	}
@@ -198,14 +197,14 @@ public class CollectionToCollectionConverterTests {
 
 	@Test
 	public void listToCollectionNoCopyRequired() throws NoSuchFieldException {
-		List<?> input = new ArrayList<>(Arrays.asList("foo", "bar"));
+		List<?> input = new ArrayList<String>(Arrays.asList("foo", "bar"));
 		assertSame(input, conversionService.convert(input, TypeDescriptor.forObject(input),
 				new TypeDescriptor(getClass().getField("wildcardCollection"))));
 	}
 
 	@Test
 	public void differentImpls() throws Exception {
-		List<Resource> resources = new ArrayList<>();
+		List<Resource> resources = new ArrayList<Resource>();
 		resources.add(new ClassPathResource("test"));
 		resources.add(new FileSystemResource("test"));
 		resources.add(new TestResource());
@@ -215,7 +214,7 @@ public class CollectionToCollectionConverterTests {
 
 	@Test
 	public void mixedInNulls() throws Exception {
-		List<Resource> resources = new ArrayList<>();
+		List<Resource> resources = new ArrayList<Resource>();
 		resources.add(new ClassPathResource("test"));
 		resources.add(null);
 		resources.add(new FileSystemResource("test"));
@@ -226,7 +225,7 @@ public class CollectionToCollectionConverterTests {
 
 	@Test
 	public void allNulls() throws Exception {
-		List<Resource> resources = new ArrayList<>();
+		List<Resource> resources = new ArrayList<Resource>();
 		resources.add(null);
 		resources.add(null);
 		TypeDescriptor sourceType = TypeDescriptor.forObject(resources);
@@ -235,7 +234,7 @@ public class CollectionToCollectionConverterTests {
 
 	@Test(expected = ConverterNotFoundException.class)
 	public void elementTypesNotConvertible() throws Exception {
-		List<String> resources = new ArrayList<>();
+		List<String> resources = new ArrayList<String>();
 		resources.add(null);
 		resources.add(null);
 		TypeDescriptor sourceType = new TypeDescriptor(getClass().getField("strings"));
@@ -244,21 +243,11 @@ public class CollectionToCollectionConverterTests {
 
 	@Test(expected = ConversionFailedException.class)
 	public void nothingInCommon() throws Exception {
-		List<Object> resources = new ArrayList<>();
+		List<Object> resources = new ArrayList<Object>();
 		resources.add(new ClassPathResource("test"));
 		resources.add(3);
 		TypeDescriptor sourceType = TypeDescriptor.forObject(resources);
 		assertEquals(resources, conversionService.convert(resources, sourceType, new TypeDescriptor(getClass().getField("resources"))));
-	}
-
-	@Test
-	public void testStringToEnumSet() throws Exception {
-		conversionService.addConverterFactory(new StringToEnumConverterFactory());
-		List<String> list = new ArrayList<>();
-		list.add("A");
-		list.add("C");
-		assertEquals(EnumSet.of(MyEnum.A, MyEnum.C),
-				conversionService.convert(list, TypeDescriptor.forObject(list), new TypeDescriptor(getClass().getField("enumSet"))));
 	}
 
 
@@ -277,8 +266,6 @@ public class CollectionToCollectionConverterTests {
 	public Collection<?> wildcardCollection = Collections.emptyList();
 
 	public List<Resource> resources;
-
-	public EnumSet<MyEnum> enumSet;
 
 
 	public static abstract class BaseResource implements Resource {
@@ -300,11 +287,6 @@ public class CollectionToCollectionConverterTests {
 
 		@Override
 		public boolean isOpen() {
-			return false;
-		}
-
-		@Override
-		public boolean isFile() {
 			return false;
 		}
 
@@ -352,8 +334,5 @@ public class CollectionToCollectionConverterTests {
 
 	public static class TestResource extends BaseResource {
 	}
-
-
-	public enum MyEnum {A, B, C}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,10 @@ import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpRequest;
-import org.springframework.http.StreamingHttpOutputMessage;
-import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 
 /**
- * Wrapper for a {@link ClientHttpRequest} that has support for {@link ClientHttpRequestInterceptor ClientHttpRequest} that has support for {@link ClientHttpRequestInterceptors}.
+ * Wrapper for a {@link ClientHttpRequest} that has support for {@link ClientHttpRequestInterceptor}s.
  *
  * @author Arjen Poutsma
  * @since 3.1
@@ -55,17 +53,10 @@ class InterceptingClientHttpRequest extends AbstractBufferingClientHttpRequest {
 	}
 
 
-	@Override
 	public HttpMethod getMethod() {
 		return this.method;
 	}
 
-	@Override
-	public String getMethodValue() {
-		return this.method.name();
-	}
-
-	@Override
 	public URI getURI() {
 		return this.uri;
 	}
@@ -85,25 +76,16 @@ class InterceptingClientHttpRequest extends AbstractBufferingClientHttpRequest {
 			this.iterator = interceptors.iterator();
 		}
 
-		@Override
 		public ClientHttpResponse execute(HttpRequest request, byte[] body) throws IOException {
 			if (this.iterator.hasNext()) {
 				ClientHttpRequestInterceptor nextInterceptor = this.iterator.next();
 				return nextInterceptor.intercept(request, body, this);
 			}
 			else {
-				HttpMethod method = request.getMethod();
-				Assert.state(method != null, "No standard HTTP method");
-				ClientHttpRequest delegate = requestFactory.createRequest(request.getURI(), method);
-				request.getHeaders().forEach((key, value) -> delegate.getHeaders().addAll(key, value));
+				ClientHttpRequest delegate = requestFactory.createRequest(request.getURI(), request.getMethod());
+				delegate.getHeaders().putAll(request.getHeaders());
 				if (body.length > 0) {
-					if (delegate instanceof StreamingHttpOutputMessage) {
-						StreamingHttpOutputMessage streamingOutputMessage = (StreamingHttpOutputMessage) delegate;
-						streamingOutputMessage.setBody(outputStream -> StreamUtils.copy(body, outputStream));
-					}
-					else {
-						StreamUtils.copy(body, delegate.getBody());
-					}
+					StreamUtils.copy(body, delegate.getBody());
 				}
 				return delegate.execute();
 			}

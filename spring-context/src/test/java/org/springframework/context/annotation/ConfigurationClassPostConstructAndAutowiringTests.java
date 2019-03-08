@@ -16,15 +16,14 @@
 
 package org.springframework.context.annotation;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import javax.annotation.PostConstruct;
 
 import org.junit.Test;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.tests.sample.beans.TestBean;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Tests cornering the issue reported in SPR-8080. If the product of a @Bean method

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,16 @@ package org.springframework.aop.support;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Arrays;
 
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.PatternMatchUtils;
 
 /**
  * Pointcut bean for simple method name matches, as alternative to regexp patterns.
- * Does not handle overloaded methods: all methods with a given name will be eligible.
+ * Does not handle overloaded methods: all methods *with a given name will be eligible.
  *
  * @author Juergen Hoeller
  * @author Rod Johnson
@@ -37,7 +38,7 @@ import org.springframework.util.PatternMatchUtils;
 @SuppressWarnings("serial")
 public class NameMatchMethodPointcut extends StaticMethodMatcherPointcut implements Serializable {
 
-	private List<String> mappedNames = new ArrayList<>();
+	private List<String> mappedNames = new LinkedList<String>();
 
 
 	/**
@@ -55,7 +56,10 @@ public class NameMatchMethodPointcut extends StaticMethodMatcherPointcut impleme
 	 * the pointcut matches.
 	 */
 	public void setMappedNames(String... mappedNames) {
-		this.mappedNames = new ArrayList<>(Arrays.asList(mappedNames));
+		this.mappedNames = new LinkedList<String>();
+		if (mappedNames != null) {
+			this.mappedNames.addAll(Arrays.asList(mappedNames));
+		}
 	}
 
 	/**
@@ -100,12 +104,12 @@ public class NameMatchMethodPointcut extends StaticMethodMatcherPointcut impleme
 	@Override
 	public boolean equals(Object other) {
 		return (this == other || (other instanceof NameMatchMethodPointcut &&
-				this.mappedNames.equals(((NameMatchMethodPointcut) other).mappedNames)));
+				ObjectUtils.nullSafeEquals(this.mappedNames, ((NameMatchMethodPointcut) other).mappedNames)));
 	}
 
 	@Override
 	public int hashCode() {
-		return this.mappedNames.hashCode();
+		return (this.mappedNames != null ? this.mappedNames.hashCode() : 0);
 	}
 
 }

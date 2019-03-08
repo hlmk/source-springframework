@@ -19,7 +19,6 @@ package org.springframework.transaction.interceptor;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -53,9 +52,7 @@ public class CompositeTransactionAttributeSource implements TransactionAttribute
 	}
 
 
-	@Override
-	@Nullable
-	public TransactionAttribute getTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
+	public TransactionAttribute getTransactionAttribute(Method method, Class<?> targetClass) {
 		for (TransactionAttributeSource tas : this.transactionAttributeSources) {
 			TransactionAttribute ta = tas.getTransactionAttribute(method, targetClass);
 			if (ta != null) {

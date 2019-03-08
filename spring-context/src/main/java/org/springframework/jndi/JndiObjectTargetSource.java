@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.jndi;
 import javax.naming.NamingException;
 
 import org.springframework.aop.TargetSource;
-import org.springframework.lang.Nullable;
 
 /**
  * AOP {@link org.springframework.aop.TargetSource} that provides
@@ -32,7 +31,7 @@ import org.springframework.lang.Nullable;
  *
  * <p>Example:
  *
- * <pre class="code">
+ * <pre>
  * &lt;bean id="queueConnectionFactoryTarget" class="org.springframework.jndi.JndiObjectTargetSource"&gt;
  *   &lt;property name="jndiName" value="JmsQueueConnectionFactory"/&gt;
  *   &lt;property name="lookupOnStartup" value="false"/&gt;
@@ -65,11 +64,9 @@ public class JndiObjectTargetSource extends JndiObjectLocator implements TargetS
 
 	private boolean cache = true;
 
-	@Nullable
 	private Object cachedObject;
 
-	@Nullable
-	private Class<?> targetClass;
+	private Class targetClass;
 
 
 	/**
@@ -108,8 +105,6 @@ public class JndiObjectTargetSource extends JndiObjectLocator implements TargetS
 	}
 
 
-	@Override
-	@Nullable
 	public Class<?> getTargetClass() {
 		if (this.cachedObject != null) {
 			return this.cachedObject.getClass();
@@ -122,13 +117,10 @@ public class JndiObjectTargetSource extends JndiObjectLocator implements TargetS
 		}
 	}
 
-	@Override
 	public boolean isStatic() {
 		return (this.cachedObject != null);
 	}
 
-	@Override
-	@Nullable
 	public Object getTarget() {
 		try {
 			if (this.lookupOnStartup || !this.cache) {
@@ -148,7 +140,6 @@ public class JndiObjectTargetSource extends JndiObjectLocator implements TargetS
 		}
 	}
 
-	@Override
 	public void releaseTarget(Object target) {
 	}
 

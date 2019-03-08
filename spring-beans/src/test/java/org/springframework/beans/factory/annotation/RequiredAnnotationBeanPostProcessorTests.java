@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package org.springframework.beans.factory.annotation;
 
+import static org.junit.Assert.*;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.junit.Test;
-
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -30,17 +31,13 @@ import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.support.RootBeanDefinition;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Rob Harrop
  * @author Chris Beams
  * @since 2.0
  */
-@Deprecated
-public class RequiredAnnotationBeanPostProcessorTests {
+public final class RequiredAnnotationBeanPostProcessorTests {
 
 	@Test
 	public void testWithRequiredPropertyOmitted() {
@@ -59,9 +56,9 @@ public class RequiredAnnotationBeanPostProcessorTests {
 		}
 		catch (BeanCreationException ex) {
 			String message = ex.getCause().getMessage();
-			assertTrue(message.contains("Property"));
-			assertTrue(message.contains("age"));
-			assertTrue(message.contains("testBean"));
+			assertTrue(message.indexOf("Property") > -1);
+			assertTrue(message.indexOf("age") > -1);
+			assertTrue(message.indexOf("testBean") > -1);
 		}
 	}
 
@@ -80,16 +77,16 @@ public class RequiredAnnotationBeanPostProcessorTests {
 		}
 		catch (BeanCreationException ex) {
 			String message = ex.getCause().getMessage();
-			assertTrue(message.contains("Properties"));
-			assertTrue(message.contains("age"));
-			assertTrue(message.contains("favouriteColour"));
-			assertTrue(message.contains("jobTitle"));
-			assertTrue(message.contains("testBean"));
+			assertTrue(message.indexOf("Properties") > -1);
+			assertTrue(message.indexOf("age") > -1);
+			assertTrue(message.indexOf("favouriteColour") > -1);
+			assertTrue(message.indexOf("jobTitle") > -1);
+			assertTrue(message.indexOf("testBean") > -1);
 		}
 	}
 
 	@Test
-	public void testWithAllRequiredPropertiesSpecified() {
+	public void testWithOnlyRequiredPropertiesSpecified() {
 		DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
 		BeanDefinition beanDef = BeanDefinitionBuilder
 			.genericBeanDefinition(RequiredTestBean.class)
@@ -121,143 +118,76 @@ public class RequiredAnnotationBeanPostProcessorTests {
 		}
 		catch (BeanCreationException ex) {
 			String message = ex.getCause().getMessage();
-			assertTrue(message.contains("Property"));
-			assertTrue(message.contains("name"));
-			assertTrue(message.contains("testBean"));
+			assertTrue(message.indexOf("Property") > -1);
+			assertTrue(message.indexOf("name") > -1);
+			assertTrue(message.indexOf("testBean") > -1);
 		}
 	}
 
-	@Test
-	public void testWithStaticFactoryMethod() {
-		try {
-			DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
-			BeanDefinition beanDef = BeanDefinitionBuilder
-					.genericBeanDefinition(RequiredTestBean.class)
-					.setFactoryMethod("create")
-					.addPropertyValue("name", "Rob Harrop")
-					.addPropertyValue("favouriteColour", "Blue")
-					.addPropertyValue("jobTitle", "Grand Poobah")
-					.getBeanDefinition();
-			factory.registerBeanDefinition("testBean", beanDef);
-			factory.addBeanPostProcessor(new RequiredAnnotationBeanPostProcessor());
-			factory.preInstantiateSingletons();
-			fail("Should have thrown BeanCreationException");
-		}
-		catch (BeanCreationException ex) {
-			String message = ex.getCause().getMessage();
-			assertTrue(message.contains("Property"));
-			assertTrue(message.contains("age"));
-			assertTrue(message.contains("testBean"));
-		}
+}
+
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+@interface MyRequired {
+}
+
+
+class RequiredTestBean implements BeanNameAware, BeanFactoryAware {
+
+	private String name;
+
+	private int age;
+
+	private String favouriteColour;
+
+	private String jobTitle;
+
+
+	public int getAge() {
+		return age;
 	}
 
-	@Test
-	public void testWithStaticFactoryMethodAndRequiredPropertiesSpecified() {
-		DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
-		BeanDefinition beanDef = BeanDefinitionBuilder
-				.genericBeanDefinition(RequiredTestBean.class)
-				.setFactoryMethod("create")
-				.addPropertyValue("age", "24")
-				.addPropertyValue("favouriteColour", "Blue")
-				.addPropertyValue("jobTitle", "Grand Poobah")
-				.getBeanDefinition();
-		factory.registerBeanDefinition("testBean", beanDef);
-		factory.addBeanPostProcessor(new RequiredAnnotationBeanPostProcessor());
-		factory.preInstantiateSingletons();
-		RequiredTestBean bean = (RequiredTestBean) factory.getBean("testBean");
-		assertEquals(24, bean.getAge());
-		assertEquals("Blue", bean.getFavouriteColour());
+	@Required
+	public void setAge(int age) {
+		this.age = age;
 	}
 
-	@Test
-	public void testWithFactoryBean() {
-		DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
-		RootBeanDefinition beanDef = new RootBeanDefinition(RequiredTestBean.class);
-		beanDef.setFactoryBeanName("testBeanFactory");
-		beanDef.setFactoryMethodName("create");
-		factory.registerBeanDefinition("testBean", beanDef);
-		factory.registerBeanDefinition("testBeanFactory", new RootBeanDefinition(RequiredTestBeanFactory.class));
-		RequiredAnnotationBeanPostProcessor bpp = new RequiredAnnotationBeanPostProcessor();
-		bpp.setBeanFactory(factory);
-		factory.addBeanPostProcessor(bpp);
-		factory.preInstantiateSingletons();
+	public String getName() {
+		return name;
 	}
 
-
-	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.METHOD)
-	public @interface MyRequired {
+	@MyRequired
+	public void setName(String name) {
+		this.name = name;
 	}
 
-
-	public static class RequiredTestBean implements BeanNameAware, BeanFactoryAware {
-
-		private String name;
-
-		private int age;
-
-		private String favouriteColour;
-
-		private String jobTitle;
-
-
-		public int getAge() {
-			return age;
-		}
-
-		@Required
-		public void setAge(int age) {
-			this.age = age;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		@MyRequired
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		public String getFavouriteColour() {
-			return favouriteColour;
-		}
-
-		@Required
-		public void setFavouriteColour(String favouriteColour) {
-			this.favouriteColour = favouriteColour;
-		}
-
-		public String getJobTitle() {
-			return jobTitle;
-		}
-
-		@Required
-		public void setJobTitle(String jobTitle) {
-			this.jobTitle = jobTitle;
-		}
-
-		@Override
-		@Required
-		public void setBeanName(String name) {
-		}
-
-		@Override
-		@Required
-		public void setBeanFactory(BeanFactory beanFactory) {
-		}
-
-		public static RequiredTestBean create() {
-			return new RequiredTestBean();
-		}
+	public String getFavouriteColour() {
+		return favouriteColour;
 	}
 
+	@Required
+	public void setFavouriteColour(String favouriteColour) {
+		this.favouriteColour = favouriteColour;
+	}
 
-	public static class RequiredTestBeanFactory {
+	public String getJobTitle() {
+		return jobTitle;
+	}
 
-		public RequiredTestBean create() {
-			return new RequiredTestBean();
-		}
+	@Required
+	public void setJobTitle(String jobTitle) {
+		this.jobTitle = jobTitle;
+	}
+
+	@Override
+	@Required
+	public void setBeanName(String name) {
+	}
+
+	@Override
+	@Required
+	public void setBeanFactory(BeanFactory beanFactory) {
 	}
 
 }

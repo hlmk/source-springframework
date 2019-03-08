@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,20 @@
 
 package org.springframework.transaction.annotation;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import javax.sql.DataSource;
 
+import org.junit.Ignore;
 import org.junit.Test;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
@@ -43,17 +50,12 @@ import org.springframework.tests.transaction.CallCountingTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-
 /**
  * Integration tests for the @EnableTransactionManagement annotation.
  *
  * @author Chris Beams
- * @author Sam Brannen
  * @since 3.1
  */
-@SuppressWarnings("resource")
 public class EnableTransactionManagementIntegrationTests {
 
 	@Test
@@ -65,8 +67,7 @@ public class EnableTransactionManagementIntegrationTests {
 		try {
 			assertTxProxying(ctx);
 			fail("expected exception");
-		}
-		catch (AssertionError ex) {
+		} catch (AssertionError ex) {
 			assertThat(ex.getMessage(), equalTo("FooRepository is not a TX proxy"));
 		}
 	}
@@ -89,9 +90,13 @@ public class EnableTransactionManagementIntegrationTests {
 		assertTxProxying(ctx);
 	}
 
-	@Test
+	@Ignore @Test // TODO SPR-8207
 	public void repositoryIsTxProxy_withNonConventionalTxManagerName_fallsBackToByTypeLookup() {
-		assertTxProxying(new AnnotationConfigApplicationContext(Config.class, NonConventionalTxManagerNameConfig.class));
+		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+		ctx.register(Config.class, NonConventionalTxManagerNameConfig.class);
+		ctx.refresh();
+
+		assertTxProxying(ctx);
 	}
 
 	@Test
@@ -115,7 +120,7 @@ public class EnableTransactionManagementIntegrationTests {
 			// this test is a bit fragile, but gets the job done, proving that an
 			// attempt was made to look up the AJ aspect. It's due to classpath issues
 			// in .integration-tests that it's not found.
-			assertTrue(ex.getMessage().contains("AspectJJtaTransactionManagementConfiguration"));
+			assertTrue(ex.getMessage().contains("AspectJTransactionManagementConfiguration"));
 		}
 	}
 
@@ -162,30 +167,10 @@ public class EnableTransactionManagementIntegrationTests {
 	}
 
 
-	private void assertTxProxying(AnnotationConfigApplicationContext ctx) {
-		FooRepository repo = ctx.getBean(FooRepository.class);
-
-		boolean isTxProxy = false;
-		if (AopUtils.isAopProxy(repo)) {
-			for (Advisor advisor : ((Advised)repo).getAdvisors()) {
-				if (advisor instanceof BeanFactoryTransactionAttributeSourceAdvisor) {
-					isTxProxy = true;
-					break;
-				}
-			}
-		}
-		assertTrue("FooRepository is not a TX proxy", isTxProxy);
-
-		// trigger a transaction
-		repo.findAll();
-	}
-
-
 	@Configuration
 	@EnableTransactionManagement
 	@ImportResource("org/springframework/transaction/annotation/enable-caching.xml")
 	static class EnableTxAndCachingConfig {
-
 		@Bean
 		public PlatformTransactionManager txManager() {
 			return new CallCountingTransactionManager();
@@ -199,7 +184,7 @@ public class EnableTransactionManagementIntegrationTests {
 		@Bean
 		public CacheManager cacheManager() {
 			SimpleCacheManager mgr = new SimpleCacheManager();
-			ArrayList<Cache> caches = new ArrayList<>();
+			ArrayList<Cache> caches = new ArrayList<Cache>();
 			caches.add(new ConcurrentMapCache(""));
 			mgr.setCaches(caches);
 			return mgr;
@@ -210,7 +195,6 @@ public class EnableTransactionManagementIntegrationTests {
 	@Configuration
 	@EnableTransactionManagement
 	static class ImplicitTxManagerConfig {
-
 		@Bean
 		public PlatformTransactionManager txManager() {
 			return new CallCountingTransactionManager();
@@ -226,7 +210,6 @@ public class EnableTransactionManagementIntegrationTests {
 	@Configuration
 	@EnableTransactionManagement
 	static class ExplicitTxManagerConfig implements TransactionManagementConfigurer {
-
 		@Bean
 		public PlatformTransactionManager txManager1() {
 			return new CallCountingTransactionManager();
@@ -248,11 +231,28 @@ public class EnableTransactionManagementIntegrationTests {
 		}
 	}
 
+	private void assertTxProxying(AnnotationConfigApplicationContext ctx) {
+		FooRepository repo = ctx.getBean(FooRepository.class);
+
+		boolean isTxProxy = false;
+		if (AopUtils.isAopProxy(repo)) {
+			for (Advisor advisor : ((Advised)repo).getAdvisors()) {
+				if (advisor instanceof BeanFactoryTransactionAttributeSourceAdvisor) {
+					isTxProxy = true;
+					break;
+				}
+			}
+		}
+		assertTrue("FooRepository is not a TX proxy", isTxProxy);
+
+		// trigger a transaction
+		repo.findAll();
+	}
+
 
 	@Configuration
 	@EnableTransactionManagement
 	static class DefaultTxManagerNameConfig {
-
 		@Bean
 		PlatformTransactionManager transactionManager(DataSource dataSource) {
 			return new DataSourceTransactionManager(dataSource);
@@ -263,7 +263,6 @@ public class EnableTransactionManagementIntegrationTests {
 	@Configuration
 	@EnableTransactionManagement
 	static class CustomTxManagerNameConfig {
-
 		@Bean
 		PlatformTransactionManager txManager(DataSource dataSource) {
 			return new DataSourceTransactionManager(dataSource);
@@ -274,7 +273,6 @@ public class EnableTransactionManagementIntegrationTests {
 	@Configuration
 	@EnableTransactionManagement
 	static class NonConventionalTxManagerNameConfig {
-
 		@Bean
 		PlatformTransactionManager txManager(DataSource dataSource) {
 			return new DataSourceTransactionManager(dataSource);
@@ -285,7 +283,6 @@ public class EnableTransactionManagementIntegrationTests {
 	@Configuration
 	@EnableTransactionManagement(proxyTargetClass=true)
 	static class ProxyTargetClassTxConfig {
-
 		@Bean
 		PlatformTransactionManager transactionManager(DataSource dataSource) {
 			return new DataSourceTransactionManager(dataSource);
@@ -296,7 +293,6 @@ public class EnableTransactionManagementIntegrationTests {
 	@Configuration
 	@EnableTransactionManagement(mode=AdviceMode.ASPECTJ)
 	static class AspectJTxConfig {
-
 		@Bean
 		PlatformTransactionManager transactionManager(DataSource dataSource) {
 			return new DataSourceTransactionManager(dataSource);
@@ -306,7 +302,6 @@ public class EnableTransactionManagementIntegrationTests {
 
 	@Configuration
 	static class Config {
-
 		@Bean
 		FooRepository fooRepository() {
 			JdbcFooRepository repos = new JdbcFooRepository();
@@ -324,7 +319,6 @@ public class EnableTransactionManagementIntegrationTests {
 
 
 	interface FooRepository {
-
 		List<Object> findAll();
 	}
 
@@ -342,7 +336,6 @@ public class EnableTransactionManagementIntegrationTests {
 		}
 	}
 
-
 	@Repository
 	static class DummyFooRepository implements FooRepository {
 
@@ -352,5 +345,4 @@ public class EnableTransactionManagementIntegrationTests {
 			return Collections.emptyList();
 		}
 	}
-
 }

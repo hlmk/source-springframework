@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ package org.springframework.jdbc.support;
 
 import java.sql.SQLException;
 
-import org.junit.Test;
+import junit.framework.TestCase;
 
+import org.springframework.core.JdkVersion;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -30,22 +31,23 @@ import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Thomas Risberg
  */
-public class SQLExceptionSubclassTranslatorTests {
+public class SQLExceptionSubclassTranslatorTests extends TestCase {
 
 	private static SQLErrorCodes ERROR_CODES = new SQLErrorCodes();
 
 	static {
-		ERROR_CODES.setBadSqlGrammarCodes("1");
+		ERROR_CODES.setBadSqlGrammarCodes(new String[] { "1" });
 	}
 
 
-	@Test
-	public void errorCodeTranslation() {
+	public void testErrorCodeTranslation() {
+		if (JdkVersion.getMajorJavaVersion() < JdkVersion.JAVA_16) {
+			return;
+		}
+
 		SQLExceptionTranslator sext = new SQLErrorCodeSQLExceptionTranslator(ERROR_CODES);
 
 		SQLException dataIntegrityViolationEx = SQLExceptionSubclassFactory.newSQLDataException("", "", 0);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import javax.xml.ws.Service;
 
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
 
 /**
  * {@link org.springframework.beans.factory.FactoryBean} for locally
@@ -28,7 +27,7 @@ import org.springframework.lang.Nullable;
  * Uses {@link LocalJaxWsServiceFactory}'s facilities underneath.
  *
  * <p>Alternatively, JAX-WS Service references can be looked up
- * in the JNDI environment of the Java EE container.
+ * in the JNDI environment of the J2EE container.
  *
  * @author Juergen Hoeller
  * @since 2.5
@@ -39,27 +38,21 @@ import org.springframework.lang.Nullable;
 public class LocalJaxWsServiceFactoryBean extends LocalJaxWsServiceFactory
 		implements FactoryBean<Service>, InitializingBean {
 
-	@Nullable
 	private Service service;
 
 
-	@Override
 	public void afterPropertiesSet() {
 		this.service = createJaxWsService();
 	}
 
-	@Override
-	@Nullable
 	public Service getObject() {
 		return this.service;
 	}
 
-	@Override
 	public Class<? extends Service> getObjectType() {
 		return (this.service != null ? this.service.getClass() : Service.class);
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}

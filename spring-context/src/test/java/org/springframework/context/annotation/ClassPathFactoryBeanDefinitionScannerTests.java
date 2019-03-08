@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,29 @@
 
 package org.springframework.context.annotation;
 
-import org.junit.Test;
+import junit.framework.TestCase;
 
 import org.springframework.aop.scope.ScopedObject;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.tests.context.SimpleMapScope;
+import org.springframework.tests.sample.beans.TestBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.annotation4.DependencyBean;
 import org.springframework.context.annotation4.FactoryMethodComponent;
-import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.tests.context.SimpleMapScope;
-import org.springframework.tests.sample.beans.TestBean;
 import org.springframework.util.ClassUtils;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Mark Pollack
  * @author Juergen Hoeller
  */
-public class ClassPathFactoryBeanDefinitionScannerTests {
+public class ClassPathFactoryBeanDefinitionScannerTests extends TestCase {
 
 	private static final String BASE_PACKAGE = FactoryMethodComponent.class.getPackage().getName();
 
 
-	@Test
 	public void testSingletonScopedFactoryMethod() {
 		GenericApplicationContext context = new GenericApplicationContext();
 		ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(context);
@@ -56,13 +52,13 @@ public class ClassPathFactoryBeanDefinitionScannerTests {
 		FactoryMethodComponent fmc = context.getBean("factoryMethodComponent", FactoryMethodComponent.class);
 		assertFalse(fmc.getClass().getName().contains(ClassUtils.CGLIB_CLASS_SEPARATOR));
 
-		TestBean tb = (TestBean) context.getBean("publicInstance"); //2
+		TestBean tb = (TestBean)context.getBean("publicInstance"); //2
 		assertEquals("publicInstance", tb.getName());
-		TestBean tb2 = (TestBean) context.getBean("publicInstance"); //2
+		TestBean tb2 = (TestBean)context.getBean("publicInstance"); //2
 		assertEquals("publicInstance", tb2.getName());
 		assertSame(tb2, tb);
 
-		tb = (TestBean) context.getBean("protectedInstance"); //3
+		tb = (TestBean)context.getBean("protectedInstance"); //3
 		assertEquals("protectedInstance", tb.getName());
 		assertSame(tb, context.getBean("protectedInstance"));
 		assertEquals("0", tb.getCountry());
@@ -82,9 +78,8 @@ public class ClassPathFactoryBeanDefinitionScannerTests {
 		assertTrue(bean instanceof ScopedObject);
 
 		QualifiedClientBean clientBean = context.getBean("clientBean", QualifiedClientBean.class);
-		assertSame(context.getBean("publicInstance"), clientBean.testBean);
-		assertSame(context.getBean("dependencyBean"), clientBean.dependencyBean);
-		assertSame(context, clientBean.applicationContext);
+		assertSame(clientBean.testBean, context.getBean("publicInstance"));
+		assertSame(clientBean.dependencyBean, context.getBean("dependencyBean"));
 	}
 
 
@@ -95,9 +90,6 @@ public class ClassPathFactoryBeanDefinitionScannerTests {
 
 		@Autowired
 		public DependencyBean dependencyBean;
-
-		@Autowired
-		AbstractApplicationContext applicationContext;
 	}
 
 }

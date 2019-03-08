@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import static org.junit.Assert.*;
  * @author Chris Beams
  * @since 3.1
  */
-@SuppressWarnings("resource")
 public class EnableCachingIntegrationTests {
 
 	@Test
@@ -70,7 +69,6 @@ public class EnableCachingIntegrationTests {
 		}
 	}
 
-
 	private void assertCacheProxying(AnnotationConfigApplicationContext ctx) {
 		FooRepository repo = ctx.getBean(FooRepository.class);
 
@@ -90,7 +88,6 @@ public class EnableCachingIntegrationTests {
 	@Configuration
 	@EnableCaching(proxyTargetClass=true)
 	static class ProxyTargetClassCachingConfig {
-
 		@Bean
 		CacheManager mgr() {
 			return new NoOpCacheManager();
@@ -100,7 +97,6 @@ public class EnableCachingIntegrationTests {
 
 	@Configuration
 	static class Config {
-
 		@Bean
 		FooRepository fooRepository() {
 			return new DummyFooRepository();
@@ -111,7 +107,6 @@ public class EnableCachingIntegrationTests {
 	@Configuration
 	@EnableCaching(mode=AdviceMode.ASPECTJ)
 	static class AspectJCacheConfig {
-
 		@Bean
 		CacheManager cacheManager() {
 			return new NoOpCacheManager();
@@ -120,7 +115,6 @@ public class EnableCachingIntegrationTests {
 
 
 	interface FooRepository {
-
 		List<Object> findAll();
 	}
 
@@ -134,5 +128,4 @@ public class EnableCachingIntegrationTests {
 			return Collections.emptyList();
 		}
 	}
-
 }

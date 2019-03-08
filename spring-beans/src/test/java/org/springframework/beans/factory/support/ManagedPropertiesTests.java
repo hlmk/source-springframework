@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,15 @@ package org.springframework.beans.factory.support;
 
 import java.util.Map;
 
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import junit.framework.TestCase;
 
 /**
  * @author Rick Evans
  * @author Juergen Hoeller
- * @author Sam Brannen
  */
-@SuppressWarnings("rawtypes")
-public class ManagedPropertiesTests {
+public class ManagedPropertiesTests extends TestCase {
 
-	@Test
-	public void mergeSunnyDay() {
+	public void testMergeSunnyDay() {
 		ManagedProperties parent = new ManagedProperties();
 		parent.setProperty("one", "one");
 		parent.setProperty("two", "two");
@@ -42,28 +37,34 @@ public class ManagedPropertiesTests {
 		assertEquals("merge() obviously did not work.", 3, mergedMap.size());
 	}
 
-	@Test
-	public void mergeWithNullParent() {
+	public void testMergeWithNullParent() {
 		ManagedProperties child = new ManagedProperties();
 		child.setMergeEnabled(true);
 		assertSame(child, child.merge(null));
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void mergeWithNonCompatibleParentType() {
+	public void testMergeWithNonCompatibleParentType() {
 		ManagedProperties map = new ManagedProperties();
 		map.setMergeEnabled(true);
-		map.merge("hello");
+		try {
+			map.merge("hello");
+			fail("Must have failed by this point.");
+		}
+		catch (IllegalArgumentException expected) {
+		}
 	}
 
-	@Test(expected = IllegalStateException.class)
-	public void mergeNotAllowedWhenMergeNotEnabled() {
+	public void testMergeNotAllowedWhenMergeNotEnabled() {
 		ManagedProperties map = new ManagedProperties();
-		map.merge(null);
+		try {
+			map.merge(null);
+			fail("Must have failed by this point (cannot merge() when the mergeEnabled property is false.");
+		}
+		catch (IllegalStateException expected) {
+		}
 	}
 
-	@Test
-	public void mergeEmptyChild() {
+	public void testMergeEmptyChild() {
 		ManagedProperties parent = new ManagedProperties();
 		parent.setProperty("one", "one");
 		parent.setProperty("two", "two");
@@ -73,8 +74,7 @@ public class ManagedPropertiesTests {
 		assertEquals("merge() obviously did not work.", 2, mergedMap.size());
 	}
 
-	@Test
-	public void mergeChildValuesOverrideTheParents() {
+	public void testMergeChildValuesOverrideTheParents() {
 		ManagedProperties parent = new ManagedProperties();
 		parent.setProperty("one", "one");
 		parent.setProperty("two", "two");

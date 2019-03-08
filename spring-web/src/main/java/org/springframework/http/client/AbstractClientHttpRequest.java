@@ -36,30 +36,23 @@ public abstract class AbstractClientHttpRequest implements ClientHttpRequest {
 	private boolean executed = false;
 
 
-	@Override
 	public final HttpHeaders getHeaders() {
 		return (this.executed ? HttpHeaders.readOnlyHttpHeaders(this.headers) : this.headers);
 	}
 
-	@Override
 	public final OutputStream getBody() throws IOException {
-		assertNotExecuted();
+		checkExecuted();
 		return getBodyInternal(this.headers);
 	}
 
-	@Override
 	public final ClientHttpResponse execute() throws IOException {
-		assertNotExecuted();
+		checkExecuted();
 		ClientHttpResponse result = executeInternal(this.headers);
 		this.executed = true;
 		return result;
 	}
 
-	/**
-	 * Assert that this request has not been {@linkplain #execute() executed} yet.
-	 * @throws IllegalStateException if this request has been executed
-	 */
-	protected void assertNotExecuted() {
+	private void checkExecuted() {
 		Assert.state(!this.executed, "ClientHttpRequest already executed");
 	}
 

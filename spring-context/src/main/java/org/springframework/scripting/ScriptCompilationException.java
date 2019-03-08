@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.scripting;
 
 import org.springframework.core.NestedRuntimeException;
-import org.springframework.lang.Nullable;
 
 /**
  * Exception to be thrown on script compilation failure.
@@ -28,8 +27,7 @@ import org.springframework.lang.Nullable;
 @SuppressWarnings("serial")
 public class ScriptCompilationException extends NestedRuntimeException {
 
-	@Nullable
-	private final ScriptSource scriptSource;
+	private ScriptSource scriptSource;
 
 
 	/**
@@ -38,48 +36,38 @@ public class ScriptCompilationException extends NestedRuntimeException {
 	 */
 	public ScriptCompilationException(String msg) {
 		super(msg);
-		this.scriptSource = null;
 	}
 
 	/**
 	 * Constructor for ScriptCompilationException.
 	 * @param msg the detail message
-	 * @param cause the root cause (usually from using an underlying script compiler API)
+	 * @param cause the root cause (usually from using an underlying
+	 * script compiler API)
 	 */
 	public ScriptCompilationException(String msg, Throwable cause) {
 		super(msg, cause);
-		this.scriptSource = null;
 	}
 
 	/**
 	 * Constructor for ScriptCompilationException.
 	 * @param scriptSource the source for the offending script
-	 * @param msg the detail message
-	 * @since 4.2
-	 */
-	public ScriptCompilationException(ScriptSource scriptSource, String msg) {
-		super("Could not compile " + scriptSource + ": " + msg);
-		this.scriptSource = scriptSource;
-	}
-
-	/**
-	 * Constructor for ScriptCompilationException.
-	 * @param scriptSource the source for the offending script
-	 * @param cause the root cause (usually from using an underlying script compiler API)
+	 * @param cause the root cause (usually from using an underlying
+	 * script compiler API)
 	 */
 	public ScriptCompilationException(ScriptSource scriptSource, Throwable cause) {
-		super("Could not compile " + scriptSource, cause);
+		super("Could not compile script", cause);
 		this.scriptSource = scriptSource;
 	}
 
 	/**
 	 * Constructor for ScriptCompilationException.
-	 * @param scriptSource the source for the offending script
 	 * @param msg the detail message
-	 * @param cause the root cause (usually from using an underlying script compiler API)
+	 * @param scriptSource the source for the offending script
+	 * @param cause the root cause (usually from using an underlying
+	 * script compiler API)
 	 */
 	public ScriptCompilationException(ScriptSource scriptSource, String msg, Throwable cause) {
-		super("Could not compile " + scriptSource + ": " + msg, cause);
+		super("Could not compile script [" + scriptSource + "]: " + msg, cause);
 		this.scriptSource = scriptSource;
 	}
 
@@ -88,7 +76,6 @@ public class ScriptCompilationException extends NestedRuntimeException {
 	 * Return the source for the offending script.
 	 * @return the source, or {@code null} if not available
 	 */
-	@Nullable
 	public ScriptSource getScriptSource() {
 		return this.scriptSource;
 	}

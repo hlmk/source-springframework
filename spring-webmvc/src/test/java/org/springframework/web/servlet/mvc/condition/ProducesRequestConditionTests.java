@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,20 @@
 
 package org.springframework.web.servlet.mvc.condition;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.Collection;
 import java.util.Collections;
 
 import org.junit.Test;
-
 import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.web.servlet.mvc.condition.ProducesRequestCondition.ProduceMediaTypeExpression;
 
-import static org.junit.Assert.*;
-
 /**
- * Unit tests for {@link ProducesRequestCondition}.
- *
  * @author Arjen Poutsma
  * @author Rossen Stoyanchev
  */
@@ -52,15 +53,6 @@ public class ProducesRequestConditionTests {
 		request.addHeader("Accept", "text/plain");
 
 		assertNull(condition.getMatchingCondition(request));
-	}
-
-	@Test
-	public void matchNegatedWithoutAcceptHeader() {
-		ProducesRequestCondition condition = new ProducesRequestCondition("!text/plain");
-		MockHttpServletRequest request = new MockHttpServletRequest();
-
-		assertNotNull(condition.getMatchingCondition(request));
-		assertEquals(Collections.emptySet(), condition.getProducibleMediaTypes());
 	}
 
 	@Test
@@ -124,17 +116,6 @@ public class ProducesRequestConditionTests {
 		ProducesRequestCondition condition = new ProducesRequestCondition(new String[] {"text/plain"}, new String[] {});
 
 		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/foo.txt");
-
-		assertNotNull(condition.getMatchingCondition(request));
-	}
-
-	@Test // SPR-17550
-	public void matchWithNegationAndMediaTypeAllWithQualityParameter() {
-		ProducesRequestCondition condition = new ProducesRequestCondition("!application/json");
-
-		MockHttpServletRequest request = new MockHttpServletRequest();
-		request.addHeader("Accept",
-				"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
 
 		assertNotNull(condition.getMatchingCondition(request));
 	}
@@ -206,7 +187,7 @@ public class ProducesRequestConditionTests {
 	}
 
 	@Test
-	public void compareToMultipleExpressionsAndMultipleAcceptHeaderValues() {
+	public void compareToMultipleExpressionsAndMultipeAcceptHeaderValues() {
 		ProducesRequestCondition condition1 = new ProducesRequestCondition("text/*", "text/plain");
 		ProducesRequestCondition condition2 = new ProducesRequestCondition("application/*", "application/xml");
 
@@ -337,7 +318,6 @@ public class ProducesRequestConditionTests {
 		result = condition.getMatchingCondition(request);
 		assertNull(result);
 	}
-
 
 	private void assertConditions(ProducesRequestCondition condition, String... expected) {
 		Collection<ProduceMediaTypeExpression> expressions = condition.getContent();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,12 @@ import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.BodyTag;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * The {@code <errors>} tag renders field errors in an HTML 'span' tag.
- * Displays errors for either an object or a particular field.
+ * Form tag for displaying errors for a particular field or object.
  *
  * <p>This tag supports three main usage patterns:
  *
@@ -39,149 +37,6 @@ import org.springframework.util.StringUtils;
  *	<li>Object errors only - omit '{@code path}'</li>
  *	<li>All errors - set '{@code path}' to '{@code *}'</li>
  * </ol>
- *
- * <p>
- * <table>
- * <caption>Attribute Summary</caption>
- * <thead>
- * <tr>
- * <th class="colFirst">Attribute</th>
- * <th class="colOne">Required?</th>
- * <th class="colOne">Runtime Expression?</th>
- * <th class="colLast">Description</th>
- * </tr>
- * </thead>
- * <tbody>
- * <tr class="altColor">
- * <td><p>cssClass</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Optional Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>cssStyle</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Optional Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>delimiter</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>Delimiter for displaying multiple error messages.
- * Defaults to the br tag.</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>dir</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>element</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>Specifies the HTML element that is used to render the enclosing
- * errors.</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>htmlEscape</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>Enable/disable HTML escaping of rendered values.</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>id</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>lang</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onclick</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>ondblclick</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onkeydown</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onkeypress</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onkeyup</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onmousedown</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onmousemove</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onmouseout</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>onmouseover</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>onmouseup</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Event Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>path</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>Path to errors object for data binding</p></td>
- * </tr>
- * <tr class="rowColor">
- * <td><p>tabindex</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * <tr class="altColor">
- * <td><p>title</p></td>
- * <td><p>false</p></td>
- * <td><p>true</p></td>
- * <td><p>HTML Standard Attribute</p></td>
- * </tr>
- * </tbody>
- * </table>
  *
  * @author Rob Harrop
  * @author Juergen Hoeller
@@ -210,7 +65,6 @@ public class ErrorsTag extends AbstractHtmlElementBodyTag implements BodyTag {
 	/**
 	 * Stores any value that existed in the 'errors messages' before the tag was started.
 	 */
-	@Nullable
 	private Object oldMessages;
 
 	private boolean errorMessagesWereExposed;
@@ -218,7 +72,7 @@ public class ErrorsTag extends AbstractHtmlElementBodyTag implements BodyTag {
 
 	/**
 	 * Set the HTML element must be used to render the error messages.
-	 * <p>Defaults to an HTML '{@code <span/>}' tag.
+	 * <p>Defaults to an HTML '{@code &lt;span/&gt;}' tag.
 	 */
 	public void setElement(String element) {
 		Assert.hasText(element, "'element' cannot be null or blank");
@@ -234,7 +88,7 @@ public class ErrorsTag extends AbstractHtmlElementBodyTag implements BodyTag {
 
 	/**
 	 * Set the delimiter to be used between error messages.
-	 * <p>Defaults to an HTML '{@code <br/>}' tag.
+	 * <p>Defaults to an HTML '{@code &lt;br/&gt;}' tag.
 	 */
 	public void setDelimiter(String delimiter) {
 		this.delimiter = delimiter;
@@ -251,7 +105,7 @@ public class ErrorsTag extends AbstractHtmlElementBodyTag implements BodyTag {
 	/**
 	 * Get the value for the HTML '{@code id}' attribute.
 	 * <p>Appends '{@code .errors}' to the value returned by {@link #getPropertyPath()}
-	 * or to the model attribute name if the {@code <form:errors/>} tag's
+	 * or to the model attribute name if the {@code &lt;form:errors/&gt;} tag's
 	 * '{@code path}' attribute has been omitted.
 	 * @return the value for the HTML '{@code id}' attribute
 	 * @see #getPropertyPath()
@@ -272,7 +126,6 @@ public class ErrorsTag extends AbstractHtmlElementBodyTag implements BodyTag {
 	 * is not a validate attribute for the '{@code span}' element.
 	 */
 	@Override
-	@Nullable
 	protected String getName() throws JspException {
 		return null;
 	}
@@ -317,7 +170,8 @@ public class ErrorsTag extends AbstractHtmlElementBodyTag implements BodyTag {
 	 */
 	@Override
 	protected void exposeAttributes() throws JspException {
-		List<String> errorMessages = new ArrayList<>(Arrays.asList(getBindStatus().getErrorMessages()));
+		List<String> errorMessages = new ArrayList<String>();
+		errorMessages.addAll(Arrays.asList(getBindStatus().getErrorMessages()));
 		this.oldMessages = this.pageContext.getAttribute(MESSAGES_ATTRIBUTE, PageContext.PAGE_SCOPE);
 		this.pageContext.setAttribute(MESSAGES_ATTRIBUTE, errorMessages, PageContext.PAGE_SCOPE);
 		this.errorMessagesWereExposed = true;

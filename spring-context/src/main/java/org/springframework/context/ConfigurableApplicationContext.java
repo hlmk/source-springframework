@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.ProtocolResolver;
-import org.springframework.lang.Nullable;
 
 /**
  * SPI interface to be implemented by most if not all application contexts.
@@ -54,8 +52,8 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 	/**
 	 * Name of the ConversionService bean in the factory.
 	 * If none is supplied, default conversion rules apply.
-	 * @since 3.0
 	 * @see org.springframework.core.convert.ConversionService
+	 * @since 3.0
 	 */
 	String CONVERSION_SERVICE_BEAN_NAME = "conversionService";
 
@@ -101,7 +99,13 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 	 * @param parent the parent context
 	 * @see org.springframework.web.context.ConfigurableWebApplicationContext
 	 */
-	void setParent(@Nullable ApplicationContext parent);
+	void setParent(ApplicationContext parent);
+
+	/**
+	 * Return the Environment for this application context in configurable form.
+	 * @since 3.1
+	 */
+	ConfigurableEnvironment getEnvironment();
 
 	/**
 	 * Set the {@code Environment} for this application context.
@@ -109,14 +113,6 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 	 * @since 3.1
 	 */
 	void setEnvironment(ConfigurableEnvironment environment);
-
-	/**
-	 * Return the {@code Environment} for this application context in configurable
-	 * form, allowing for further customization.
-	 * @since 3.1
-	 */
-	@Override
-	ConfigurableEnvironment getEnvironment();
 
 	/**
 	 * Add a new BeanFactoryPostProcessor that will get applied to the internal
@@ -137,15 +133,6 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 	 * @see org.springframework.context.event.ContextClosedEvent
 	 */
 	void addApplicationListener(ApplicationListener<?> listener);
-
-	/**
-	 * Register the given protocol resolver with this application context,
-	 * allowing for additional resource protocols to be handled.
-	 * <p>Any such resolver will be invoked ahead of this context's standard
-	 * resolution rules. It may therefore also override any default rules.
-	 * @since 4.3
-	 */
-	void addProtocolResolver(ProtocolResolver resolver);
 
 	/**
 	 * Load or refresh the persistent representation of the configuration,
@@ -177,7 +164,6 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 	 * <p>This method can be called multiple times without side effects: Subsequent
 	 * {@code close} calls on an already closed context will be ignored.
 	 */
-	@Override
 	void close();
 
 	/**
@@ -197,7 +183,7 @@ public interface ConfigurableApplicationContext extends ApplicationContext, Life
 	 * will already have been instantiated before. Use a BeanFactoryPostProcessor
 	 * to intercept the BeanFactory setup process before beans get touched.
 	 * <p>Generally, this internal factory will only be accessible while the context
-	 * is active, that is, in-between {@link #refresh()} and {@link #close()}.
+	 * is active, that is, inbetween {@link #refresh()} and {@link #close()}.
 	 * The {@link #isActive()} flag can be used to check whether the context
 	 * is in an appropriate state.
 	 * @return the underlying bean factory

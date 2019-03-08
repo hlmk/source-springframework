@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.Lifecycle;
-import org.springframework.lang.Nullable;
 
 /**
  * {@link org.springframework.beans.factory.FactoryBean} that retrieves a
@@ -51,17 +50,13 @@ import org.springframework.lang.Nullable;
  * @see ScheduledTimerListener
  * @see commonj.timers.TimerManager
  * @see commonj.timers.TimerListener
- * @deprecated as of 5.1, in favor of EE 7's
- * {@link org.springframework.scheduling.concurrent.DefaultManagedTaskScheduler}
  */
-@Deprecated
 public class TimerManagerFactoryBean extends TimerManagerAccessor
 		implements FactoryBean<TimerManager>, InitializingBean, DisposableBean, Lifecycle {
 
-	@Nullable
 	private ScheduledTimerListener[] scheduledTimerListeners;
 
-	private final List<Timer> timers = new LinkedList<>();
+	private final List<Timer> timers = new LinkedList<Timer>();
 
 
 	/**
@@ -81,12 +76,10 @@ public class TimerManagerFactoryBean extends TimerManagerAccessor
 	// Implementation of InitializingBean interface
 	//---------------------------------------------------------------------
 
-	@Override
 	public void afterPropertiesSet() throws NamingException {
 		super.afterPropertiesSet();
-
 		if (this.scheduledTimerListeners != null) {
-			TimerManager timerManager = obtainTimerManager();
+			TimerManager timerManager = getTimerManager();
 			for (ScheduledTimerListener scheduledTask : this.scheduledTimerListeners) {
 				Timer timer;
 				if (scheduledTask.isOneTimeTask()) {
@@ -112,19 +105,15 @@ public class TimerManagerFactoryBean extends TimerManagerAccessor
 	// Implementation of FactoryBean interface
 	//---------------------------------------------------------------------
 
-	@Override
-	@Nullable
 	public TimerManager getObject() {
 		return getTimerManager();
 	}
 
-	@Override
 	public Class<? extends TimerManager> getObjectType() {
 		TimerManager timerManager = getTimerManager();
 		return (timerManager != null ? timerManager.getClass() : TimerManager.class);
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}
@@ -148,7 +137,7 @@ public class TimerManagerFactoryBean extends TimerManagerAccessor
 				timer.cancel();
 			}
 			catch (Throwable ex) {
-				logger.debug("Could not cancel CommonJ Timer", ex);
+				logger.warn("Could not cancel CommonJ Timer", ex);
 			}
 		}
 		this.timers.clear();

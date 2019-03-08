@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,42 +17,13 @@
 package org.springframework.expression;
 
 /**
- * Supported operations that an {@link OperatorOverloader} can implement for any pair of
- * operands.
+ * Supported operations that an {@link OperatorOverloader} can implement for any pair of operands.
  *
  * @author Andy Clement
  * @since 3.0
  */
 public enum Operation {
 
-	/**
-	 * Add operation.
-	 */
-	ADD,
-
-	/**
-	 * Subtract operation.
-	 */
-	SUBTRACT,
-
-	/**
-	 * Divide operation.
-	 */
-	DIVIDE,
-
-	/**
-	 * Multiply operation.
-	 */
-	MULTIPLY,
-
-	/**
-	 * Modulus operation.
-	 */
-	MODULUS,
-
-	/**
-	 * Power operation.
-	 */
-	POWER
+	ADD, SUBTRACT, DIVIDE, MULTIPLY, MODULUS, POWER
 
 }

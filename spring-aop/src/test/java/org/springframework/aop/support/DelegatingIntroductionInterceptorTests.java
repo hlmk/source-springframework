@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.io.Serializable;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.junit.Test;
-
 import org.springframework.aop.IntroductionAdvisor;
 import org.springframework.aop.IntroductionInterceptor;
 import org.springframework.aop.framework.ProxyFactory;
@@ -43,9 +42,9 @@ import static org.mockito.BDDMockito.*;
  * @author Chris Beams
  * @since 13.05.2003
  */
-public class DelegatingIntroductionInterceptorTests {
+public final class DelegatingIntroductionInterceptorTests {
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected=IllegalArgumentException.class)
 	public void testNullTarget() throws Exception {
 		// Shouldn't accept null target
 		new DelegatingIntroductionInterceptor(null);
@@ -157,7 +156,7 @@ public class DelegatingIntroductionInterceptorTests {
 		TimeStamped ts = (TimeStamped) pf.getProxy();
 
 		assertThat(ts, instanceOf(TimeStamped.class));
-		// Shouldn't proxy framework interfaces
+		// Shoulnd't proxy framework interfaces
 		assertTrue(!(ts instanceof MethodInterceptor));
 		assertTrue(!(ts instanceof IntroductionInterceptor));
 
@@ -185,7 +184,6 @@ public class DelegatingIntroductionInterceptorTests {
 		TimeStamped ts = new SerializableTimeStamped(0);
 
 		factory.addAdvisor(0, new DefaultIntroductionAdvisor(new DelegatingIntroductionInterceptor(ts) {
-			@Override
 			public String toString() {
 				throw new UnsupportedOperationException("Shouldn't be invoked");
 			}

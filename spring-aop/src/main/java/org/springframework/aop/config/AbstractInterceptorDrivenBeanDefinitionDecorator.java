@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.BeanDefinitionDecorator;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -59,7 +58,6 @@ import org.springframework.util.StringUtils;
  */
 public abstract class AbstractInterceptorDrivenBeanDefinitionDecorator implements BeanDefinitionDecorator {
 
-	@Override
 	public final BeanDefinitionHolder decorate(Node node, BeanDefinitionHolder definitionHolder, ParserContext parserContext) {
 		BeanDefinitionRegistry registry = parserContext.getRegistry();
 
@@ -72,7 +70,7 @@ public abstract class AbstractInterceptorDrivenBeanDefinitionDecorator implement
 		BeanDefinition interceptorDefinition = createInterceptorDefinition(node);
 
 		// generate name and register the interceptor
-		String interceptorName = existingBeanName + '.' + getInterceptorNameSuffix(interceptorDefinition);
+		String interceptorName = existingBeanName + "." + getInterceptorNameSuffix(interceptorDefinition);
 		BeanDefinitionReaderUtils.registerBeanDefinition(
 				new BeanDefinitionHolder(interceptorDefinition, interceptorName), registry);
 
@@ -106,8 +104,8 @@ public abstract class AbstractInterceptorDrivenBeanDefinitionDecorator implement
 
 	@SuppressWarnings("unchecked")
 	private void addInterceptorNameToList(String interceptorName, BeanDefinition beanDefinition) {
-		List<String> list = (List<String>) beanDefinition.getPropertyValues().get("interceptorNames");
-		Assert.state(list != null, "Missing 'interceptorNames' property");
+		List<String> list = (List<String>)
+				beanDefinition.getPropertyValues().getPropertyValue("interceptorNames").getValue();
 		list.add(interceptorName);
 	}
 
@@ -116,9 +114,7 @@ public abstract class AbstractInterceptorDrivenBeanDefinitionDecorator implement
 	}
 
 	protected String getInterceptorNameSuffix(BeanDefinition interceptorDefinition) {
-		String beanClassName = interceptorDefinition.getBeanClassName();
-		return (StringUtils.hasLength(beanClassName) ?
-				StringUtils.uncapitalize(ClassUtils.getShortName(beanClassName)) : "");
+		return StringUtils.uncapitalize(ClassUtils.getShortName(interceptorDefinition.getBeanClassName()));
 	}
 
 	/**

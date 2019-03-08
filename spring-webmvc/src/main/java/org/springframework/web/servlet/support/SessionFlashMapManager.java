@@ -21,15 +21,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.springframework.lang.Nullable;
 import org.springframework.web.servlet.FlashMap;
-import org.springframework.web.util.WebUtils;
 
 /**
  * Store and retrieve {@link FlashMap} instances to and from the HTTP session.
  *
  * @author Rossen Stoyanchev
- * @author Juergen Hoeller
  * @since 3.1.1
  */
 public class SessionFlashMapManager extends AbstractFlashMapManager {
@@ -38,32 +35,22 @@ public class SessionFlashMapManager extends AbstractFlashMapManager {
 
 
 	/**
-	 * Retrieves saved FlashMap instances from the HTTP session, if any.
+	 * Retrieve saved FlashMap instances from the HTTP Session.
+	 * <p>Does not cause an HTTP session to be created but may update it if a
+	 * FlashMap matching the current request is found or there are expired
+	 * FlashMap to be removed.
 	 */
-	@Override
 	@SuppressWarnings("unchecked")
-	@Nullable
 	protected List<FlashMap> retrieveFlashMaps(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);
 		return (session != null ? (List<FlashMap>) session.getAttribute(FLASH_MAPS_SESSION_ATTRIBUTE) : null);
 	}
 
 	/**
-	 * Saves the given FlashMap instances in the HTTP session.
+	 * Save the given FlashMap instance, if not empty, in the HTTP session.
 	 */
-	@Override
 	protected void updateFlashMaps(List<FlashMap> flashMaps, HttpServletRequest request, HttpServletResponse response) {
-		WebUtils.setSessionAttribute(request, FLASH_MAPS_SESSION_ATTRIBUTE, (!flashMaps.isEmpty() ? flashMaps : null));
-	}
-
-	/**
-	 * Exposes the best available session mutex.
-	 * @see org.springframework.web.util.WebUtils#getSessionMutex
-	 * @see org.springframework.web.util.HttpSessionMutexListener
-	 */
-	@Override
-	protected Object getFlashMapsMutex(HttpServletRequest request) {
-		return WebUtils.getSessionMutex(request.getSession());
+		request.getSession().setAttribute(FLASH_MAPS_SESSION_ATTRIBUTE, flashMaps);
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,19 +23,15 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.jdbc.datasource.init.DatabasePopulator;
 import org.springframework.jdbc.datasource.init.DatabasePopulatorUtils;
-import org.springframework.lang.Nullable;
 
 /**
- * A subclass of {@link EmbeddedDatabaseFactory} that implements {@link FactoryBean}
- * for registration as a Spring bean. Returns the actual {@link DataSource} that
- * provides connectivity to the embedded database to Spring.
+ * A subclass of {@link EmbeddedDatabaseFactory} that implements {@link FactoryBean} for registration as a Spring bean.
+ * Returns the actual {@link DataSource} that provides connectivity to the embedded database to Spring.
  *
- * <p>The target {@link DataSource} is returned instead of an {@link EmbeddedDatabase}
- * proxy since the {@link FactoryBean} will manage the initialization and destruction
- * lifecycle of the embedded database instance.
+ * <p>The target DataSource is returned instead of a {@link EmbeddedDatabase} proxy since the FactoryBean
+ * will manage the initialization and destruction lifecycle of the database instance.
  *
- * <p>Implements {@link DisposableBean} to shutdown the embedded database when the
- * managing Spring container is being closed.
+ * <p>Implements DisposableBean to shutdown the embedded database when the managing Spring container is shutdown.
  *
  * @author Keith Donald
  * @author Juergen Hoeller
@@ -44,7 +40,6 @@ import org.springframework.lang.Nullable;
 public class EmbeddedDatabaseFactoryBean extends EmbeddedDatabaseFactory
 		implements FactoryBean<DataSource>, InitializingBean, DisposableBean {
 
-	@Nullable
 	private DatabasePopulator databaseCleaner;
 
 
@@ -59,35 +54,28 @@ public class EmbeddedDatabaseFactoryBean extends EmbeddedDatabaseFactory
 		this.databaseCleaner = databaseCleaner;
 	}
 
-	@Override
 	public void afterPropertiesSet() {
 		initDatabase();
 	}
 
+	public void destroy() {
+		if (this.databaseCleaner != null) {
+			DatabasePopulatorUtils.execute(this.databaseCleaner, getDataSource());
+		}
+		shutdownDatabase();
+	}
 
-	@Override
-	@Nullable
+
 	public DataSource getObject() {
 		return getDataSource();
 	}
 
-	@Override
 	public Class<? extends DataSource> getObjectType() {
 		return DataSource.class;
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
-	}
-
-
-	@Override
-	public void destroy() {
-		if (this.databaseCleaner != null && getDataSource() != null) {
-			DatabasePopulatorUtils.execute(this.databaseCleaner, getDataSource());
-		}
-		shutdownDatabase();
 	}
 
 }

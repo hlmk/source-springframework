@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,16 @@ package org.springframework.util.xml;
 
 import java.io.InputStream;
 import java.io.StringReader;
+
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 
-import org.junit.Test;
-import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
+import org.xml.sax.helpers.AttributesImpl;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.*;
 
 public class StaxEventXMLReaderTests extends AbstractStaxXMLReaderTestCase {
 
@@ -38,19 +38,18 @@ public class StaxEventXMLReaderTests extends AbstractStaxXMLReaderTestCase {
 		return new StaxEventXMLReader(inputFactory.createXMLEventReader(inputStream));
 	}
 
-	@Test
-	public void partial() throws Exception {
+	public void testPartial() throws Exception {
 		XMLInputFactory inputFactory = XMLInputFactory.newInstance();
 		XMLEventReader eventReader = inputFactory.createXMLEventReader(new StringReader(CONTENT));
-		eventReader.nextTag();  // skip to root
+		eventReader.nextTag(); // skip to root
 		StaxEventXMLReader xmlReader = new StaxEventXMLReader(eventReader);
 		ContentHandler contentHandler = mock(ContentHandler.class);
 		xmlReader.setContentHandler(contentHandler);
 		xmlReader.parse(new InputSource());
 		verify(contentHandler).startDocument();
-		verify(contentHandler).startElement(eq("http://springframework.org/spring-ws"), eq("child"), eq("child"), any(Attributes.class));
+		verify(contentHandler).startElement("http://springframework.org/spring-ws", "child", "child", new AttributesImpl());
 		verify(contentHandler).endElement("http://springframework.org/spring-ws", "child", "child");
 		verify(contentHandler).endDocument();
 	}
-
 }
+

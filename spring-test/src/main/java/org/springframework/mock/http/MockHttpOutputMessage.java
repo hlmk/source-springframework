@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.springframework.mock.http;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpOutputMessage;
@@ -33,7 +33,7 @@ import org.springframework.http.HttpOutputMessage;
  */
 public class MockHttpOutputMessage implements HttpOutputMessage {
 
-	private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+	private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
 	private final HttpHeaders headers = new HttpHeaders();
 
@@ -43,7 +43,6 @@ public class MockHttpOutputMessage implements HttpOutputMessage {
 	/**
 	 * Return the headers.
 	 */
-	@Override
 	public HttpHeaders getHeaders() {
 		return this.headers;
 	}
@@ -51,7 +50,6 @@ public class MockHttpOutputMessage implements HttpOutputMessage {
 	/**
 	 * Return the body content.
 	 */
-	@Override
 	public OutputStream getBody() throws IOException {
 		return this.body;
 	}
@@ -76,7 +74,13 @@ public class MockHttpOutputMessage implements HttpOutputMessage {
 	 */
 	public String getBodyAsString(Charset charset) {
 		byte[] bytes = getBodyAsBytes();
-		return new String(bytes, charset);
+		try {
+			return new String(bytes, charset.name());
+		}
+		catch (UnsupportedEncodingException ex) {
+			// should not occur
+			throw new IllegalStateException(ex);
+		}
 	}
 
 }

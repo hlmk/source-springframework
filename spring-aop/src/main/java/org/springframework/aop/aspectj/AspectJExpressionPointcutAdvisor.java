@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ package org.springframework.aop.aspectj;
 
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractGenericPointcutAdvisor;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.lang.Nullable;
 
 /**
  * Spring AOP Advisor that can be used for any AspectJ pointcut expression.
@@ -29,45 +26,37 @@ import org.springframework.lang.Nullable;
  * @since 2.0
  */
 @SuppressWarnings("serial")
-public class AspectJExpressionPointcutAdvisor extends AbstractGenericPointcutAdvisor implements BeanFactoryAware {
+public class AspectJExpressionPointcutAdvisor extends AbstractGenericPointcutAdvisor {
 
 	private final AspectJExpressionPointcut pointcut = new AspectJExpressionPointcut();
 
 
-	public void setExpression(@Nullable String expression) {
+	public Pointcut getPointcut() {
+		return this.pointcut;
+	}
+
+	public void setExpression(String expression) {
 		this.pointcut.setExpression(expression);
 	}
 
-	@Nullable
 	public String getExpression() {
 		return this.pointcut.getExpression();
 	}
 
-	public void setLocation(@Nullable String location) {
+	public void setLocation(String location) {
 		this.pointcut.setLocation(location);
 	}
 
-	@Nullable
 	public String getLocation() {
 		return this.pointcut.getLocation();
 	}
 
-	public void setParameterNames(String... names) {
-		this.pointcut.setParameterNames(names);
-	}
-
-	public void setParameterTypes(Class<?>... types) {
+	public void setParameterTypes(Class<?>[] types) {
 		this.pointcut.setParameterTypes(types);
 	}
 
-	@Override
-	public void setBeanFactory(BeanFactory beanFactory) {
-		this.pointcut.setBeanFactory(beanFactory);
-	}
-
-	@Override
-	public Pointcut getPointcut() {
-		return this.pointcut;
+	public void setParameterNames(String... names) {
+		this.pointcut.setParameterNames(names);
 	}
 
 }

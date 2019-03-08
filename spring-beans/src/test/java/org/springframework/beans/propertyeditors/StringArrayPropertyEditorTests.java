@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,15 @@
 
 package org.springframework.beans.propertyeditors;
 
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import junit.framework.TestCase;
 
 /**
  * @author Rick Evans
  * @author Juergen Hoeller
  */
-public class StringArrayPropertyEditorTests {
+public class StringArrayPropertyEditorTests extends TestCase {
 
-	@Test
-	public void withDefaultSeparator() throws Exception {
+	public void testWithDefaultSeparator() throws Exception {
 		StringArrayPropertyEditor editor = new StringArrayPropertyEditor();
 		editor.setAsText("0,1,2");
 		Object value = editor.getValue();
@@ -40,8 +37,7 @@ public class StringArrayPropertyEditorTests {
 		assertEquals("0,1,2", editor.getAsText());
 	}
 
-	@Test
-	public void trimByDefault() throws Exception {
+	public void testTrimByDefault() throws Exception {
 		StringArrayPropertyEditor editor = new StringArrayPropertyEditor();
 		editor.setAsText(" 0,1 , 2 ");
 		Object value = editor.getValue();
@@ -52,8 +48,7 @@ public class StringArrayPropertyEditorTests {
 		assertEquals("0,1,2", editor.getAsText());
 	}
 
-	@Test
-	public void noTrim() throws Exception {
+	public void testNoTrim() throws Exception {
 		StringArrayPropertyEditor editor = new StringArrayPropertyEditor(",",false,false);
 		editor.setAsText("  0,1  , 2 ");
 		Object value = editor.getValue();
@@ -65,8 +60,7 @@ public class StringArrayPropertyEditorTests {
 		assertEquals("  0,1  , 2 ", editor.getAsText());
 	}
 
-	@Test
-	public void withCustomSeparator() throws Exception {
+	public void testWithCustomSeparator() throws Exception {
 		StringArrayPropertyEditor editor = new StringArrayPropertyEditor(":");
 		editor.setAsText("0:1:2");
 		Object value = editor.getValue();
@@ -78,8 +72,7 @@ public class StringArrayPropertyEditorTests {
 		assertEquals("0:1:2", editor.getAsText());
 	}
 
-	@Test
-	public void withCharsToDelete() throws Exception {
+	public void testWithCharsToDelete() throws Exception {
 		StringArrayPropertyEditor editor = new StringArrayPropertyEditor(",", "\r\n", false);
 		editor.setAsText("0\r,1,\n2");
 		Object value = editor.getValue();
@@ -91,8 +84,7 @@ public class StringArrayPropertyEditorTests {
 		assertEquals("0,1,2", editor.getAsText());
 	}
 
-	@Test
-	public void withEmptyArray() throws Exception {
+	public void testWithEmptyArray() throws Exception {
 		StringArrayPropertyEditor editor = new StringArrayPropertyEditor();
 		editor.setAsText("");
 		Object value = editor.getValue();
@@ -100,8 +92,7 @@ public class StringArrayPropertyEditorTests {
 		assertEquals(0, ((String[]) value).length);
 	}
 
-	@Test
-	public void withEmptyArrayAsNull() throws Exception {
+	public void testWithEmptyArrayAsNull() throws Exception {
 		StringArrayPropertyEditor editor = new StringArrayPropertyEditor(",", true);
 		editor.setAsText("");
 		assertNull(editor.getValue());

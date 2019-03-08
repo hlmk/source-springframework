@@ -29,8 +29,8 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
  * to declaratively manage transactions.
  *
  * <p>One approach uses transaction semantics defined in XML using the
- * {@code <tx:advice>} elements, the other uses annotations
- * in combination with the {@code <tx:annotation-driven>} element.
+ * {@code &lt;tx:advice&gt;} elements, the other uses annotations
+ * in combination with the {@code &lt;tx:annotation-driven&gt;} element.
  * Both approached are detailed to great extent in the Spring reference manual.
  *
  * @author Rob Harrop
@@ -50,7 +50,6 @@ public class TxNamespaceHandler extends NamespaceHandlerSupport {
 	}
 
 
-	@Override
 	public void init() {
 		registerBeanDefinitionParser("advice", new TxAdviceBeanDefinitionParser());
 		registerBeanDefinitionParser("annotation-driven", new AnnotationDrivenBeanDefinitionParser());

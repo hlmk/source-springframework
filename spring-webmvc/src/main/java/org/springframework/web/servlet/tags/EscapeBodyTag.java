@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,17 @@
 package org.springframework.web.servlet.tags;
 
 import java.io.IOException;
+
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.BodyContent;
 import javax.servlet.jsp.tagext.BodyTag;
 
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
+import org.springframework.web.util.ExpressionEvaluationUtils;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.JavaScriptUtils;
 
 /**
- * The {@code <escapeBody>} tag is used to escape its enclosed body content,
+ * Custom JSP tag to escape its enclosed body content,
  * applying HTML escaping and/or JavaScript escaping.
  *
  * <p>Provides a "htmlEscape" property for explicitly specifying whether to
@@ -36,34 +37,6 @@ import org.springframework.web.util.JavaScriptUtils;
  *
  * <p>Provides a "javaScriptEscape" property for specifying whether to apply
  * JavaScript escaping. Can be combined with HTML escaping or used standalone.
- *
- * <table>
- * <caption>Attribute Summary</caption>
- * <thead>
- * <tr>
- * <th>Attribute</th>
- * <th>Required?</th>
- * <th>Runtime Expression?</th>
- * <th>Description</th>
- * </tr>
- * </thead>
- * <tbody>
- * <tr>
- * <td>htmlEscape</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Set HTML escaping for this tag, as boolean value.
- * Overrides the default HTML escaping setting for the current page.</td>
- * </tr>
- * <tr>
- * <td>javaScriptEscape</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Set JavaScript escaping for this tag, as boolean value.
- * Default is false.</td>
- * </tr>
- * </tbody>
- * </table>
  *
  * @author Juergen Hoeller
  * @since 1.1.1
@@ -75,7 +48,6 @@ public class EscapeBodyTag extends HtmlEscapingAwareTag implements BodyTag {
 
 	private boolean javaScriptEscape = false;
 
-	@Nullable
 	private BodyContent bodyContent;
 
 
@@ -83,8 +55,9 @@ public class EscapeBodyTag extends HtmlEscapingAwareTag implements BodyTag {
 	 * Set JavaScript escaping for this tag, as boolean value.
 	 * Default is "false".
 	 */
-	public void setJavaScriptEscape(boolean javaScriptEscape) throws JspException {
-		this.javaScriptEscape = javaScriptEscape;
+	public void setJavaScriptEscape(String javaScriptEscape) throws JspException {
+		this.javaScriptEscape =
+				ExpressionEvaluationUtils.evaluateBoolean("javaScriptEscape", javaScriptEscape, pageContext);
 	}
 
 
@@ -94,12 +67,10 @@ public class EscapeBodyTag extends HtmlEscapingAwareTag implements BodyTag {
 		return EVAL_BODY_BUFFERED;
 	}
 
-	@Override
 	public void doInitBody() {
 		// do nothing
 	}
 
-	@Override
 	public void setBodyContent(BodyContent bodyContent) {
 		this.bodyContent = bodyContent;
 	}
@@ -109,8 +80,8 @@ public class EscapeBodyTag extends HtmlEscapingAwareTag implements BodyTag {
 		try {
 			String content = readBodyContent();
 			// HTML and/or JavaScript escape, if demanded
-			content = htmlEscape(content);
-			content = (this.javaScriptEscape ? JavaScriptUtils.javaScriptEscape(content) : content);
+			content = isHtmlEscape() ? HtmlUtils.htmlEscape(content) : content;
+			content = this.javaScriptEscape ? JavaScriptUtils.javaScriptEscape(content) : content;
 			writeBodyContent(content);
 		}
 		catch (IOException ex) {
@@ -125,7 +96,6 @@ public class EscapeBodyTag extends HtmlEscapingAwareTag implements BodyTag {
 	 * @throws IOException if reading failed
 	 */
 	protected String readBodyContent() throws IOException {
-		Assert.state(this.bodyContent != null, "No BodyContent set");
 		return this.bodyContent.getString();
 	}
 
@@ -136,7 +106,6 @@ public class EscapeBodyTag extends HtmlEscapingAwareTag implements BodyTag {
 	 * @throws IOException if writing failed
 	 */
 	protected void writeBodyContent(String content) throws IOException {
-		Assert.state(this.bodyContent != null, "No BodyContent set");
 		this.bodyContent.getEnclosingWriter().print(content);
 	}
 

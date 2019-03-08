@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,31 @@
 
 package org.springframework.context.annotation.aspectj;
 
-import org.junit.Test;
-
-import org.springframework.beans.factory.aspectj.ShouldBeConfiguredBySpring;
+import org.springframework.beans.factory.aspectj.AbstractBeanConfigurerTests;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
-
-import static org.junit.Assert.*;
+import org.springframework.context.annotation.aspectj.EnableSpringConfigured;
 
 /**
  * Tests that @EnableSpringConfigured properly registers an
- * {@link org.springframework.beans.factory.aspectj.AnnotationBeanConfigurerAspect},
- * just as does {@code <context:spring-configured>}.
+ * {@link org.springframework.beans.factory.aspectj.AnnotationBeanConfigurerAspect}, just
+ * as does {@code <context:spring-configured>}
  *
  * @author Chris Beams
  * @since 3.1
  */
-public class AnnotationBeanConfigurerTests {
+public class AnnotationBeanConfigurerTests extends AbstractBeanConfigurerTests {
 
-	@Test
-	public void injection() {
-		try (AnnotationConfigApplicationContext context = new  AnnotationConfigApplicationContext(Config.class)) {
-			ShouldBeConfiguredBySpring myObject = new ShouldBeConfiguredBySpring();
-			assertEquals("Rod", myObject.getName());
-		}
+	@Override
+	protected ConfigurableApplicationContext createContext() {
+		return new AnnotationConfigApplicationContext(Config.class);
 	}
-
 
 	@Configuration
 	@ImportResource("org/springframework/beans/factory/aspectj/beanConfigurerTests-beans.xml")
 	@EnableSpringConfigured
 	static class Config {
 	}
-
 }

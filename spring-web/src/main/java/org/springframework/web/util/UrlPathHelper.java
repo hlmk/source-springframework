@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@
 
 package org.springframework.web.util;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -36,7 +35,8 @@ import org.springframework.util.StringUtils;
  * Helper class for URL path matching. Provides support for URL paths in
  * RequestDispatcher includes and support for consistent URL decoding.
  *
- * <p>Used by {@link org.springframework.web.servlet.handler.AbstractUrlHandlerMapping}
+ * <p>Used by {@link org.springframework.web.servlet.handler.AbstractUrlHandlerMapping},
+ * {@link org.springframework.web.servlet.mvc.multiaction.AbstractUrlMethodNameResolver}
  * and {@link org.springframework.web.servlet.support.RequestContext} for path matching
  * and/or URI determination.
  *
@@ -56,7 +56,6 @@ public class UrlPathHelper {
 
 	private static final Log logger = LogFactory.getLog(UrlPathHelper.class);
 
-	@Nullable
 	static volatile Boolean websphereComplianceFlag;
 
 
@@ -70,28 +69,22 @@ public class UrlPathHelper {
 
 
 	/**
-	 * Whether URL lookups should always use the full path within current
-	 * application context, i.e. within {@link ServletContext#getContextPath()}.
-	 * <p>If set to {@literal false} the path within the current servlet mapping
-	 * is used instead if applicable (i.e. in the case of a prefix based Servlet
-	 * mapping such as "/myServlet/*").
-	 * <p>By default this is set to "false".
+	 * Set if URL lookup should always use full path within current servlet
+	 * context. Else, the path within the current servlet mapping is used
+	 * if applicable (i.e. in the case of a ".../*" servlet mapping in web.xml).
+	 * Default is "false".
 	 */
 	public void setAlwaysUseFullPath(boolean alwaysUseFullPath) {
 		this.alwaysUseFullPath = alwaysUseFullPath;
 	}
 
 	/**
-	 * Whether the context path and request URI should be decoded -- both of
-	 * which are returned <i>undecoded</i> by the Servlet API, in contrast to
-	 * the servlet path.
-	 * <p>Either the request encoding or the default Servlet spec encoding
-	 * (ISO-8859-1) is used when set to "true".
-	 * <p>By default this is set to {@literal true}.
-	 * <p><strong>Note:</strong> Be aware the servlet path will not match when
-	 * compared to encoded paths. Therefore use of {@code urlDecode=false} is
-	 * not compatible with a prefix-based Servlet mappping and likewise implies
-	 * also setting {@code alwaysUseFullPath=true}.
+	 * Set if context path and request URI should be URL-decoded.
+	 * Both are returned <i>undecoded</i> by the Servlet API,
+	 * in contrast to the servlet path.
+	 * <p>Uses either the request encoding or the default encoding according
+	 * to the Servlet spec (ISO-8859-1).
+	 * <p>Default is "true", as of Spring 2.5.
 	 * @see #getServletPath
 	 * @see #getContextPath
 	 * @see #getRequestUri
@@ -101,14 +94,6 @@ public class UrlPathHelper {
 	 */
 	public void setUrlDecode(boolean urlDecode) {
 		this.urlDecode = urlDecode;
-	}
-
-	/**
-	 * Whether to decode the request URI when determining the lookup path.
-	 * @since 4.3.13
-	 */
-	public boolean isUrlDecode() {
-		return this.urlDecode;
 	}
 
 	/**
@@ -180,8 +165,6 @@ public class UrlPathHelper {
 	 * i.e. the part of the request's URL beyond the part that called the servlet,
 	 * or "" if the whole URL has been used to identify the servlet.
 	 * <p>Detects include request URL if called within a RequestDispatcher include.
-	 * <p>E.g.: servlet mapping = "/*"; request URI = "/test/a" -> "/test/a".
-	 * <p>E.g.: servlet mapping = "/"; request URI = "/test/a" -> "/test/a".
 	 * <p>E.g.: servlet mapping = "/test/*"; request URI = "/test/a" -> "/a".
 	 * <p>E.g.: servlet mapping = "/test"; request URI = "/test" -> "".
 	 * <p>E.g.: servlet mapping = "/*.test"; request URI = "/a.test" -> "".
@@ -191,17 +174,7 @@ public class UrlPathHelper {
 	public String getPathWithinServletMapping(HttpServletRequest request) {
 		String pathWithinApp = getPathWithinApplication(request);
 		String servletPath = getServletPath(request);
-		String sanitizedPathWithinApp = getSanitizedPath(pathWithinApp);
-		String path;
-
-		// If the app container sanitized the servletPath, check against the sanitized version
-		if (servletPath.contains(sanitizedPathWithinApp)) {
-			path = getRemainingPath(sanitizedPathWithinApp, servletPath, false);
-		}
-		else {
-			path = getRemainingPath(pathWithinApp, servletPath, false);
-		}
-
+		String path = getRemainingPath(pathWithinApp, servletPath, false);
 		if (path != null) {
 			// Normal case: URI contains servlet path.
 			return path;
@@ -254,7 +227,6 @@ public class UrlPathHelper {
 	 * context path and the servlet path returned by the HttpServletRequest are
 	 * stripped of semicolon content unlike the requesUri.
 	 */
-	@Nullable
 	private String getRemainingPath(String requestUri, String mapping, boolean ignoreCase) {
 		int index1 = 0;
 		int index2 = 0;
@@ -268,7 +240,10 @@ public class UrlPathHelper {
 				}
 				c1 = requestUri.charAt(index1);
 			}
-			if (c1 == c2 || (ignoreCase && (Character.toLowerCase(c1) == Character.toLowerCase(c2)))) {
+			if (c1 == c2) {
+				continue;
+			}
+			else if (ignoreCase && (Character.toLowerCase(c1) == Character.toLowerCase(c2))) {
 				continue;
 			}
 			return null;
@@ -283,26 +258,6 @@ public class UrlPathHelper {
 			index1 = requestUri.indexOf('/', index1);
 		}
 		return (index1 != -1 ? requestUri.substring(index1) : "");
-	}
-
-	/**
-	 * Sanitize the given path. Uses the following rules:
-	 * <ul>
-	 *     <li>replace all "//" by "/"</li>
-	 * </ul>
-	 */
-	private String getSanitizedPath(final String path) {
-		String sanitized = path;
-		while (true) {
-			int index = sanitized.indexOf("//");
-			if (index < 0) {
-				break;
-			}
-			else {
-				sanitized = sanitized.substring(0, index) + sanitized.substring(index + 1);
-			}
-		}
-		return sanitized;
 	}
 
 	/**
@@ -434,7 +389,6 @@ public class UrlPathHelper {
 	private String decodeAndCleanUriString(HttpServletRequest request, String uri) {
 		uri = removeSemicolonContent(uri);
 		uri = decodeRequestString(request, uri);
-		uri = getSanitizedPath(uri);
 		return uri;
 	}
 
@@ -451,7 +405,7 @@ public class UrlPathHelper {
 	 * @see java.net.URLDecoder#decode(String)
 	 */
 	public String decodeRequestString(HttpServletRequest request, String source) {
-		if (this.urlDecode) {
+		if (this.urlDecode && source != null) {
 			return decodeInternal(request, source);
 		}
 		return source;
@@ -463,7 +417,7 @@ public class UrlPathHelper {
 		try {
 			return UriUtils.decode(source, enc);
 		}
-		catch (UnsupportedCharsetException ex) {
+		catch (UnsupportedEncodingException ex) {
 			if (logger.isWarnEnabled()) {
 				logger.warn("Could not decode request string [" + source + "] with encoding '" + enc +
 						"': falling back to platform default encoding; exception message: " + ex.getMessage());
@@ -531,7 +485,7 @@ public class UrlPathHelper {
 	 * decoded through a call to
 	 * {@link #getLookupPathForRequest(HttpServletRequest)}.
 	 * @param request current HTTP request
-	 * @param vars the URI variables extracted from the URL path
+	 * @param vars URI variables extracted from the URL path
 	 * @return the same Map or a new Map instance
 	 */
 	public Map<String, String> decodePathVariables(HttpServletRequest request, Map<String, String> vars) {
@@ -539,8 +493,10 @@ public class UrlPathHelper {
 			return vars;
 		}
 		else {
-			Map<String, String> decodedVars = new LinkedHashMap<>(vars.size());
-			vars.forEach((key, value) -> decodedVars.put(key, decodeInternal(request, value)));
+			Map<String, String> decodedVars = new LinkedHashMap<String, String>(vars.size());
+			for (Entry<String, String> entry : vars.entrySet()) {
+				decodedVars.put(entry.getKey(), decodeInternal(request, entry.getValue()));
+			}
 			return decodedVars;
 		}
 	}
@@ -553,22 +509,20 @@ public class UrlPathHelper {
 	 * decoded through a call to
 	 * {@link #getLookupPathForRequest(HttpServletRequest)}.
 	 * @param request current HTTP request
-	 * @param vars the URI variables extracted from the URL path
+	 * @param vars URI variables extracted from the URL path
 	 * @return the same Map or a new Map instance
 	 */
-	public MultiValueMap<String, String> decodeMatrixVariables(HttpServletRequest request,
-			MultiValueMap<String, String> vars) {
-
+	public MultiValueMap<String, String> decodeMatrixVariables(HttpServletRequest request, MultiValueMap<String, String> vars) {
 		if (this.urlDecode) {
 			return vars;
 		}
 		else {
-			MultiValueMap<String, String> decodedVars = new LinkedMultiValueMap<>(vars.size());
-			vars.forEach((key, values) -> {
-				for (String value : values) {
+			MultiValueMap<String, String> decodedVars = new LinkedMultiValueMap	<String, String>(vars.size());
+			for (String key : vars.keySet()) {
+				for (String value : vars.get(key)) {
 					decodedVars.add(key, decodeInternal(request, value));
 				}
-			});
+			}
 			return decodedVars;
 		}
 	}
@@ -580,8 +534,7 @@ public class UrlPathHelper {
 			// Don't remove that slash.
 			return false;
 		}
-		Boolean flagToUse = websphereComplianceFlag;
-		if (flagToUse == null) {
+		if (websphereComplianceFlag == null) {
 			ClassLoader classLoader = UrlPathHelper.class.getClassLoader();
 			String className = "com.ibm.ws.webcontainer.WebContainer";
 			String methodName = "getWebContainerProperties";
@@ -597,12 +550,11 @@ public class UrlPathHelper {
 					logger.debug("Could not introspect WebSphere web container properties: " + ex);
 				}
 			}
-			flagToUse = flag;
 			websphereComplianceFlag = flag;
 		}
 		// Don't bother if WebSphere is configured to be fully Servlet compliant.
 		// However, if it is not compliant, do remove the improper trailing slash!
-		return !flagToUse;
+		return !websphereComplianceFlag;
 	}
 
 }

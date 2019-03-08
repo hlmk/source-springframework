@@ -16,8 +16,6 @@
 
 package org.springframework.aop.framework;
 
-import org.springframework.lang.Nullable;
-
 /**
  * Delegate interface for a configured AOP proxy, allowing for the creation
  * of actual proxy objects.
@@ -50,6 +48,6 @@ public interface AopProxy {
 	 * (or {@code null} for the low-level proxy facility's default)
 	 * @return the new proxy object (never {@code null})
 	 */
-	Object getProxy(@Nullable ClassLoader classLoader);
+	Object getProxy(ClassLoader classLoader);
 
 }

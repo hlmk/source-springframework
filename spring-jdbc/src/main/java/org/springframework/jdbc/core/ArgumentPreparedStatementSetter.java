@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package org.springframework.jdbc.core;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import org.springframework.lang.Nullable;
-
 /**
  * Simple adapter for {@link PreparedStatementSetter} that applies a given array of arguments.
  *
@@ -29,7 +27,6 @@ import org.springframework.lang.Nullable;
  */
 public class ArgumentPreparedStatementSetter implements PreparedStatementSetter, ParameterDisposer {
 
-	@Nullable
 	private final Object[] args;
 
 
@@ -37,12 +34,11 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter,
 	 * Create a new ArgPreparedStatementSetter for the given arguments.
 	 * @param args the arguments to set
 	 */
-	public ArgumentPreparedStatementSetter(@Nullable Object[] args) {
+	public ArgumentPreparedStatementSetter(Object[] args) {
 		this.args = args;
 	}
 
 
-	@Override
 	public void setValues(PreparedStatement ps) throws SQLException {
 		if (this.args != null) {
 			for (int i = 0; i < this.args.length; i++) {
@@ -58,7 +54,7 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter,
 	 * @param ps the PreparedStatement
 	 * @param parameterPosition index of the parameter position
 	 * @param argValue the value to set
-	 * @throws SQLException if thrown by PreparedStatement methods
+	 * @throws SQLException
 	 */
 	protected void doSetValue(PreparedStatement ps, int parameterPosition, Object argValue) throws SQLException {
 		if (argValue instanceof SqlParameterValue) {
@@ -70,7 +66,6 @@ public class ArgumentPreparedStatementSetter implements PreparedStatementSetter,
 		}
 	}
 
-	@Override
 	public void cleanupParameters() {
 		StatementCreatorUtils.cleanupParameters(this.args);
 	}

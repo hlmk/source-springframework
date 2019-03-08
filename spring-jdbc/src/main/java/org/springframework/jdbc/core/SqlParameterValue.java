@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package org.springframework.jdbc.core;
 
-import org.springframework.lang.Nullable;
-
 /**
- * Object to represent a SQL parameter value, including parameter meta-data
+ * Object to represent a SQL parameter value, including parameter metadata
  * such as the SQL type and the scale for numeric values.
  *
  * <p>Designed for use with {@link JdbcTemplate}'s operations that take an array of
@@ -38,39 +36,38 @@ import org.springframework.lang.Nullable;
  */
 public class SqlParameterValue extends SqlParameter {
 
-	@Nullable
 	private final Object value;
 
 
 	/**
 	 * Create a new SqlParameterValue, supplying the SQL type.
-	 * @param sqlType the SQL type of the parameter according to {@code java.sql.Types}
+	 * @param sqlType SQL type of the parameter according to {@code java.sql.Types}
 	 * @param value the value object
 	 */
-	public SqlParameterValue(int sqlType, @Nullable Object value) {
+	public SqlParameterValue(int sqlType, Object value) {
 		super(sqlType);
 		this.value = value;
 	}
 
 	/**
 	 * Create a new SqlParameterValue, supplying the SQL type.
-	 * @param sqlType the SQL type of the parameter according to {@code java.sql.Types}
+	 * @param sqlType SQL type of the parameter according to {@code java.sql.Types}
 	 * @param typeName the type name of the parameter (optional)
 	 * @param value the value object
 	 */
-	public SqlParameterValue(int sqlType, @Nullable String typeName, @Nullable Object value) {
+	public SqlParameterValue(int sqlType, String typeName, Object value) {
 		super(sqlType, typeName);
 		this.value = value;
 	}
 
 	/**
 	 * Create a new SqlParameterValue, supplying the SQL type.
-	 * @param sqlType the SQL type of the parameter according to {@code java.sql.Types}
+	 * @param sqlType SQL type of the parameter according to {@code java.sql.Types}
 	 * @param scale the number of digits after the decimal point
 	 * (for DECIMAL and NUMERIC types)
 	 * @param value the value object
 	 */
-	public SqlParameterValue(int sqlType, int scale, @Nullable Object value) {
+	public SqlParameterValue(int sqlType, int scale, Object value) {
 		super(sqlType, scale);
 		this.value = value;
 	}
@@ -80,7 +77,7 @@ public class SqlParameterValue extends SqlParameter {
 	 * @param declaredParam the declared SqlParameter to define a value for
 	 * @param value the value object
 	 */
-	public SqlParameterValue(SqlParameter declaredParam, @Nullable Object value) {
+	public SqlParameterValue(SqlParameter declaredParam, Object value) {
 		super(declaredParam);
 		this.value = value;
 	}
@@ -89,7 +86,6 @@ public class SqlParameterValue extends SqlParameter {
 	/**
 	 * Return the value object that this parameter value holds.
 	 */
-	@Nullable
 	public Object getValue() {
 		return this.value;
 	}

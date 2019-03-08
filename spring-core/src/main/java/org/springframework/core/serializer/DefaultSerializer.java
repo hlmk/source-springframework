@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 
 /**
- * A {@link Serializer} implementation that writes an object to an output stream
- * using Java serialization.
+ * Serializer that writes an object to an output stream using Java Serialization.
  *
  * @author Gary Russell
  * @author Mark Fisher
@@ -32,11 +31,9 @@ import java.io.Serializable;
 public class DefaultSerializer implements Serializer<Object> {
 
 	/**
-	 * Writes the source object to an output stream using Java serialization.
+	 * Writes the source object to an output stream using Java Serialization.
 	 * The source object must implement {@link Serializable}.
-	 * @see ObjectOutputStream#writeObject(Object)
 	 */
-	@Override
 	public void serialize(Object object, OutputStream outputStream) throws IOException {
 		if (!(object instanceof Serializable)) {
 			throw new IllegalArgumentException(getClass().getSimpleName() + " requires a Serializable payload " +

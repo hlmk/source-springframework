@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.rometools.rome.feed.atom.Entry;
-import com.rometools.rome.feed.atom.Feed;
+import com.sun.syndication.feed.atom.Entry;
+import com.sun.syndication.feed.atom.Feed;
 
 /**
- * Abstract superclass for Atom Feed views, using the
- * <a href="https://github.com/rometools/rome">ROME</a> package.
- *
- * <p>><b>NOTE: As of Spring 4.1, this is based on the {@code com.rometools}
- * variant of ROME, version 1.5. Please upgrade your build dependency.</b>
+ * Abstract superclass for Atom Feed views, using java.net's
+ * <a href="https://rome.dev.java.net/">ROME</a> package.
  *
  * <p>Application-specific view classes will extend this class.
  * The view will be held in the subclass itself, not in a template.
@@ -46,9 +43,6 @@ import com.rometools.rome.feed.atom.Feed;
  */
 public abstract class AbstractAtomFeedView extends AbstractFeedView<Feed> {
 
-	/**
-	 * The default feed type used.
-	 */
 	public static final String DEFAULT_FEED_TYPE = "atom_1.0";
 
 	private String feedType = DEFAULT_FEED_TYPE;

@@ -1,9 +1,8 @@
+
 /**
- * Support for class instrumentation on GlassFish.
+ *
+ * Support for class instrumentation on GlassFish / Sun Application Server.
+ *
  */
-@NonNullApi
-@NonNullFields
 package org.springframework.instrument.classloading.glassfish;
 
-import org.springframework.lang.NonNullApi;
-import org.springframework.lang.NonNullFields;

@@ -25,7 +25,6 @@ import org.springframework.core.convert.converter.Converter;
  */
 public class FooServiceDependentConverter implements Converter<String, org.springframework.tests.sample.beans.TestBean> {
 
-	@SuppressWarnings("unused")
 	private FooService fooService;
 
 	public void setFooService(FooService fooService) {

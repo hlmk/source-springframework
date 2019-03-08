@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.jdbc.object;
 
 import java.util.List;
 import java.util.Map;
+
 import javax.sql.DataSource;
 
 import org.springframework.dao.DataAccessException;
@@ -26,7 +27,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterUtils;
 import org.springframework.jdbc.core.namedparam.ParsedSql;
-import org.springframework.lang.Nullable;
 
 /**
  * Reusable operation object representing a SQL query.
@@ -50,7 +50,6 @@ import org.springframework.lang.Nullable;
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Thomas Risberg
- * @param <T> the result type
  * @see SqlUpdate
  */
 public abstract class SqlQuery<T> extends SqlOperation {
@@ -107,7 +106,7 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * @return a List of objects, one per row of the ResultSet. Normally all these
 	 * will be of the same class, although it is possible to use different types.
 	 */
-	public List<T> execute(@Nullable Object[] params, @Nullable Map<?, ?> context) throws DataAccessException {
+	public List<T> execute(Object[] params, Map context) throws DataAccessException {
 		validateParameters(params);
 		RowMapper<T> rowMapper = newRowMapper(params, context);
 		return getJdbcTemplate().query(newPreparedStatementCreator(params), rowMapper);
@@ -127,7 +126,7 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * Convenient method to execute without parameters.
 	 * @param context the contextual information for object creation
 	 */
-	public List<T> execute(Map<?, ?> context) throws DataAccessException {
+	public List<T> execute(Map context) throws DataAccessException {
 		return execute((Object[]) null, context);
 	}
 
@@ -135,7 +134,7 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * Convenient method to execute without parameters nor context.
 	 */
 	public List<T> execute() throws DataAccessException {
-		return execute((Object[]) null, null);
+		return execute((Object[]) null);
 	}
 
 	/**
@@ -143,7 +142,7 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * @param p1 single int parameter
 	 * @param context the contextual information for object creation
 	 */
-	public List<T> execute(int p1, @Nullable Map<?, ?> context) throws DataAccessException {
+	public List<T> execute(int p1, Map context) throws DataAccessException {
 		return execute(new Object[] {p1}, context);
 	}
 
@@ -161,7 +160,7 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * @param p2 second int parameter
 	 * @param context the contextual information for object creation
 	 */
-	public List<T> execute(int p1, int p2, @Nullable Map<?, ?> context) throws DataAccessException {
+	public List<T> execute(int p1, int p2, Map context) throws DataAccessException {
 		return execute(new Object[] {p1, p2}, context);
 	}
 
@@ -179,7 +178,7 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * @param p1 single long parameter
 	 * @param context the contextual information for object creation
 	 */
-	public List<T> execute(long p1, @Nullable Map<?, ?> context) throws DataAccessException {
+	public List<T> execute(long p1, Map context) throws DataAccessException {
 		return execute(new Object[] {p1}, context);
 	}
 
@@ -196,7 +195,7 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * @param p1 single String parameter
 	 * @param context the contextual information for object creation
 	 */
-	public List<T> execute(String p1, @Nullable Map<?, ?> context) throws DataAccessException {
+	public List<T> execute(String p1, Map context) throws DataAccessException {
 		return execute(new Object[] {p1}, context);
 	}
 
@@ -220,14 +219,14 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * @return a List of objects, one per row of the ResultSet. Normally all these
 	 * will be of the same class, although it is possible to use different types.
 	 */
-	public List<T> executeByNamedParam(Map<String, ?> paramMap, @Nullable Map<?, ?> context) throws DataAccessException {
+	public List<T> executeByNamedParam(Map<String, ?> paramMap, Map context) throws DataAccessException {
 		validateNamedParameters(paramMap);
 		ParsedSql parsedSql = getParsedSql();
 		MapSqlParameterSource paramSource = new MapSqlParameterSource(paramMap);
 		String sqlToUse = NamedParameterUtils.substituteNamedParameters(parsedSql, paramSource);
 		Object[] params = NamedParameterUtils.buildValueArray(parsedSql, paramSource, getDeclaredParameters());
 		RowMapper<T> rowMapper = newRowMapper(params, context);
-		return getJdbcTemplate().query(newPreparedStatementCreator(sqlToUse, params), rowMapper);
+ 		return getJdbcTemplate().query(newPreparedStatementCreator(sqlToUse, params), rowMapper);
 	}
 
 	/**
@@ -249,8 +248,7 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * choose to treat this as an error and throw an exception.
 	 * @see org.springframework.dao.support.DataAccessUtils#singleResult
 	 */
-	@Nullable
-	public T findObject(@Nullable Object[] params, @Nullable Map<?, ?> context) throws DataAccessException {
+	public T findObject(Object[] params, Map context) throws DataAccessException {
 		List<T> results = execute(params, context);
 		return DataAccessUtils.singleResult(results);
 	}
@@ -258,7 +256,6 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	/**
 	 * Convenient method to find a single object without context.
 	 */
-	@Nullable
 	public T findObject(Object... params) throws DataAccessException {
 		return findObject(params, null);
 	}
@@ -267,15 +264,13 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * Convenient method to find a single object given a single int parameter
 	 * and a context.
 	 */
-	@Nullable
-	public T findObject(int p1, @Nullable Map<?, ?> context) throws DataAccessException {
+	public T findObject(int p1, Map context) throws DataAccessException {
 		return findObject(new Object[] {p1}, context);
 	}
 
 	/**
 	 * Convenient method to find a single object given a single int parameter.
 	 */
-	@Nullable
 	public T findObject(int p1) throws DataAccessException {
 		return findObject(p1, null);
 	}
@@ -284,15 +279,13 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * Convenient method to find a single object given two int parameters
 	 * and a context.
 	 */
-	@Nullable
-	public T findObject(int p1, int p2, @Nullable Map<?, ?> context) throws DataAccessException {
+	public T findObject(int p1, int p2, Map context) throws DataAccessException {
 		return findObject(new Object[] {p1, p2}, context);
 	}
 
 	/**
 	 * Convenient method to find a single object given two int parameters.
 	 */
-	@Nullable
 	public T findObject(int p1, int p2) throws DataAccessException {
 		return findObject(p1, p2, null);
 	}
@@ -301,15 +294,13 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * Convenient method to find a single object given a single long parameter
 	 * and a context.
 	 */
-	@Nullable
-	public T findObject(long p1, @Nullable Map<?, ?> context) throws DataAccessException {
+	public T findObject(long p1, Map context) throws DataAccessException {
 		return findObject(new Object[] {p1}, context);
 	}
 
 	/**
 	 * Convenient method to find a single object given a single long parameter.
 	 */
-	@Nullable
 	public T findObject(long p1) throws DataAccessException {
 		return findObject(p1, null);
 	}
@@ -318,22 +309,20 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * Convenient method to find a single object given a single String parameter
 	 * and a context.
 	 */
-	@Nullable
-	public T findObject(String p1, @Nullable Map<?, ?> context) throws DataAccessException {
+	public T findObject(String p1, Map context) throws DataAccessException {
 		return findObject(new Object[] {p1}, context);
 	}
 
 	/**
 	 * Convenient method to find a single object given a single String parameter.
 	 */
-	@Nullable
 	public T findObject(String p1) throws DataAccessException {
 		return findObject(p1, null);
 	}
 
 	/**
 	 * Generic object finder method for named parameters.
-	 * @param paramMap a Map of parameter name to parameter object,
+	 * @param paramMap Map of parameter name to parameter object,
 	 * matching named parameters specified in the SQL statement.
 	 * Ordering is not significant.
 	 * @param context contextual information passed to the {@code mapRow}
@@ -342,19 +331,17 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * @return a List of objects, one per row of the ResultSet. Normally all these
 	 * will be of the same class, although it is possible to use different types.
 	 */
-	@Nullable
-	public T findObjectByNamedParam(Map<String, ?> paramMap, @Nullable Map<?, ?> context) throws DataAccessException {
+	public T findObjectByNamedParam(Map<String, ?> paramMap, Map context) throws DataAccessException {
 		List<T> results = executeByNamedParam(paramMap, context);
 		return DataAccessUtils.singleResult(results);
 	}
 
 	/**
 	 * Convenient method to execute without context.
-	 * @param paramMap a Map of parameter name to parameter object,
+	 * @param paramMap Map of parameter name to parameter object,
 	 * matching named parameters specified in the SQL statement.
 	 * Ordering is not significant.
 	 */
-	@Nullable
 	public T findObjectByNamedParam(Map<String, ?> paramMap) throws DataAccessException {
 		return findObjectByNamedParam(paramMap, null);
 	}
@@ -362,7 +349,7 @@ public abstract class SqlQuery<T> extends SqlOperation {
 
 	/**
 	 * Subclasses must implement this method to extract an object per row, to be
-	 * returned by the {@code execute} method as an aggregated {@link List}.
+	 * returned by the <cod>execute</code> method as an aggregated {@link List}.
 	 * @param parameters the parameters to the {@code execute()} method,
 	 * in case subclass is interested; may be {@code null} if there
 	 * were no parameters.
@@ -371,6 +358,6 @@ public abstract class SqlQuery<T> extends SqlOperation {
 	 * but it can be useful for creating the objects of the result list.
 	 * @see #execute
 	 */
-	protected abstract RowMapper<T> newRowMapper(@Nullable Object[] parameters, @Nullable Map<?, ?> context);
+	protected abstract RowMapper<T> newRowMapper(Object[] parameters, Map context);
 
 }

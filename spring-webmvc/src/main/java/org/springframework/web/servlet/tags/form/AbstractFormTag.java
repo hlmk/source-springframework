@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package org.springframework.web.servlet.tags.form;
 import java.beans.PropertyEditor;
 import javax.servlet.jsp.JspException;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.servlet.tags.HtmlEscapingAwareTag;
+import org.springframework.web.util.ExpressionEvaluationUtils;
 
 /**
  * Base class for all JSP form tags. Provides utility methods for
@@ -42,12 +42,29 @@ import org.springframework.web.servlet.tags.HtmlEscapingAwareTag;
 public abstract class AbstractFormTag extends HtmlEscapingAwareTag {
 
 	/**
-	 * Evaluate the supplied value for the supplied attribute name.
-	 * <p>The default implementation simply returns the given value as-is.
+	 * Evaluate the supplied value for the supplied attribute name. If the supplied value
+	 * is {@code null} then {@code null} is returned, otherwise evaluation is
+	 * handled using {@link ExpressionEvaluationUtils#evaluate(String, String, javax.servlet.jsp.PageContext)}.
 	 */
-	@Nullable
-	protected Object evaluate(String attributeName, @Nullable Object value) throws JspException {
-		return value;
+	protected Object evaluate(String attributeName, Object value) throws JspException {
+		if (value instanceof String) {
+			return ExpressionEvaluationUtils.evaluate(attributeName, (String) value, this.pageContext);
+		}
+		else {
+			return value;
+		}
+	}
+
+	/**
+	 * Evaluate the supplied value for the supplied attribute name. If the supplied value
+	 * is {@code null} then {@code false} is returned, otherwise evaluation is
+	 * handled using {@link ExpressionEvaluationUtils#evaluate(String, String, javax.servlet.jsp.PageContext)},
+	 * with subsequent matching against {@code Boolean.TRUE} and {@code Boolean.valueOf}.
+	 */
+	protected boolean evaluateBoolean(String attributeName, String value) throws JspException {
+		Object evaluated = ExpressionEvaluationUtils.evaluate(attributeName, value, this.pageContext);
+		return (Boolean.TRUE.equals(evaluated) ||
+				(evaluated instanceof String && Boolean.valueOf((String) evaluated)));
 	}
 
 	/**
@@ -58,7 +75,7 @@ public abstract class AbstractFormTag extends HtmlEscapingAwareTag {
 	 * or empty, no attribute is written.
 	 * @see TagWriter#writeOptionalAttributeValue(String, String)
 	 */
-	protected final void writeOptionalAttribute(TagWriter tagWriter, String attributeName, @Nullable String value)
+	protected final void writeOptionalAttribute(TagWriter tagWriter, String attributeName, String value)
 			throws JspException {
 
 		if (value != null) {
@@ -90,7 +107,7 @@ public abstract class AbstractFormTag extends HtmlEscapingAwareTag {
 	 * Get the display value of the supplied {@code Object}, HTML escaped
 	 * as required. This version is <strong>not</strong> {@link PropertyEditor}-aware.
 	 */
-	protected String getDisplayString(@Nullable Object value) {
+	protected String getDisplayString(Object value) {
 		return ValueFormatter.getDisplayString(value, isHtmlEscape());
 	}
 
@@ -100,7 +117,7 @@ public abstract class AbstractFormTag extends HtmlEscapingAwareTag {
 	 * {@link PropertyEditor} is not null then the {@link PropertyEditor} is used
 	 * to obtain the display value.
 	 */
-	protected String getDisplayString(@Nullable Object value, @Nullable PropertyEditor propertyEditor) {
+	protected String getDisplayString(Object value, PropertyEditor propertyEditor) {
 		return ValueFormatter.getDisplayString(value, propertyEditor, isHtmlEscape());
 	}
 

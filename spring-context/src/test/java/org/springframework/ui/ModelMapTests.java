@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import static org.junit.Assert.*;
  * @author Juergen Hoeller
  * @author Chris Beams
  */
-public class ModelMapTests {
+public final class ModelMapTests {
 
 	@Test
 	public void testNoArgCtorYieldsEmptyModel() throws Exception {
@@ -96,7 +96,7 @@ public class ModelMapTests {
 		assertEquals("bing", string);
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected=IllegalArgumentException.class)
 	public void testOneArgCtorWithNull() {
 		//Null model arguments added without a name being explicitly supplied are not allowed
 		new ModelMap(null);
@@ -115,12 +115,12 @@ public class ModelMapTests {
 
 	@Test
 	public void testOneArgCtorWithEmptyCollection() throws Exception {
-		ModelMap model = new ModelMap(new HashSet<>());
+		ModelMap model = new ModelMap(new HashSet<Object>());
 		// must not add if collection is empty...
 		assertEquals(0, model.size());
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected=IllegalArgumentException.class)
 	public void testAddObjectWithNull() throws Exception {
 		// Null model arguments added without a name being explicitly supplied are not allowed
 		ModelMap model = new ModelMap();
@@ -150,11 +150,11 @@ public class ModelMapTests {
 		assertEquals(0, model.size());
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected=IllegalArgumentException.class)
 	public void testAddAllObjectsWithSparseArrayList() throws Exception {
 		// Null model arguments added without a name being explicitly supplied are not allowed
 		ModelMap model = new ModelMap();
-		ArrayList<String> list = new ArrayList<>();
+		ArrayList<String> list = new ArrayList<String>();
 		list.add("bing");
 		list.add(null);
 		model.addAllAttributes(list);
@@ -162,7 +162,7 @@ public class ModelMapTests {
 
 	@Test
 	public void testAddMap() throws Exception {
-		Map<String, String> map = new HashMap<>();
+		Map<String, String> map = new HashMap<String, String>();
 		map.put("one", "one-value");
 		map.put("two", "two-value");
 		ModelMap model = new ModelMap();
@@ -184,7 +184,7 @@ public class ModelMapTests {
 
 	@Test
 	public void testAddListOfTheSameObjects() throws Exception {
-		List<TestBean> beans = new ArrayList<>();
+		List<TestBean> beans = new ArrayList<TestBean>();
 		beans.add(new TestBean("one"));
 		beans.add(new TestBean("two"));
 		beans.add(new TestBean("three"));
@@ -195,7 +195,7 @@ public class ModelMapTests {
 
 	@Test
 	public void testMergeMapWithOverriding() throws Exception {
-		Map<String, TestBean> beans = new HashMap<>();
+		Map<String, TestBean> beans = new HashMap<String, TestBean>();
 		beans.put("one", new TestBean("one"));
 		beans.put("two", new TestBean("two"));
 		beans.put("three", new TestBean("three"));
@@ -238,7 +238,7 @@ public class ModelMapTests {
 	public void testAopJdkProxy() throws Exception {
 		ModelMap map = new ModelMap();
 		ProxyFactory factory = new ProxyFactory();
-		Map<?, ?> target = new HashMap<>();
+		Map<?, ?> target = new HashMap<Object, Object>();
 		factory.setTarget(target);
 		factory.addInterface(Map.class);
 		Object proxy = factory.getProxy();
@@ -249,7 +249,7 @@ public class ModelMapTests {
 	@Test
 	public void testAopJdkProxyWithMultipleInterfaces() throws Exception {
 		ModelMap map = new ModelMap();
-		Map<?, ?> target = new HashMap<>();
+		Map<?, ?> target = new HashMap<Object, Object>();
 		ProxyFactory factory = new ProxyFactory();
 		factory.setTarget(target);
 		factory.addInterface(Serializable.class);
@@ -264,7 +264,7 @@ public class ModelMapTests {
 	@Test
 	public void testAopJdkProxyWithDetectedInterfaces() throws Exception {
 		ModelMap map = new ModelMap();
-		Map<?, ?> target = new HashMap<>();
+		Map<?, ?> target = new HashMap<Object, Object>();
 		ProxyFactory factory = new ProxyFactory(target);
 		Object proxy = factory.getProxy();
 		map.addAttribute(proxy);
@@ -290,7 +290,6 @@ public class ModelMapTests {
 
 	public static class SomeInnerClass {
 
-		@Override
 		public boolean equals(Object obj) {
 			return (obj instanceof SomeInnerClass);
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.transaction.support;
 
-import org.springframework.lang.Nullable;
 import org.springframework.transaction.NestedTransactionNotSupportedException;
 import org.springframework.transaction.SavepointManager;
 import org.springframework.transaction.TransactionException;
@@ -50,7 +49,6 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 
 	private boolean completed = false;
 
-	@Nullable
 	private Object savepoint;
 
 
@@ -58,7 +56,6 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	// Handling of current transaction state
 	//---------------------------------------------------------------------
 
-	@Override
 	public void setRollbackOnly() {
 		this.rollbackOnly = true;
 	}
@@ -70,7 +67,6 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	 * @see #isLocalRollbackOnly()
 	 * @see #isGlobalRollbackOnly()
 	 */
-	@Override
 	public boolean isRollbackOnly() {
 		return (isLocalRollbackOnly() || isGlobalRollbackOnly());
 	}
@@ -96,7 +92,6 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	/**
 	 * This implementations is empty, considering flush as a no-op.
 	 */
-	@Override
 	public void flush() {
 	}
 
@@ -107,7 +102,6 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 		this.completed = true;
 	}
 
-	@Override
 	public boolean isCompleted() {
 		return this.completed;
 	}
@@ -121,19 +115,17 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	 * Set a savepoint for this transaction. Useful for PROPAGATION_NESTED.
 	 * @see org.springframework.transaction.TransactionDefinition#PROPAGATION_NESTED
 	 */
-	protected void setSavepoint(@Nullable Object savepoint) {
+	protected void setSavepoint(Object savepoint) {
 		this.savepoint = savepoint;
 	}
 
 	/**
 	 * Get the savepoint for this transaction, if any.
 	 */
-	@Nullable
 	protected Object getSavepoint() {
 		return this.savepoint;
 	}
 
-	@Override
 	public boolean hasSavepoint() {
 		return (this.savepoint != null);
 	}
@@ -148,17 +140,13 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	}
 
 	/**
-	 * Roll back to the savepoint that is held for the transaction
-	 * and release the savepoint right afterwards.
+	 * Roll back to the savepoint that is held for the transaction.
 	 */
 	public void rollbackToHeldSavepoint() throws TransactionException {
-		Object savepoint = getSavepoint();
-		if (savepoint == null) {
-			throw new TransactionUsageException(
-					"Cannot roll back to savepoint - no savepoint associated with current transaction");
+		if (!hasSavepoint()) {
+			throw new TransactionUsageException("No savepoint associated with current transaction");
 		}
-		getSavepointManager().rollbackToSavepoint(savepoint);
-		getSavepointManager().releaseSavepoint(savepoint);
+		getSavepointManager().rollbackToSavepoint(getSavepoint());
 		setSavepoint(null);
 	}
 
@@ -166,12 +154,10 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	 * Release the savepoint that is held for the transaction.
 	 */
 	public void releaseHeldSavepoint() throws TransactionException {
-		Object savepoint = getSavepoint();
-		if (savepoint == null) {
-			throw new TransactionUsageException(
-					"Cannot release savepoint - no savepoint associated with current transaction");
+		if (!hasSavepoint()) {
+			throw new TransactionUsageException("No savepoint associated with current transaction");
 		}
-		getSavepointManager().releaseSavepoint(savepoint);
+		getSavepointManager().releaseSavepoint(getSavepoint());
 		setSavepoint(null);
 	}
 
@@ -184,9 +170,8 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	 * This implementation delegates to a SavepointManager for the
 	 * underlying transaction, if possible.
 	 * @see #getSavepointManager()
-	 * @see SavepointManager#createSavepoint()
+	 * @see org.springframework.transaction.SavepointManager
 	 */
-	@Override
 	public Object createSavepoint() throws TransactionException {
 		return getSavepointManager().createSavepoint();
 	}
@@ -194,10 +179,10 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	/**
 	 * This implementation delegates to a SavepointManager for the
 	 * underlying transaction, if possible.
+	 * @throws org.springframework.transaction.NestedTransactionNotSupportedException
 	 * @see #getSavepointManager()
-	 * @see SavepointManager#rollbackToSavepoint(Object)
+	 * @see org.springframework.transaction.SavepointManager
 	 */
-	@Override
 	public void rollbackToSavepoint(Object savepoint) throws TransactionException {
 		getSavepointManager().rollbackToSavepoint(savepoint);
 	}
@@ -206,9 +191,8 @@ public abstract class AbstractTransactionStatus implements TransactionStatus {
 	 * This implementation delegates to a SavepointManager for the
 	 * underlying transaction, if possible.
 	 * @see #getSavepointManager()
-	 * @see SavepointManager#releaseSavepoint(Object)
+	 * @see org.springframework.transaction.SavepointManager
 	 */
-	@Override
 	public void releaseSavepoint(Object savepoint) throws TransactionException {
 		getSavepointManager().releaseSavepoint(savepoint);
 	}

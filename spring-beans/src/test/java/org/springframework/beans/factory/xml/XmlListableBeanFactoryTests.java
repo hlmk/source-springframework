@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.BeanFactory;
@@ -36,39 +33,34 @@ import org.springframework.tests.sample.beans.LifecycleBean;
 import org.springframework.tests.sample.beans.TestBean;
 import org.springframework.tests.sample.beans.factory.DummyFactory;
 
-import static org.junit.Assert.*;
 
 /**
  * @author Juergen Hoeller
  * @since 09.11.2003
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
 public class XmlListableBeanFactoryTests extends AbstractListableBeanFactoryTests {
 
 	private DefaultListableBeanFactory parent;
 
 	private DefaultListableBeanFactory factory;
 
-
-	@Before
-	public void setup() {
+	@Override
+	protected void setUp() {
 		parent = new DefaultListableBeanFactory();
-
-		Map map = new HashMap();
-		map.put("name", "Albert");
+		Map m = new HashMap();
+		m.put("name", "Albert");
 		RootBeanDefinition bd1 = new RootBeanDefinition(TestBean.class);
-		bd1.setPropertyValues(new MutablePropertyValues(map));
+		bd1.setPropertyValues(new MutablePropertyValues(m));
 		parent.registerBeanDefinition("father", bd1);
-
-		map = new HashMap();
-		map.put("name", "Roderick");
+		m = new HashMap();
+		m.put("name", "Roderick");
 		RootBeanDefinition bd2 = new RootBeanDefinition(TestBean.class);
-		bd2.setPropertyValues(new MutablePropertyValues(map));
+		bd2.setPropertyValues(new MutablePropertyValues(m));
 		parent.registerBeanDefinition("rod", bd2);
 
 		this.factory = new DefaultListableBeanFactory(parent);
-		new XmlBeanDefinitionReader(this.factory).loadBeanDefinitions(new ClassPathResource("test.xml", getClass()));
-
+		new XmlBeanDefinitionReader(this.factory).loadBeanDefinitions(
+				new ClassPathResource("test.xml", getClass()));
 		this.factory.addBeanPostProcessor(new BeanPostProcessor() {
 			@Override
 			public Object postProcessBeforeInitialization(Object bean, String name) throws BeansException {
@@ -85,10 +77,9 @@ public class XmlListableBeanFactoryTests extends AbstractListableBeanFactoryTest
 				return bean;
 			}
 		});
-
 		this.factory.addBeanPostProcessor(new LifecycleBean.PostProcessor());
 		this.factory.addBeanPostProcessor(new ProtectedLifecycleBean.PostProcessor());
-		// this.factory.preInstantiateSingletons();
+		//this.factory.preInstantiateSingletons();
 	}
 
 	@Override
@@ -96,32 +87,26 @@ public class XmlListableBeanFactoryTests extends AbstractListableBeanFactoryTest
 		return factory;
 	}
 
-
-	@Test
 	@Override
-	public void count() {
+	public void testCount() {
 		assertCount(24);
 	}
 
-	@Test
-	public void beanCount() {
+	public void testTestBeanCount() {
 		assertTestBeanCount(13);
 	}
 
-	@Test
-	public void lifecycleMethods() {
+	public void testLifecycleMethods() throws Exception {
 		LifecycleBean bean = (LifecycleBean) getBeanFactory().getBean("lifecycle");
 		bean.businessMethod();
 	}
 
-	@Test
-	public void protectedLifecycleMethods() {
+	public void testProtectedLifecycleMethods() throws Exception {
 		ProtectedLifecycleBean bean = (ProtectedLifecycleBean) getBeanFactory().getBean("protectedLifecycle");
 		bean.businessMethod();
 	}
 
-	@Test
-	public void descriptionButNoProperties() {
+	public void testDescriptionButNoProperties() throws Exception {
 		TestBean validEmpty = (TestBean) getBeanFactory().getBean("validEmptyWithDescription");
 		assertEquals(0, validEmpty.getAge());
 	}
@@ -129,8 +114,7 @@ public class XmlListableBeanFactoryTests extends AbstractListableBeanFactoryTest
 	/**
 	 * Test that properties with name as well as id creating an alias up front.
 	 */
-	@Test
-	public void autoAliasing() {
+	public void testAutoAliasing() throws Exception {
 		List beanNames = Arrays.asList(getListableBeanFactory().getBeanDefinitionNames());
 
 		TestBean tb1 = (TestBean) getBeanFactory().getBean("aliased");
@@ -189,8 +173,7 @@ public class XmlListableBeanFactoryTests extends AbstractListableBeanFactoryTest
 		assertTrue(drs.containsKey(DummyReferencer.class.getName() + "#2"));
 	}
 
-	@Test
-	public void factoryNesting() {
+	public void testFactoryNesting() {
 		ITestBean father = (ITestBean) getBeanFactory().getBean("father");
 		assertTrue("Bean from root context", father != null);
 
@@ -202,8 +185,7 @@ public class XmlListableBeanFactoryTests extends AbstractListableBeanFactoryTest
 		assertTrue("Bean from root context", "Roderick".equals(rod.getName()));
 	}
 
-	@Test
-	public void factoryReferences() {
+	public void testFactoryReferences() {
 		DummyFactory factory = (DummyFactory) getBeanFactory().getBean("&singletonFactory");
 
 		DummyReferencer ref = (DummyReferencer) getBeanFactory().getBean("factoryReferencer");
@@ -215,8 +197,7 @@ public class XmlListableBeanFactoryTests extends AbstractListableBeanFactoryTest
 		assertTrue(ref2.getDummyFactory() == factory);
 	}
 
-	@Test
-	public void prototypeReferences() {
+	public void testPrototypeReferences() {
 		// check that not broken by circular reference resolution mechanism
 		DummyReferencer ref1 = (DummyReferencer) getBeanFactory().getBean("prototypeReferencer");
 		assertTrue("Not referencing same bean twice", ref1.getTestBean1() != ref1.getTestBean2());
@@ -228,8 +209,7 @@ public class XmlListableBeanFactoryTests extends AbstractListableBeanFactoryTest
 		assertTrue("Not referencing same bean twice", ref1.getTestBean1() != ref2.getTestBean2());
 	}
 
-	@Test
-	public void beanPostProcessor() {
+	public void testBeanPostProcessor() throws Exception {
 		TestBean kerry = (TestBean) getBeanFactory().getBean("kerry");
 		TestBean kathy = (TestBean) getBeanFactory().getBean("kathy");
 		DummyFactory factory = (DummyFactory) getBeanFactory().getBean("&singletonFactory");
@@ -240,16 +220,14 @@ public class XmlListableBeanFactoryTests extends AbstractListableBeanFactoryTest
 		assertTrue(factoryCreated.isPostProcessed());
 	}
 
-	@Test
-	public void emptyValues() {
+	public void testEmptyValues() {
 		TestBean rod = (TestBean) getBeanFactory().getBean("rod");
 		TestBean kerry = (TestBean) getBeanFactory().getBean("kerry");
 		assertTrue("Touchy is empty", "".equals(rod.getTouchy()));
 		assertTrue("Touchy is empty", "".equals(kerry.getTouchy()));
 	}
 
-	@Test
-	public void commentsAndCdataInValue() {
+	public void testCommentsAndCdataInValue() {
 		TestBean bean = (TestBean) getBeanFactory().getBean("commentsInValue");
 		assertEquals("Failed to handle comments and CDATA properly", "this is a <!--comment-->", bean.getName());
 	}

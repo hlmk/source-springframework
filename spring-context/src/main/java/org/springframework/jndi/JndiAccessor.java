@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.springframework.lang.Nullable;
 
 /**
  * Convenient superclass for JNDI accessors, providing "jndiTemplate"
@@ -47,7 +45,7 @@ public class JndiAccessor {
 	 * <p>You can also specify JNDI environment settings via "jndiEnvironment".
 	 * @see #setJndiEnvironment
 	 */
-	public void setJndiTemplate(@Nullable JndiTemplate jndiTemplate) {
+	public void setJndiTemplate(JndiTemplate jndiTemplate) {
 		this.jndiTemplate = (jndiTemplate != null ? jndiTemplate : new JndiTemplate());
 	}
 
@@ -63,14 +61,13 @@ public class JndiAccessor {
 	 * <p>Creates a JndiTemplate with the given environment settings.
 	 * @see #setJndiTemplate
 	 */
-	public void setJndiEnvironment(@Nullable Properties jndiEnvironment) {
+	public void setJndiEnvironment(Properties jndiEnvironment) {
 		this.jndiTemplate = new JndiTemplate(jndiEnvironment);
 	}
 
 	/**
 	 * Return the JNDI environment to use for JNDI lookups.
 	 */
-	@Nullable
 	public Properties getJndiEnvironment() {
 		return this.jndiTemplate.getEnvironment();
 	}

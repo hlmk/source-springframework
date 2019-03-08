@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,23 +26,26 @@ import org.eclipse.persistence.config.PersistenceUnitProperties;
 import org.eclipse.persistence.config.TargetDatabase;
 import org.eclipse.persistence.jpa.JpaEntityManager;
 
-import org.springframework.lang.Nullable;
+import org.springframework.orm.jpa.JpaDialect;
 
 /**
  * {@link org.springframework.orm.jpa.JpaVendorAdapter} implementation for Eclipse
- * Persistence Services (EclipseLink). Developed and tested against EclipseLink 2.7;
- * backwards-compatible with EclipseLink 2.5 and 2.6 at runtime.
+ * Persistence Services (EclipseLink). Developed and tested against EclipseLink
+ * 1.0 as well as 2.0-2.3.
  *
  * <p>Exposes EclipseLink's persistence provider and EntityManager extension interface,
- * and adapts {@link AbstractJpaVendorAdapter}'s common configuration settings.
- * No support for the detection of annotated packages (through
- * {@link org.springframework.orm.jpa.persistenceunit.SmartPersistenceUnitInfo#getManagedPackages()})
- * since EclipseLink doesn't use package-level metadata.
+ * and supports {@link AbstractJpaVendorAdapter}'s common configuration settings.
+ *
+ * <p>This class is very analogous to {@link TopLinkJpaVendorAdapter}, since
+ * EclipseLink is effectively the next generation of the TopLink product.
+ * Thanks to Mike Keith for the original EclipseLink support prototype!
+ *
+ * <p>NOTE: No need to filter out classes from the JPA providers package for
+ * EclipseLink (see SPR-6040)
  *
  * @author Juergen Hoeller
  * @author Thomas Risberg
  * @since 2.5.2
- * @see EclipseLinkJpaDialect
  * @see org.eclipse.persistence.jpa.PersistenceProvider
  * @see org.eclipse.persistence.jpa.JpaEntityManager
  */
@@ -50,22 +53,21 @@ public class EclipseLinkJpaVendorAdapter extends AbstractJpaVendorAdapter {
 
 	private final PersistenceProvider persistenceProvider = new org.eclipse.persistence.jpa.PersistenceProvider();
 
-	private final EclipseLinkJpaDialect jpaDialect = new EclipseLinkJpaDialect();
+	private final JpaDialect jpaDialect = new EclipseLinkJpaDialect();
 
 
-	@Override
 	public PersistenceProvider getPersistenceProvider() {
 		return this.persistenceProvider;
 	}
 
 	@Override
 	public Map<String, Object> getJpaPropertyMap() {
-		Map<String, Object> jpaProperties = new HashMap<>();
+		Map<String, Object> jpaProperties = new HashMap<String, Object>();
 
 		if (getDatabasePlatform() != null) {
 			jpaProperties.put(PersistenceUnitProperties.TARGET_DATABASE, getDatabasePlatform());
 		}
-		else {
+		else if (getDatabase() != null) {
 			String targetDatabase = determineTargetDatabaseName(getDatabase());
 			if (targetDatabase != null) {
 				jpaProperties.put(PersistenceUnitProperties.TARGET_DATABASE, targetDatabase);
@@ -79,9 +81,7 @@ public class EclipseLinkJpaVendorAdapter extends AbstractJpaVendorAdapter {
 					PersistenceUnitProperties.DDL_DATABASE_GENERATION);
 		}
 		if (isShowSql()) {
-			jpaProperties.put(PersistenceUnitProperties.CATEGORY_LOGGING_LEVEL_ +
-					org.eclipse.persistence.logging.SessionLog.SQL, Level.FINE.toString());
-			jpaProperties.put(PersistenceUnitProperties.LOGGING_PARAMETERS, Boolean.TRUE.toString());
+			jpaProperties.put(PersistenceUnitProperties.LOGGING_LEVEL, Level.FINE.toString());
 		}
 
 		return jpaProperties;
@@ -92,15 +92,13 @@ public class EclipseLinkJpaVendorAdapter extends AbstractJpaVendorAdapter {
 	 * @param database the specified database
 	 * @return the EclipseLink target database name, or {@code null} if none found
 	 */
-	@Nullable
 	protected String determineTargetDatabaseName(Database database) {
 		switch (database) {
 			case DB2: return TargetDatabase.DB2;
 			case DERBY: return TargetDatabase.Derby;
-			case HANA: return TargetDatabase.HANA;
 			case HSQL: return TargetDatabase.HSQL;
 			case INFORMIX: return TargetDatabase.Informix;
-			case MYSQL: return TargetDatabase.MySQL;
+			case MYSQL: return TargetDatabase.MySQL4;
 			case ORACLE: return TargetDatabase.Oracle;
 			case POSTGRESQL: return TargetDatabase.PostgreSQL;
 			case SQL_SERVER: return TargetDatabase.SQLServer;
@@ -110,7 +108,7 @@ public class EclipseLinkJpaVendorAdapter extends AbstractJpaVendorAdapter {
 	}
 
 	@Override
-	public EclipseLinkJpaDialect getJpaDialect() {
+	public JpaDialect getJpaDialect() {
 		return this.jpaDialect;
 	}
 

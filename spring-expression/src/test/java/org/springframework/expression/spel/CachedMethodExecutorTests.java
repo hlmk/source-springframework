@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.expression.spel;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.expression.Expression;
@@ -35,13 +36,18 @@ public class CachedMethodExecutorTests {
 
 	private final ExpressionParser parser = new SpelExpressionParser();
 
-	private final StandardEvaluationContext context = new StandardEvaluationContext(new RootObject());
+	private StandardEvaluationContext context;
+
+
+	@Before
+	public void setUp() throws Exception {
+		this.context = new StandardEvaluationContext(new RootObject());
+	}
 
 
 	@Test
-	public void testCachedExecutionForParameters() {
+	public void testCachedExecutionForParameters() throws Exception {
 		Expression expression = this.parser.parseExpression("echo(#var)");
-
 		assertMethodExecution(expression, 42, "int: 42");
 		assertMethodExecution(expression, 42, "int: 42");
 		assertMethodExecution(expression, "Deep Thought", "String: Deep Thought");
@@ -49,9 +55,8 @@ public class CachedMethodExecutorTests {
 	}
 
 	@Test
-	public void testCachedExecutionForTarget() {
+	public void testCachedExecutionForTarget() throws Exception {
 		Expression expression = this.parser.parseExpression("#var.echo(42)");
-
 		assertMethodExecution(expression, new RootObject(), "int: 42");
 		assertMethodExecution(expression, new RootObject(), "int: 42");
 		assertMethodExecution(expression, new BaseObject(), "String: 42");
@@ -70,6 +75,7 @@ public class CachedMethodExecutorTests {
 			return "String: " + value;
 		}
 	}
+
 
 	public static class RootObject extends BaseObject {
 

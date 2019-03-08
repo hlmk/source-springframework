@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,11 +41,11 @@ import javax.servlet.ServletResponse;
  */
 public class CompositeFilter implements Filter {
 
-	private List<? extends Filter> filters = new ArrayList<>();
+	private List<? extends Filter> filters = new ArrayList<Filter>();
 
 
 	public void setFilters(List<? extends Filter> filters) {
-		this.filters = new ArrayList<>(filters);
+		this.filters = new ArrayList<Filter>(filters);
 	}
 
 
@@ -53,7 +53,6 @@ public class CompositeFilter implements Filter {
 	 * Initialize all the filters, calling each one's init method in turn in the order supplied.
 	 * @see Filter#init(FilterConfig)
 	 */
-	@Override
 	public void init(FilterConfig config) throws ServletException {
 		for (Filter filter : this.filters) {
 			filter.init(config);
@@ -66,7 +65,6 @@ public class CompositeFilter implements Filter {
 	 * the normal behavior of a {@link FilterChain}, despite the fact that this is a {@link Filter}.
 	 * @see Filter#doFilter(ServletRequest, ServletResponse, FilterChain)
 	 */
-	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 
@@ -77,7 +75,6 @@ public class CompositeFilter implements Filter {
 	 * Clean up all the filters supplied, calling each one's destroy method in turn, but in reverse order.
 	 * @see Filter#init(FilterConfig)
 	 */
-	@Override
 	public void destroy() {
 		for (int i = this.filters.size(); i-- > 0;) {
 			Filter filter = this.filters.get(i);
@@ -99,7 +96,6 @@ public class CompositeFilter implements Filter {
 			this.additionalFilters = additionalFilters;
 		}
 
-		@Override
 		public void doFilter(final ServletRequest request, final ServletResponse response)
 				throws IOException, ServletException {
 

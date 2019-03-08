@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package org.springframework.test.annotation;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.lang.reflect.Method;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  * Unit tests for {@link ProfileValueUtils}.
@@ -52,7 +51,7 @@ public class ProfileValueUtilsTests {
 	}
 
 	private void assertClassIsDisabled(Class<?> testClass) throws Exception {
-		assertFalse("Test class [" + testClass + "] should be disabled.",
+		assertFalse("Test class [" + testClass + "] should be disbled.",
 			ProfileValueUtils.isTestEnabledInThisEnvironment(testClass));
 	}
 
@@ -89,15 +88,8 @@ public class ProfileValueUtilsTests {
 		assertClassIsEnabled(NonAnnotated.class);
 		assertClassIsEnabled(EnabledAnnotatedSingleValue.class);
 		assertClassIsEnabled(EnabledAnnotatedMultiValue.class);
-		assertClassIsEnabled(MetaEnabledClass.class);
-		assertClassIsEnabled(MetaEnabledWithCustomProfileValueSourceClass.class);
-		assertClassIsEnabled(EnabledWithCustomProfileValueSourceOnTestInterface.class);
-
 		assertClassIsDisabled(DisabledAnnotatedSingleValue.class);
-		assertClassIsDisabled(DisabledAnnotatedSingleValueOnTestInterface.class);
 		assertClassIsDisabled(DisabledAnnotatedMultiValue.class);
-		assertClassIsDisabled(MetaDisabledClass.class);
-		assertClassIsDisabled(MetaDisabledWithCustomProfileValueSourceClass.class);
 	}
 
 	@Test
@@ -108,11 +100,6 @@ public class ProfileValueUtilsTests {
 		assertMethodIsEnabled(ENABLED_ANNOTATED_METHOD, EnabledAnnotatedSingleValue.class);
 		assertMethodIsDisabled(DISABLED_ANNOTATED_METHOD, EnabledAnnotatedSingleValue.class);
 
-
-		assertMethodIsEnabled(NON_ANNOTATED_METHOD, MetaEnabledAnnotatedSingleValue.class);
-		assertMethodIsEnabled(ENABLED_ANNOTATED_METHOD, MetaEnabledAnnotatedSingleValue.class);
-		assertMethodIsDisabled(DISABLED_ANNOTATED_METHOD, MetaEnabledAnnotatedSingleValue.class);
-
 		assertMethodIsEnabled(NON_ANNOTATED_METHOD, EnabledAnnotatedMultiValue.class);
 		assertMethodIsEnabled(ENABLED_ANNOTATED_METHOD, EnabledAnnotatedMultiValue.class);
 		assertMethodIsDisabled(DISABLED_ANNOTATED_METHOD, EnabledAnnotatedMultiValue.class);
@@ -120,12 +107,6 @@ public class ProfileValueUtilsTests {
 		assertMethodIsDisabled(NON_ANNOTATED_METHOD, DisabledAnnotatedSingleValue.class);
 		assertMethodIsDisabled(ENABLED_ANNOTATED_METHOD, DisabledAnnotatedSingleValue.class);
 		assertMethodIsDisabled(DISABLED_ANNOTATED_METHOD, DisabledAnnotatedSingleValue.class);
-
-		assertMethodIsDisabled(NON_ANNOTATED_METHOD, DisabledAnnotatedSingleValueOnTestInterface.class);
-
-		assertMethodIsDisabled(NON_ANNOTATED_METHOD, MetaDisabledAnnotatedSingleValue.class);
-		assertMethodIsDisabled(ENABLED_ANNOTATED_METHOD, MetaDisabledAnnotatedSingleValue.class);
-		assertMethodIsDisabled(DISABLED_ANNOTATED_METHOD, MetaDisabledAnnotatedSingleValue.class);
 
 		assertMethodIsDisabled(NON_ANNOTATED_METHOD, DisabledAnnotatedMultiValue.class);
 		assertMethodIsDisabled(ENABLED_ANNOTATED_METHOD, DisabledAnnotatedMultiValue.class);
@@ -182,17 +163,6 @@ public class ProfileValueUtilsTests {
 		}
 	}
 
-	@IfProfileValue(name = NAME, value = VALUE + "X")
-	private interface IfProfileValueTestInterface {
-	}
-
-	@SuppressWarnings("unused")
-	private static class DisabledAnnotatedSingleValueOnTestInterface implements IfProfileValueTestInterface {
-
-		public void nonAnnotatedMethod() {
-		}
-	}
-
 	@SuppressWarnings("unused")
 	@IfProfileValue(name = NAME, values = { "foo", VALUE, "bar" })
 	private static class EnabledAnnotatedMultiValue {
@@ -239,93 +209,6 @@ public class ProfileValueUtilsTests {
 		@IfProfileValue(name = NAME, value = VALUE + "X")
 		public void disabledAnnotatedMethod() {
 		}
-	}
-
-	@IfProfileValue(name = NAME, value = VALUE)
-	@Retention(RetentionPolicy.RUNTIME)
-	private static @interface MetaEnabled {
-	}
-
-	@IfProfileValue(name = NAME, value = VALUE + "X")
-	@Retention(RetentionPolicy.RUNTIME)
-	private static @interface MetaDisabled {
-	}
-
-	@MetaEnabled
-	private static class MetaEnabledClass {
-	}
-
-	@MetaDisabled
-	private static class MetaDisabledClass {
-	}
-
-	@SuppressWarnings("unused")
-	@MetaEnabled
-	private static class MetaEnabledAnnotatedSingleValue {
-
-		public void nonAnnotatedMethod() {
-		}
-
-		@MetaEnabled
-		public void enabledAnnotatedMethod() {
-		}
-
-		@MetaDisabled
-		public void disabledAnnotatedMethod() {
-		}
-	}
-
-	@SuppressWarnings("unused")
-	@MetaDisabled
-	private static class MetaDisabledAnnotatedSingleValue {
-
-		public void nonAnnotatedMethod() {
-		}
-
-		@MetaEnabled
-		public void enabledAnnotatedMethod() {
-		}
-
-		@MetaDisabled
-		public void disabledAnnotatedMethod() {
-		}
-	}
-
-	public static class HardCodedProfileValueSource implements ProfileValueSource {
-
-		@Override
-		public String get(final String key) {
-			return (key.equals(NAME) ? "42" : null);
-		}
-	}
-
-	@ProfileValueSourceConfiguration(HardCodedProfileValueSource.class)
-	@IfProfileValue(name = NAME, value = "42")
-	@Retention(RetentionPolicy.RUNTIME)
-	private static @interface MetaEnabledWithCustomProfileValueSource {
-	}
-
-	@ProfileValueSourceConfiguration(HardCodedProfileValueSource.class)
-	@IfProfileValue(name = NAME, value = "13")
-	@Retention(RetentionPolicy.RUNTIME)
-	private static @interface MetaDisabledWithCustomProfileValueSource {
-	}
-
-	@MetaEnabledWithCustomProfileValueSource
-	private static class MetaEnabledWithCustomProfileValueSourceClass {
-	}
-
-	@MetaDisabledWithCustomProfileValueSource
-	private static class MetaDisabledWithCustomProfileValueSourceClass {
-	}
-
-	@ProfileValueSourceConfiguration(HardCodedProfileValueSource.class)
-	private interface CustomProfileValueSourceTestInterface {
-	}
-
-	@IfProfileValue(name = NAME, value = "42")
-	private static class EnabledWithCustomProfileValueSourceOnTestInterface
-			implements CustomProfileValueSourceTestInterface {
 	}
 
 }

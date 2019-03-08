@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,44 +19,36 @@ package org.springframework.cache.jcache;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import javax.cache.CacheManager;
-import javax.cache.Caching;
+import javax.cache.Status;
 
 import org.springframework.cache.Cache;
 import org.springframework.cache.transaction.AbstractTransactionSupportingCacheManager;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
  * {@link org.springframework.cache.CacheManager} implementation
- * backed by a JCache {@link CacheManager javax.cache.CacheManager}.
- *
- * <p>Note: This class has been updated for JCache 1.0, as of Spring 4.0.
+ * backed by a JCache {@link javax.cache.CacheManager}.
  *
  * @author Juergen Hoeller
- * @author Stephane Nicoll
  * @since 3.2
  */
 public class JCacheCacheManager extends AbstractTransactionSupportingCacheManager {
 
-	@Nullable
-	private CacheManager cacheManager;
+	private javax.cache.CacheManager cacheManager;
 
 	private boolean allowNullValues = true;
 
 
 	/**
-	 * Create a new {@code JCacheCacheManager} without a backing JCache
-	 * {@link CacheManager javax.cache.CacheManager}.
-	 * <p>The backing JCache {@code javax.cache.CacheManager} can be set via the
-	 * {@link #setCacheManager} bean property.
+	 * Create a new JCacheCacheManager, setting the target JCache CacheManager
+	 * through the {@link #setCacheManager} bean property.
 	 */
 	public JCacheCacheManager() {
 	}
 
 	/**
-	 * Create a new {@code JCacheCacheManager} for the given backing JCache
-	 * {@link CacheManager javax.cache.CacheManager}.
-	 * @param cacheManager the backing JCache {@code javax.cache.CacheManager}
+	 * Create a new JCacheCacheManager for the given backing JCache.
+	 * @param cacheManager the backing JCache {@link javax.cache.CacheManager}
 	 */
 	public JCacheCacheManager(CacheManager cacheManager) {
 		this.cacheManager = cacheManager;
@@ -64,71 +56,65 @@ public class JCacheCacheManager extends AbstractTransactionSupportingCacheManage
 
 
 	/**
-	 * Set the backing JCache {@link CacheManager javax.cache.CacheManager}.
+	 * Set the backing JCache {@link javax.cache.CacheManager}.
 	 */
-	public void setCacheManager(@Nullable CacheManager cacheManager) {
+	public void setCacheManager(javax.cache.CacheManager cacheManager) {
 		this.cacheManager = cacheManager;
 	}
 
 	/**
-	 * Return the backing JCache {@link CacheManager javax.cache.CacheManager}.
+	 * Return the backing JCache {@link javax.cache.CacheManager}.
 	 */
-	@Nullable
-	public CacheManager getCacheManager() {
+	public javax.cache.CacheManager getCacheManager() {
 		return this.cacheManager;
 	}
 
 	/**
-	 * Specify whether to accept and convert {@code null} values for all caches
+	 * Specify whether to accept and convert null values for all caches
 	 * in this cache manager.
-	 * <p>Default is "true", despite JSR-107 itself not supporting {@code null} values.
-	 * An internal holder object will be used to store user-level {@code null}s.
+	 * <p>Default is "true", despite JSR-107 itself not supporting null values.
+	 * An internal holder object will be used to store user-level null values.
 	 */
 	public void setAllowNullValues(boolean allowNullValues) {
 		this.allowNullValues = allowNullValues;
 	}
 
 	/**
-	 * Return whether this cache manager accepts and converts {@code null} values
+	 * Return whether this cache manager accepts and converts null values
 	 * for all of its caches.
 	 */
 	public boolean isAllowNullValues() {
 		return this.allowNullValues;
 	}
 
-	@Override
-	public void afterPropertiesSet() {
-		if (getCacheManager() == null) {
-			setCacheManager(Caching.getCachingProvider().getCacheManager());
-		}
-		super.afterPropertiesSet();
-	}
-
 
 	@Override
 	protected Collection<Cache> loadCaches() {
-		CacheManager cacheManager = getCacheManager();
-		Assert.state(cacheManager != null, "No CacheManager set");
+		Assert.notNull(this.cacheManager, "A backing CacheManager is required");
+		Status status = this.cacheManager.getStatus();
+		Assert.isTrue(Status.STARTED.equals(status),
+				"A 'started' JCache CacheManager is required - current cache is " + status.toString());
 
-		Collection<Cache> caches = new LinkedHashSet<>();
-		for (String cacheName : cacheManager.getCacheNames()) {
-			javax.cache.Cache<Object, Object> jcache = cacheManager.getCache(cacheName);
-			caches.add(new JCacheCache(jcache, isAllowNullValues()));
+		Collection<Cache> caches = new LinkedHashSet<Cache>();
+		for (javax.cache.Cache<?,?> jcache : this.cacheManager.getCaches()) {
+			caches.add(new JCacheCache(jcache, this.allowNullValues));
 		}
 		return caches;
 	}
 
 	@Override
-	protected Cache getMissingCache(String name) {
-		CacheManager cacheManager = getCacheManager();
-		Assert.state(cacheManager != null, "No CacheManager set");
-
-		// Check the JCache cache again (in case the cache was added at runtime)
-		javax.cache.Cache<Object, Object> jcache = cacheManager.getCache(name);
-		if (jcache != null) {
-			return new JCacheCache(jcache, isAllowNullValues());
+	public Cache getCache(String name) {
+		Cache cache = super.getCache(name);
+		if (cache == null) {
+			// check the JCache cache again
+			// (in case the cache was added at runtime)
+			javax.cache.Cache<?,?> jcache = this.cacheManager.getCache(name);
+			if (jcache != null) {
+				addCache(new JCacheCache(jcache, this.allowNullValues));
+				cache = super.getCache(name);  // potentially decorated
+			}
 		}
-		return null;
+		return cache;
 	}
 
 }

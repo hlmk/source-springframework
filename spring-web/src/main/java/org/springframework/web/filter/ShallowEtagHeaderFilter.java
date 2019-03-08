@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,21 @@
 
 package org.springframework.web.filter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 
-import org.springframework.http.HttpMethod;
 import org.springframework.util.Assert;
 import org.springframework.util.DigestUtils;
-import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.util.WebUtils;
 
 /**
@@ -42,13 +43,8 @@ import org.springframework.web.util.WebUtils;
  * (e.g. a {@link org.springframework.web.servlet.View}) is still rendered.
  * As such, this filter only saves bandwidth, not server performance.
  *
- * <p><b>NOTE:</b> As of Spring Framework 5.0, this filter uses request/response
- * decorators built on the Servlet 3.1 API.
- *
  * @author Arjen Poutsma
  * @author Rossen Stoyanchev
- * @author Brian Clozel
- * @author Juergen Hoeller
  * @since 3.0
  */
 public class ShallowEtagHeaderFilter extends OncePerRequestFilter {
@@ -57,39 +53,10 @@ public class ShallowEtagHeaderFilter extends OncePerRequestFilter {
 
 	private static final String HEADER_IF_NONE_MATCH = "If-None-Match";
 
-	private static final String HEADER_CACHE_CONTROL = "Cache-Control";
-
-	private static final String DIRECTIVE_NO_STORE = "no-store";
-
-	private static final String STREAMING_ATTRIBUTE = ShallowEtagHeaderFilter.class.getName() + ".STREAMING";
-
-
-	private boolean writeWeakETag = false;
-
 
 	/**
-	 * Set whether the ETag value written to the response should be weak, as per RFC 7232.
-	 * <p>Should be configured using an {@code <init-param>} for parameter name
-	 * "writeWeakETag" in the filter definition in {@code web.xml}.
-	 * @since 4.3
-	 * @see <a href="https://tools.ietf.org/html/rfc7232#section-2.3">RFC 7232 section 2.3</a>
-	 */
-	public void setWriteWeakETag(boolean writeWeakETag) {
-		this.writeWeakETag = writeWeakETag;
-	}
-
-	/**
-	 * Return whether the ETag value written to the response should be weak, as per RFC 7232.
-	 * @since 4.3
-	 */
-	public boolean isWriteWeakETag() {
-		return this.writeWeakETag;
-	}
-
-
-	/**
-	 * The default value is {@code false} so that the filter may delay the generation
-	 * of an ETag until the last asynchronously dispatched thread.
+	 * The default value is "false" so that the filter may delay the generation of
+	 * an ETag until the last asynchronously dispatched thread.
 	 */
 	@Override
 	protected boolean shouldNotFilterAsyncDispatch() {
@@ -101,137 +68,209 @@ public class ShallowEtagHeaderFilter extends OncePerRequestFilter {
 			throws ServletException, IOException {
 
 		HttpServletResponse responseToUse = response;
-		if (!isAsyncDispatch(request) && !(response instanceof ContentCachingResponseWrapper)) {
-			responseToUse = new HttpStreamingAwareContentCachingResponseWrapper(response, request);
+		if (!isAsyncDispatch(request)) {
+			responseToUse = new ShallowEtagResponseWrapper(response);
 		}
 
 		filterChain.doFilter(request, responseToUse);
 
-		if (!isAsyncStarted(request) && !isContentCachingDisabled(request)) {
+		if (!isAsyncStarted(request)) {
 			updateResponse(request, responseToUse);
 		}
 	}
 
 	private void updateResponse(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		ContentCachingResponseWrapper responseWrapper =
-				WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
-		Assert.notNull(responseWrapper, "ContentCachingResponseWrapper not found");
+		ShallowEtagResponseWrapper responseWrapper =
+				WebUtils.getNativeResponse(response, ShallowEtagResponseWrapper.class);
+		Assert.notNull(responseWrapper, "ShallowEtagResponseWrapper not found");
+
 		HttpServletResponse rawResponse = (HttpServletResponse) responseWrapper.getResponse();
 		int statusCode = responseWrapper.getStatusCode();
+		byte[] body = responseWrapper.toByteArray();
 
-		if (rawResponse.isCommitted()) {
-			responseWrapper.copyBodyToResponse();
-		}
-		else if (isEligibleForEtag(request, responseWrapper, statusCode, responseWrapper.getContentInputStream())) {
-			String responseETag = generateETagHeaderValue(responseWrapper.getContentInputStream(), this.writeWeakETag);
+		if (isEligibleForEtag(request, responseWrapper, statusCode, body)) {
+			String responseETag = generateETagHeaderValue(body);
 			rawResponse.setHeader(HEADER_ETAG, responseETag);
 			String requestETag = request.getHeader(HEADER_IF_NONE_MATCH);
-			if (requestETag != null && ("*".equals(requestETag) || compareETagHeaderValue(requestETag, responseETag))) {
+			if (responseETag.equals(requestETag)) {
+				if (logger.isTraceEnabled()) {
+					logger.trace("ETag [" + responseETag + "] equal to If-None-Match, sending 304");
+				}
 				rawResponse.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
 			}
 			else {
-				responseWrapper.copyBodyToResponse();
+				if (logger.isTraceEnabled()) {
+					logger.trace("ETag [" + responseETag + "] not equal to If-None-Match [" + requestETag +
+							"], sending normal response");
+				}
+				copyBodyToResponse(body, rawResponse);
 			}
 		}
 		else {
-			responseWrapper.copyBodyToResponse();
+			if (logger.isTraceEnabled()) {
+				logger.trace("Response with status code [" + statusCode + "] not eligible for ETag");
+			}
+			copyBodyToResponse(body, rawResponse);
+		}
+	}
+
+	private void copyBodyToResponse(byte[] body, HttpServletResponse response) throws IOException {
+		if (body.length > 0) {
+			response.setContentLength(body.length);
+			StreamUtils.copy(body, response.getOutputStream());
 		}
 	}
 
 	/**
 	 * Indicates whether the given request and response are eligible for ETag generation.
-	 * <p>The default implementation returns {@code true} if all conditions match:
-	 * <ul>
-	 * <li>response status codes in the {@code 2xx} series</li>
-	 * <li>request method is a GET</li>
-	 * <li>response Cache-Control header is not set or does not contain a "no-store" directive</li>
-	 * </ul>
+	 * <p>The default implementation returns {@code true} for response status codes in the {@code 2xx} series.
 	 * @param request the HTTP request
 	 * @param response the HTTP response
 	 * @param responseStatusCode the HTTP response status code
-	 * @param inputStream the response body
-	 * @return {@code true} if eligible for ETag generation, {@code false} otherwise
+	 * @param responseBody the response body
+	 * @return {@code true} if eligible for ETag generation; {@code false} otherwise
 	 */
 	protected boolean isEligibleForEtag(HttpServletRequest request, HttpServletResponse response,
-			int responseStatusCode, InputStream inputStream) {
+			int responseStatusCode, byte[] responseBody) {
 
-		String method = request.getMethod();
-		if (responseStatusCode >= 200 && responseStatusCode < 300 && HttpMethod.GET.matches(method)) {
-			String cacheControl = response.getHeader(HEADER_CACHE_CONTROL);
-			return (cacheControl == null || !cacheControl.contains(DIRECTIVE_NO_STORE));
-		}
-		return false;
+		return (responseStatusCode >= 200 && responseStatusCode < 300);
 	}
 
 	/**
 	 * Generate the ETag header value from the given response body byte array.
 	 * <p>The default implementation generates an MD5 hash.
-	 * @param inputStream the response body as an InputStream
-	 * @param isWeak whether the generated ETag should be weak
+	 * @param bytes the response body as byte array
 	 * @return the ETag header value
 	 * @see org.springframework.util.DigestUtils
 	 */
-	protected String generateETagHeaderValue(InputStream inputStream, boolean isWeak) throws IOException {
-		// length of W/ + " + 0 + 32bits md5 hash + "
-		StringBuilder builder = new StringBuilder(37);
-		if (isWeak) {
-			builder.append("W/");
-		}
-		builder.append("\"0");
-		DigestUtils.appendMd5DigestAsHex(inputStream, builder);
+	protected String generateETagHeaderValue(byte[] bytes) {
+		StringBuilder builder = new StringBuilder("\"0");
+		DigestUtils.appendMd5DigestAsHex(bytes, builder);
 		builder.append('"');
 		return builder.toString();
 	}
 
-	private boolean compareETagHeaderValue(String requestETag, String responseETag) {
-		if (requestETag.startsWith("W/")) {
-			requestETag = requestETag.substring(2);
-		}
-		if (responseETag.startsWith("W/")) {
-			responseETag = responseETag.substring(2);
-		}
-		return requestETag.equals(responseETag);
-	}
-
 
 	/**
-	 * This method can be used to disable the content caching response wrapper
-	 * of the ShallowEtagHeaderFilter. This can be done before the start of HTTP
-	 * streaming for example where the response will be written to asynchronously
-	 * and not in the context of a Servlet container thread.
-	 * @since 4.2
+	 * {@link HttpServletRequest} wrapper that buffers all content written to the
+	 * {@linkplain #getOutputStream() output stream} and {@linkplain #getWriter() writer},
+	 * and allows this content to be retrieved via a {@link #toByteArray() byte array}.
 	 */
-	public static void disableContentCaching(ServletRequest request) {
-		Assert.notNull(request, "ServletRequest must not be null");
-		request.setAttribute(STREAMING_ATTRIBUTE, true);
-	}
+	private static class ShallowEtagResponseWrapper extends HttpServletResponseWrapper {
 
-	private static boolean isContentCachingDisabled(HttpServletRequest request) {
-		return (request.getAttribute(STREAMING_ATTRIBUTE) != null);
-	}
+		private final ByteArrayOutputStream content = new ByteArrayOutputStream(1024);
 
+		private final ServletOutputStream outputStream = new ResponseServletOutputStream();
 
-	private static class HttpStreamingAwareContentCachingResponseWrapper extends ContentCachingResponseWrapper {
+		private PrintWriter writer;
 
-		private final HttpServletRequest request;
+		private int statusCode = HttpServletResponse.SC_OK;
 
-		public HttpStreamingAwareContentCachingResponseWrapper(HttpServletResponse response, HttpServletRequest request) {
+		public ShallowEtagResponseWrapper(HttpServletResponse response) {
 			super(response);
-			this.request = request;
 		}
 
 		@Override
-		public ServletOutputStream getOutputStream() throws IOException {
-			return (useRawResponse() ? getResponse().getOutputStream() : super.getOutputStream());
+		public void setStatus(int sc) {
+			super.setStatus(sc);
+			this.statusCode = sc;
+		}
+
+		@SuppressWarnings("deprecation")
+		@Override
+		public void setStatus(int sc, String sm) {
+			super.setStatus(sc, sm);
+			this.statusCode = sc;
+		}
+
+		@Override
+		public void sendError(int sc) throws IOException {
+			super.sendError(sc);
+			this.statusCode = sc;
+		}
+
+		@Override
+		public void sendError(int sc, String msg) throws IOException {
+			super.sendError(sc, msg);
+			this.statusCode = sc;
+		}
+
+		@Override
+		public void setContentLength(int len) {
+		}
+
+		@Override
+		public ServletOutputStream getOutputStream() {
+			return this.outputStream;
 		}
 
 		@Override
 		public PrintWriter getWriter() throws IOException {
-			return (useRawResponse() ? getResponse().getWriter() : super.getWriter());
+			if (this.writer == null) {
+				String characterEncoding = getCharacterEncoding();
+				this.writer = (characterEncoding != null ? new ResponsePrintWriter(characterEncoding) :
+						new ResponsePrintWriter(WebUtils.DEFAULT_CHARACTER_ENCODING));
+			}
+			return this.writer;
 		}
 
-		private boolean useRawResponse() {
-			return isContentCachingDisabled(this.request);
+		@Override
+		public void reset() {
+			super.reset();
+			resetBuffer();
+		}
+
+		@Override
+		public void resetBuffer() {
+			this.content.reset();
+		}
+
+		public int getStatusCode() {
+			return this.statusCode;
+		}
+
+		public byte[] toByteArray() {
+			return this.content.toByteArray();
+		}
+
+
+		private class ResponseServletOutputStream extends ServletOutputStream {
+
+			@Override
+			public void write(int b) throws IOException {
+				content.write(b);
+			}
+
+			@Override
+			public void write(byte[] b, int off, int len) throws IOException {
+				content.write(b, off, len);
+			}
+		}
+
+
+		private class ResponsePrintWriter extends PrintWriter {
+
+			public ResponsePrintWriter(String characterEncoding) throws UnsupportedEncodingException {
+				super(new OutputStreamWriter(content, characterEncoding));
+			}
+
+			@Override
+			public void write(char buf[], int off, int len) {
+				super.write(buf, off, len);
+				super.flush();
+			}
+
+			@Override
+			public void write(String s, int off, int len) {
+				super.write(s, off, len);
+				super.flush();
+			}
+
+			@Override
+			public void write(int c) {
+				super.write(c);
+				super.flush();
+			}
 		}
 	}
 

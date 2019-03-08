@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package org.springframework.beans.factory;
 
 import org.springframework.beans.BeansException;
-import org.springframework.lang.Nullable;
-import org.springframework.util.StringUtils;
+import org.springframework.util.ClassUtils;
 
 /**
  * Exception thrown when a bean depends on other beans or simple properties
@@ -32,10 +31,6 @@ import org.springframework.util.StringUtils;
 @SuppressWarnings("serial")
 public class UnsatisfiedDependencyException extends BeanCreationException {
 
-	@Nullable
-	private final InjectionPoint injectionPoint;
-
-
 	/**
 	 * Create a new UnsatisfiedDependencyException.
 	 * @param resourceDescription description of the resource that the bean definition came from
@@ -44,12 +39,11 @@ public class UnsatisfiedDependencyException extends BeanCreationException {
 	 * @param msg the detail message
 	 */
 	public UnsatisfiedDependencyException(
-			@Nullable String resourceDescription, @Nullable String beanName, String propertyName, String msg) {
+			String resourceDescription, String beanName, String propertyName, String msg) {
 
 		super(resourceDescription, beanName,
 				"Unsatisfied dependency expressed through bean property '" + propertyName + "'" +
-				(StringUtils.hasLength(msg) ? ": " + msg : ""));
-		this.injectionPoint = null;
+				(msg != null ? ": " + msg : ""));
 	}
 
 	/**
@@ -60,9 +54,9 @@ public class UnsatisfiedDependencyException extends BeanCreationException {
 	 * @param ex the bean creation exception that indicated the unsatisfied dependency
 	 */
 	public UnsatisfiedDependencyException(
-			@Nullable String resourceDescription, @Nullable String beanName, String propertyName, BeansException ex) {
+			String resourceDescription, String beanName, String propertyName, BeansException ex) {
 
-		this(resourceDescription, beanName, propertyName, "");
+		this(resourceDescription, beanName, propertyName, (ex != null ? ": " + ex.getMessage() : ""));
 		initCause(ex);
 	}
 
@@ -70,42 +64,32 @@ public class UnsatisfiedDependencyException extends BeanCreationException {
 	 * Create a new UnsatisfiedDependencyException.
 	 * @param resourceDescription description of the resource that the bean definition came from
 	 * @param beanName the name of the bean requested
-	 * @param injectionPoint the injection point (field or method/constructor parameter)
+	 * @param ctorArgIndex the index of the constructor argument that couldn't be satisfied
+	 * @param ctorArgType the type of the constructor argument that couldn't be satisfied
 	 * @param msg the detail message
-	 * @since 4.3
 	 */
 	public UnsatisfiedDependencyException(
-			@Nullable String resourceDescription, @Nullable String beanName, @Nullable InjectionPoint injectionPoint, String msg) {
+			String resourceDescription, String beanName, int ctorArgIndex, Class ctorArgType, String msg) {
 
 		super(resourceDescription, beanName,
-				"Unsatisfied dependency expressed through " + injectionPoint +
-				(StringUtils.hasLength(msg) ? ": " + msg : ""));
-		this.injectionPoint = injectionPoint;
+				"Unsatisfied dependency expressed through constructor argument with index " +
+				ctorArgIndex + " of type [" + ClassUtils.getQualifiedName(ctorArgType) + "]" +
+				(msg != null ? ": " + msg : ""));
 	}
 
 	/**
 	 * Create a new UnsatisfiedDependencyException.
 	 * @param resourceDescription description of the resource that the bean definition came from
 	 * @param beanName the name of the bean requested
-	 * @param injectionPoint the injection point (field or method/constructor parameter)
+	 * @param ctorArgIndex the index of the constructor argument that couldn't be satisfied
+	 * @param ctorArgType the type of the constructor argument that couldn't be satisfied
 	 * @param ex the bean creation exception that indicated the unsatisfied dependency
-	 * @since 4.3
 	 */
 	public UnsatisfiedDependencyException(
-			@Nullable String resourceDescription, @Nullable String beanName, @Nullable InjectionPoint injectionPoint, BeansException ex) {
+			String resourceDescription, String beanName, int ctorArgIndex, Class ctorArgType, BeansException ex) {
 
-		this(resourceDescription, beanName, injectionPoint, "");
+		this(resourceDescription, beanName, ctorArgIndex, ctorArgType, (ex != null ? ": " + ex.getMessage() : ""));
 		initCause(ex);
-	}
-
-
-	/**
-	 * Return the injection point (field or method/constructor parameter), if known.
-	 * @since 4.3
-	 */
-	@Nullable
-	public InjectionPoint getInjectionPoint() {
-		return this.injectionPoint;
 	}
 
 }

@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.springframework.core.io.Resource;
 
+
 public class GenericObject<T> {
 
 	private List<Resource> resourceList;

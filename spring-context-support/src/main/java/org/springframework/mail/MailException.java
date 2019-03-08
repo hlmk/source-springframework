@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.mail;
 
 import org.springframework.core.NestedRuntimeException;
-import org.springframework.lang.Nullable;
 
 /**
  * Base class for all mail exceptions.
@@ -40,7 +39,7 @@ public abstract class MailException extends NestedRuntimeException {
 	 * @param msg the detail message
 	 * @param cause the root cause from the mail API in use
 	 */
-	public MailException(@Nullable String msg, @Nullable Throwable cause) {
+	public MailException(String msg, Throwable cause) {
 		super(msg, cause);
 	}
 

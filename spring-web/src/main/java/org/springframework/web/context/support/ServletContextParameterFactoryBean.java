@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.web.context.support;
 import javax.servlet.ServletContext;
 
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.lang.Nullable;
 import org.springframework.web.context.ServletContextAware;
 
 /**
@@ -39,10 +38,8 @@ import org.springframework.web.context.ServletContextAware;
  */
 public class ServletContextParameterFactoryBean implements FactoryBean<String>, ServletContextAware {
 
-	@Nullable
 	private String initParamName;
 
-	@Nullable
 	private String paramValue;
 
 
@@ -53,7 +50,6 @@ public class ServletContextParameterFactoryBean implements FactoryBean<String>, 
 		this.initParamName = initParamName;
 	}
 
-	@Override
 	public void setServletContext(ServletContext servletContext) {
 		if (this.initParamName == null) {
 			throw new IllegalArgumentException("initParamName is required");
@@ -65,18 +61,14 @@ public class ServletContextParameterFactoryBean implements FactoryBean<String>, 
 	}
 
 
-	@Override
-	@Nullable
 	public String getObject() {
 		return this.paramValue;
 	}
 
-	@Override
 	public Class<String> getObjectType() {
 		return String.class;
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}

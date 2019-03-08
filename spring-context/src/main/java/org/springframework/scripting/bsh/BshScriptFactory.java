@@ -21,13 +21,11 @@ import java.io.IOException;
 import bsh.EvalError;
 
 import org.springframework.beans.factory.BeanClassLoaderAware;
-import org.springframework.lang.Nullable;
 import org.springframework.scripting.ScriptCompilationException;
 import org.springframework.scripting.ScriptFactory;
 import org.springframework.scripting.ScriptSource;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * {@link org.springframework.scripting.ScriptFactory} implementation
@@ -47,13 +45,10 @@ public class BshScriptFactory implements ScriptFactory, BeanClassLoaderAware {
 
 	private final String scriptSourceLocator;
 
-	@Nullable
 	private final Class<?>[] scriptInterfaces;
 
-	@Nullable
 	private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
-	@Nullable
 	private Class<?> scriptClass;
 
 	private final Object scriptClassMonitor = new Object();
@@ -85,26 +80,22 @@ public class BshScriptFactory implements ScriptFactory, BeanClassLoaderAware {
 	 * @param scriptInterfaces the Java interfaces that the scripted object
 	 * is supposed to implement (may be {@code null})
 	 */
-	public BshScriptFactory(String scriptSourceLocator, @Nullable Class<?>... scriptInterfaces) {
+	public BshScriptFactory(String scriptSourceLocator, Class<?>... scriptInterfaces) {
 		Assert.hasText(scriptSourceLocator, "'scriptSourceLocator' must not be empty");
 		this.scriptSourceLocator = scriptSourceLocator;
 		this.scriptInterfaces = scriptInterfaces;
 	}
 
 
-	@Override
 	public void setBeanClassLoader(ClassLoader classLoader) {
 		this.beanClassLoader = classLoader;
 	}
 
 
-	@Override
 	public String getScriptSourceLocator() {
 		return this.scriptSourceLocator;
 	}
 
-	@Override
-	@Nullable
 	public Class<?>[] getScriptInterfaces() {
 		return this.scriptInterfaces;
 	}
@@ -112,7 +103,6 @@ public class BshScriptFactory implements ScriptFactory, BeanClassLoaderAware {
 	/**
 	 * BeanShell scripts do require a config interface.
 	 */
-	@Override
 	public boolean requiresConfigInterface() {
 		return true;
 	}
@@ -121,9 +111,7 @@ public class BshScriptFactory implements ScriptFactory, BeanClassLoaderAware {
 	 * Load and parse the BeanShell script via {@link BshScriptUtils}.
 	 * @see BshScriptUtils#createBshObject(String, Class[], ClassLoader)
 	 */
-	@Override
-	@Nullable
-	public Object getScriptedObject(ScriptSource scriptSource, @Nullable Class<?>... actualInterfaces)
+	public Object getScriptedObject(ScriptSource scriptSource, Class<?>... actualInterfaces)
 			throws IOException, ScriptCompilationException {
 
 		Class<?> clazz;
@@ -161,7 +149,7 @@ public class BshScriptFactory implements ScriptFactory, BeanClassLoaderAware {
 		if (clazz != null) {
 			// A Class: We need to create an instance for every call.
 			try {
-				return ReflectionUtils.accessibleConstructor(clazz).newInstance();
+				return clazz.newInstance();
 			}
 			catch (Throwable ex) {
 				throw new ScriptCompilationException(
@@ -180,8 +168,6 @@ public class BshScriptFactory implements ScriptFactory, BeanClassLoaderAware {
 		}
 	}
 
-	@Override
-	@Nullable
 	public Class<?> getScriptedObjectType(ScriptSource scriptSource)
 			throws IOException, ScriptCompilationException {
 
@@ -190,8 +176,7 @@ public class BshScriptFactory implements ScriptFactory, BeanClassLoaderAware {
 				if (scriptSource.isModified()) {
 					// New script content: Let's check whether it evaluates to a Class.
 					this.wasModifiedForTypeCheck = true;
-					this.scriptClass = BshScriptUtils.determineBshObjectType(
-							scriptSource.getScriptAsString(), this.beanClassLoader);
+					this.scriptClass = BshScriptUtils.determineBshObjectType(scriptSource.getScriptAsString());
 				}
 				return this.scriptClass;
 			}
@@ -202,7 +187,6 @@ public class BshScriptFactory implements ScriptFactory, BeanClassLoaderAware {
 		}
 	}
 
-	@Override
 	public boolean requiresScriptedObjectRefresh(ScriptSource scriptSource) {
 		synchronized (this.scriptClassMonitor) {
 			return (scriptSource.isModified() || this.wasModifiedForTypeCheck);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package org.springframework.web.servlet.theme;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.lang.Nullable;
-
 /**
  * {@link org.springframework.web.servlet.ThemeResolver} implementation
  * that simply uses a fixed theme. The fixed name can be defined via
@@ -36,15 +34,11 @@ import org.springframework.lang.Nullable;
  */
 public class FixedThemeResolver extends AbstractThemeResolver {
 
-	@Override
 	public String resolveThemeName(HttpServletRequest request) {
 		return getDefaultThemeName();
 	}
 
-	@Override
-	public void setThemeName(
-			HttpServletRequest request, @Nullable HttpServletResponse response, @Nullable String themeName) {
-
+	public void setThemeName(HttpServletRequest request, HttpServletResponse response, String themeName) {
 		throw new UnsupportedOperationException("Cannot change theme - use a different theme resolution strategy");
 	}
 

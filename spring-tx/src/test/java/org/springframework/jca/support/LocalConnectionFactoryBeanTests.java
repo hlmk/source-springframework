@@ -30,9 +30,9 @@ import static org.mockito.BDDMockito.*;
  * @author Rick Evans
  * @author Chris Beams
  */
-public class LocalConnectionFactoryBeanTests {
+public final class LocalConnectionFactoryBeanTests {
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected=IllegalArgumentException.class)
 	public void testManagedConnectionFactoryIsRequired() throws Exception {
 		new LocalConnectionFactoryBean().afterPropertiesSet();
 	}

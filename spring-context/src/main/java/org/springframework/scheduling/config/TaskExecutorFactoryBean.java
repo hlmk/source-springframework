@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,21 @@
 
 package org.springframework.scheduling.config;
 
-import java.util.concurrent.RejectedExecutionHandler;
-
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.core.JdkVersion;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.lang.Nullable;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * {@link FactoryBean} for creating {@link ThreadPoolTaskExecutor} instances,
- * primarily used behind the XML task namespace.
+ * FactoryBean for creating ThreadPoolTaskExecutor instances, choosing
+ * between the standard concurrent and the backport-concurrent variant.
  *
  * @author Mark Fisher
  * @author Juergen Hoeller
@@ -38,23 +39,17 @@ import org.springframework.util.StringUtils;
 public class TaskExecutorFactoryBean implements
 		FactoryBean<TaskExecutor>, BeanNameAware, InitializingBean, DisposableBean {
 
-	@Nullable
 	private String poolSize;
 
-	@Nullable
 	private Integer queueCapacity;
 
-	@Nullable
-	private RejectedExecutionHandler rejectedExecutionHandler;
+	private Object rejectedExecutionHandler;
 
-	@Nullable
 	private Integer keepAliveSeconds;
 
-	@Nullable
 	private String beanName;
 
-	@Nullable
-	private ThreadPoolTaskExecutor target;
+	private TaskExecutor target;
 
 
 	public void setPoolSize(String poolSize) {
@@ -65,7 +60,7 @@ public class TaskExecutorFactoryBean implements
 		this.queueCapacity = queueCapacity;
 	}
 
-	public void setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
+	public void setRejectedExecutionHandler(Object rejectedExecutionHandler) {
 		this.rejectedExecutionHandler = rejectedExecutionHandler;
 	}
 
@@ -73,33 +68,41 @@ public class TaskExecutorFactoryBean implements
 		this.keepAliveSeconds = keepAliveSeconds;
 	}
 
-	@Override
 	public void setBeanName(String beanName) {
 		this.beanName = beanName;
 	}
 
 
-	@Override
-	public void afterPropertiesSet() {
-		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-		determinePoolSizeRange(executor);
+	public void afterPropertiesSet() throws Exception {
+		Class<?> executorClass = (shouldUseBackport() ?
+				ClassUtils.forName("org.springframework.scheduling.backportconcurrent.ThreadPoolTaskExecutor", getClass().getClassLoader()) :
+				ThreadPoolTaskExecutor.class);
+		BeanWrapper bw = new BeanWrapperImpl(executorClass);
+		determinePoolSizeRange(bw);
 		if (this.queueCapacity != null) {
-			executor.setQueueCapacity(this.queueCapacity);
+			bw.setPropertyValue("queueCapacity", this.queueCapacity);
 		}
 		if (this.keepAliveSeconds != null) {
-			executor.setKeepAliveSeconds(this.keepAliveSeconds);
+			bw.setPropertyValue("keepAliveSeconds", this.keepAliveSeconds);
 		}
 		if (this.rejectedExecutionHandler != null) {
-			executor.setRejectedExecutionHandler(this.rejectedExecutionHandler);
+			bw.setPropertyValue("rejectedExecutionHandler", this.rejectedExecutionHandler);
 		}
 		if (this.beanName != null) {
-			executor.setThreadNamePrefix(this.beanName + "-");
+			bw.setPropertyValue("threadNamePrefix", this.beanName + "-");
 		}
-		executor.afterPropertiesSet();
-		this.target = executor;
+		this.target = (TaskExecutor) bw.getWrappedInstance();
+		if (this.target instanceof InitializingBean) {
+			((InitializingBean) this.target).afterPropertiesSet();
+		}
 	}
 
-	private void determinePoolSizeRange(ThreadPoolTaskExecutor executor) {
+	private boolean shouldUseBackport() {
+		return (StringUtils.hasText(this.poolSize) && this.poolSize.startsWith("0") &&
+				JdkVersion.getMajorJavaVersion() < JdkVersion.JAVA_16);
+	}
+
+	private void determinePoolSizeRange(BeanWrapper bw) {
 		if (StringUtils.hasText(this.poolSize)) {
 			try {
 				int corePoolSize;
@@ -113,15 +116,15 @@ public class TaskExecutorFactoryBean implements
 								"Lower bound of pool-size range must not exceed the upper bound");
 					}
 					if (this.queueCapacity == null) {
-						// No queue-capacity provided, so unbounded
+						// no queue-capacity provided, so unbounded
 						if (corePoolSize == 0) {
-							// Actually set 'corePoolSize' to the upper bound of the range
-							// but allow core threads to timeout...
-							executor.setAllowCoreThreadTimeOut(true);
+							// actually set 'corePoolSize' to the upper bound of the range
+							// but allow core threads to timeout
+							bw.setPropertyValue("allowCoreThreadTimeOut", true);
 							corePoolSize = maxPoolSize;
 						}
 						else {
-							// Non-zero lower bound implies a core-max size range...
+							// non-zero lower bound implies a core-max size range
 							throw new IllegalArgumentException(
 									"A non-zero lower bound for the size range requires a queue-capacity value");
 						}
@@ -132,8 +135,8 @@ public class TaskExecutorFactoryBean implements
 					corePoolSize = value;
 					maxPoolSize = value;
 				}
-				executor.setCorePoolSize(corePoolSize);
-				executor.setMaxPoolSize(maxPoolSize);
+				bw.setPropertyValue("corePoolSize", corePoolSize);
+				bw.setPropertyValue("maxPoolSize", maxPoolSize);
 			}
 			catch (NumberFormatException ex) {
 				throw new IllegalArgumentException("Invalid pool-size value [" + this.poolSize + "]: only single " +
@@ -143,27 +146,25 @@ public class TaskExecutorFactoryBean implements
 	}
 
 
-	@Override
-	@Nullable
 	public TaskExecutor getObject() {
 		return this.target;
 	}
 
-	@Override
 	public Class<? extends TaskExecutor> getObjectType() {
-		return (this.target != null ? this.target.getClass() : ThreadPoolTaskExecutor.class);
+		if (this.target != null) {
+			return this.target.getClass();
+		}
+		return (!shouldUseBackport() ? ThreadPoolTaskExecutor.class : TaskExecutor.class);
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}
 
 
-	@Override
-	public void destroy() {
-		if (this.target != null) {
-			this.target.destroy();
+	public void destroy() throws Exception {
+		if (this.target instanceof DisposableBean) {
+			((DisposableBean) this.target).destroy();
 		}
 	}
 

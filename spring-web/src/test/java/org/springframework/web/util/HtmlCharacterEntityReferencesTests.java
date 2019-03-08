@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,10 +39,10 @@ public class HtmlCharacterEntityReferencesTests {
 	@Test
 	public void testSupportsAllCharacterEntityReferencesDefinedByHtml() {
 		HtmlCharacterEntityReferences entityReferences = new HtmlCharacterEntityReferences();
-		Map<Integer, String> referenceCharactersMap = getReferenceCharacterMap();
+		Map referenceCharactersMap = getReferenceCharacterMap();
 
 		for (int character = 0; character < 10000; character++) {
-			String referenceName = referenceCharactersMap.get(character);
+			String referenceName = (String) referenceCharactersMap.get(new Integer(character));
 			if (referenceName != null) {
 				String fullReference =
 						HtmlCharacterEntityReferences.REFERENCE_START +
@@ -76,23 +76,9 @@ public class HtmlCharacterEntityReferencesTests {
 				(char) -1, entityReferences.convertToCharacter("invalid"));
 	}
 
-	// SPR-9293
-	@Test
-	public void testConvertToReferenceUTF8() {
-		HtmlCharacterEntityReferences entityReferences = new HtmlCharacterEntityReferences();
-		String utf8 = "UTF-8";
-		assertEquals("&lt;", entityReferences.convertToReference('<', utf8));
-		assertEquals("&gt;", entityReferences.convertToReference('>', utf8));
-		assertEquals("&amp;", entityReferences.convertToReference('&', utf8));
-		assertEquals("&quot;", entityReferences.convertToReference('"', utf8));
-		assertEquals("&#39;", entityReferences.convertToReference('\'', utf8));
-		assertNull(entityReferences.convertToReference((char) 233, utf8));
-		assertNull(entityReferences.convertToReference((char) 934, utf8));
-	}
-
-	private Map<Integer, String> getReferenceCharacterMap() {
+	private Map getReferenceCharacterMap() {
 		CharacterEntityResourceIterator entityIterator = new CharacterEntityResourceIterator();
-		Map<Integer, String> referencedCharactersMap = new HashMap<>();
+		Map<Integer, String> referencedCharactersMap = new HashMap<Integer, String>();
 		while (entityIterator.hasNext()) {
 			int character = entityIterator.getReferredCharacter();
 			String entityName = entityIterator.nextEntry();
@@ -156,7 +142,7 @@ public class HtmlCharacterEntityReferencesTests {
 				return false;
 			}
 			catch (IOException ex) {
-				throw new IllegalStateException("Could not parse definition resource: " + ex.getMessage());
+				throw new IllegalStateException("Could not parse defintion resource: " + ex.getMessage());
 			}
 		}
 

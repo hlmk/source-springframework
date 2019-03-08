@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import javax.servlet.ServletException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.core.MethodParameter;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.context.request.NativeWebRequest;
 
@@ -42,31 +40,27 @@ import org.springframework.web.context.request.NativeWebRequest;
 public class ExpressionValueMethodArgumentResolver extends AbstractNamedValueMethodArgumentResolver {
 
 	/**
-	 * Create a new {@link ExpressionValueMethodArgumentResolver} instance.
 	 * @param beanFactory a bean factory to use for resolving  ${...}
 	 * placeholder and #{...} SpEL expressions in default values;
 	 * or {@code null} if default values are not expected to contain expressions
 	 */
-	public ExpressionValueMethodArgumentResolver(@Nullable ConfigurableBeanFactory beanFactory) {
+	public ExpressionValueMethodArgumentResolver(ConfigurableBeanFactory beanFactory) {
 		super(beanFactory);
 	}
 
-
-	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
 		return parameter.hasParameterAnnotation(Value.class);
 	}
 
 	@Override
 	protected NamedValueInfo createNamedValueInfo(MethodParameter parameter) {
-		Value ann = parameter.getParameterAnnotation(Value.class);
-		Assert.state(ann != null, "No Value annotation");
-		return new ExpressionValueNamedValueInfo(ann);
+		Value annotation = parameter.getParameterAnnotation(Value.class);
+		return new ExpressionValueNamedValueInfo(annotation);
 	}
 
 	@Override
-	@Nullable
-	protected Object resolveName(String name, MethodParameter parameter, NativeWebRequest webRequest) throws Exception {
+	protected Object resolveName(String name, MethodParameter parameter, NativeWebRequest webRequest)
+			throws Exception {
 		// No name to resolve
 		return null;
 	}
@@ -76,12 +70,10 @@ public class ExpressionValueMethodArgumentResolver extends AbstractNamedValueMet
 		throw new UnsupportedOperationException("@Value is never required: " + parameter.getMethod());
 	}
 
-
-	private static final class ExpressionValueNamedValueInfo extends NamedValueInfo {
+	private static class ExpressionValueNamedValueInfo extends NamedValueInfo {
 
 		private ExpressionValueNamedValueInfo(Value annotation) {
 			super("@Value", false, annotation.value());
 		}
 	}
-
 }

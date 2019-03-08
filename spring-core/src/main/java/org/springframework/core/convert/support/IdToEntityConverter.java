@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import java.util.Set;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalGenericConverter;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -50,32 +48,27 @@ final class IdToEntityConverter implements ConditionalGenericConverter {
 	}
 
 
-	@Override
 	public Set<ConvertiblePair> getConvertibleTypes() {
 		return Collections.singleton(new ConvertiblePair(Object.class, Object.class));
 	}
 
-	@Override
 	public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
 		Method finder = getFinder(targetType.getType());
 		return (finder != null &&
 				this.conversionService.canConvert(sourceType, TypeDescriptor.valueOf(finder.getParameterTypes()[0])));
 	}
 
-	@Override
-	@Nullable
-	public Object convert(@Nullable Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+	public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
 		if (source == null) {
 			return null;
 		}
 		Method finder = getFinder(targetType.getType());
-		Assert.state(finder != null, "No finder method");
 		Object id = this.conversionService.convert(
 				source, sourceType, TypeDescriptor.valueOf(finder.getParameterTypes()[0]));
 		return ReflectionUtils.invokeMethod(finder, source, id);
 	}
 
-	@Nullable
+
 	private Method getFinder(Class<?> entityClass) {
 		String finderMethod = "find" + getEntityName(entityClass);
 		Method[] methods;
@@ -92,7 +85,7 @@ final class IdToEntityConverter implements ConditionalGenericConverter {
 		}
 		for (Method method : methods) {
 			if (Modifier.isStatic(method.getModifiers()) && method.getName().equals(finderMethod) &&
-					method.getParameterCount() == 1 && method.getReturnType().equals(entityClass) &&
+					method.getParameterTypes().length == 1 && method.getReturnType().equals(entityClass) &&
 					(localOnlyFiltered || method.getDeclaringClass().equals(entityClass))) {
 				return method;
 			}

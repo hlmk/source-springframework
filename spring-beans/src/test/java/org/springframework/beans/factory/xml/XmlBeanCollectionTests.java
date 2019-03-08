@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,11 @@
 
 package org.springframework.beans.factory.xml;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -29,9 +34,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.junit.Before;
 import org.junit.Test;
-
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.config.ListFactoryBean;
@@ -42,7 +45,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.tests.sample.beans.HasMap;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
 
 /**
  * Tests for collections in XML bean definitions.
@@ -53,15 +55,13 @@ import static org.junit.Assert.*;
  */
 public class XmlBeanCollectionTests {
 
-	private final DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+	private final DefaultListableBeanFactory beanFactory;
 
-
-	@Before
-	public void loadBeans() {
+	public XmlBeanCollectionTests() {
+		this.beanFactory = new DefaultListableBeanFactory();
 		new XmlBeanDefinitionReader(this.beanFactory).loadBeanDefinitions(
 				new ClassPathResource("collections.xml", getClass()));
 	}
-
 
 	@Test
 	public void testCollectionFactoryDefaults() throws Exception {
@@ -331,15 +331,6 @@ public class XmlBeanCollectionTests {
 	}
 
 	@Test
-	public void testIntegerArray() throws Exception {
-		HasMap hasMap = (HasMap) this.beanFactory.getBean("integerArray");
-		assertTrue(hasMap.getIntegerArray().length == 3);
-		assertTrue(hasMap.getIntegerArray()[0].intValue() == 0);
-		assertTrue(hasMap.getIntegerArray()[1].intValue() == 1);
-		assertTrue(hasMap.getIntegerArray()[2].intValue() == 2);
-	}
-
-	@Test
 	public void testClassArray() throws Exception {
 		HasMap hasMap = (HasMap) this.beanFactory.getBean("classArray");
 		assertTrue(hasMap.getClassArray().length == 2);
@@ -348,11 +339,12 @@ public class XmlBeanCollectionTests {
 	}
 
 	@Test
-	public void testClassList() throws Exception {
-		HasMap hasMap = (HasMap) this.beanFactory.getBean("classList");
-		assertTrue(hasMap.getClassList().size()== 2);
-		assertTrue(hasMap.getClassList().get(0).equals(String.class));
-		assertTrue(hasMap.getClassList().get(1).equals(Exception.class));
+	public void testIntegerArray() throws Exception {
+		HasMap hasMap = (HasMap) this.beanFactory.getBean("integerArray");
+		assertTrue(hasMap.getIntegerArray().length == 3);
+		assertTrue(hasMap.getIntegerArray()[0].intValue() == 0);
+		assertTrue(hasMap.getIntegerArray()[1].intValue() == 1);
+		assertTrue(hasMap.getIntegerArray()[2].intValue() == 2);
 	}
 
 	@Test
@@ -458,5 +450,4 @@ public class XmlBeanCollectionTests {
 			return obj;
 		}
 	}
-
 }

@@ -28,7 +28,7 @@ import static org.mockito.BDDMockito.*;
  * @author Rick Evans
  * @author Chris Beams
  */
-public class PerformanceMonitorInterceptorTests {
+public final class PerformanceMonitorInterceptorTests {
 
 	@Test
 	public void testSuffixAndPrefixAssignment() {

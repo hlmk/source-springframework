@@ -95,7 +95,6 @@ public abstract class ClassFilters {
 			this.filters = filters;
 		}
 
-		@Override
 		public boolean matches(Class<?> clazz) {
 			for (ClassFilter filter : this.filters) {
 				if (filter.matches(clazz)) {
@@ -130,7 +129,6 @@ public abstract class ClassFilters {
 			this.filters = filters;
 		}
 
-		@Override
 		public boolean matches(Class<?> clazz) {
 			for (ClassFilter filter : this.filters) {
 				if (!filter.matches(clazz)) {

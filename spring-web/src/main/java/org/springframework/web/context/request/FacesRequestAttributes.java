@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,17 @@ package org.springframework.web.context.request;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import javax.faces.application.Application;
+import javax.faces.component.UIViewRoot;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
+import javax.portlet.PortletSession;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.WebUtils;
@@ -39,8 +43,6 @@ import org.springframework.web.util.WebUtils;
  * callbacks, consider defining a Spring {@link RequestContextListener} in your
  * {@code web.xml}.
  *
- * <p>Requires JSF 2.0 or higher, as of Spring 4.0.
- *
  * @author Juergen Hoeller
  * @since 2.5.2
  * @see javax.faces.context.FacesContext#getExternalContext()
@@ -49,6 +51,9 @@ import org.springframework.web.util.WebUtils;
  * @see RequestContextHolder#currentRequestAttributes()
  */
 public class FacesRequestAttributes implements RequestAttributes {
+
+	private static final boolean portletApiPresent =
+			ClassUtils.isPresent("javax.portlet.PortletSession", FacesRequestAttributes.class.getClassLoader());
 
 	/**
 	 * We'll create a lot of these objects, so we don't want a new logger every time.
@@ -85,7 +90,7 @@ public class FacesRequestAttributes implements RequestAttributes {
 	}
 
 	/**
-	 * Return the JSF attribute Map for the specified scope.
+	 * Return the JSF attribute Map for the specified scope
 	 * @param scope constant indicating request or session scope
 	 * @return the Map representation of the attributes in the specified scope
 	 * @see #SCOPE_REQUEST
@@ -101,27 +106,42 @@ public class FacesRequestAttributes implements RequestAttributes {
 	}
 
 
-	@Override
 	public Object getAttribute(String name, int scope) {
-		return getAttributeMap(scope).get(name);
+		if (scope == SCOPE_GLOBAL_SESSION && portletApiPresent) {
+			return PortletSessionAccessor.getAttribute(name, getExternalContext());
+		}
+		else {
+			return getAttributeMap(scope).get(name);
+		}
 	}
 
-	@Override
 	public void setAttribute(String name, Object value, int scope) {
-		getAttributeMap(scope).put(name, value);
+		if (scope == SCOPE_GLOBAL_SESSION && portletApiPresent) {
+			PortletSessionAccessor.setAttribute(name, value, getExternalContext());
+		}
+		else {
+			getAttributeMap(scope).put(name, value);
+		}
 	}
 
-	@Override
 	public void removeAttribute(String name, int scope) {
-		getAttributeMap(scope).remove(name);
+		if (scope == SCOPE_GLOBAL_SESSION && portletApiPresent) {
+			PortletSessionAccessor.removeAttribute(name, getExternalContext());
+		}
+		else {
+			getAttributeMap(scope).remove(name);
+		}
 	}
 
-	@Override
 	public String[] getAttributeNames(int scope) {
-		return StringUtils.toStringArray(getAttributeMap(scope).keySet());
+		if (scope == SCOPE_GLOBAL_SESSION && portletApiPresent) {
+			return PortletSessionAccessor.getAttributeNames(getExternalContext());
+		}
+		else {
+			return StringUtils.toStringArray(getAttributeMap(scope).keySet());
+		}
 	}
 
-	@Override
 	public void registerDestructionCallback(String name, Runnable callback, int scope) {
 		if (logger.isWarnEnabled()) {
 			logger.warn("Could not register destruction callback [" + callback + "] for attribute '" + name +
@@ -129,7 +149,6 @@ public class FacesRequestAttributes implements RequestAttributes {
 		}
 	}
 
-	@Override
 	public Object resolveReference(String key) {
 		if (REFERENCE_REQUEST.equals(key)) {
 			return getExternalContext().getRequest();
@@ -174,42 +193,109 @@ public class FacesRequestAttributes implements RequestAttributes {
 			return getFacesContext().getViewRoot();
 		}
 		else if ("viewScope".equals(key)) {
-			return getFacesContext().getViewRoot().getViewMap();
+			try {
+				return ReflectionUtils.invokeMethod(UIViewRoot.class.getMethod("getViewMap"), getFacesContext().getViewRoot());
+			}
+			catch (NoSuchMethodException ex) {
+				throw new IllegalStateException("JSF 2.0 API not available", ex);
+			}
 		}
 		else if ("flash".equals(key)) {
-			return getExternalContext().getFlash();
+			try {
+				return ReflectionUtils.invokeMethod(ExternalContext.class.getMethod("getFlash"), getExternalContext());
+			}
+			catch (NoSuchMethodException ex) {
+				throw new IllegalStateException("JSF 2.0 API not available", ex);
+			}
 		}
 		else if ("resource".equals(key)) {
-			return getFacesContext().getApplication().getResourceHandler();
+			try {
+				return ReflectionUtils.invokeMethod(Application.class.getMethod("getResourceHandler"), getFacesContext().getApplication());
+			}
+			catch (NoSuchMethodException ex) {
+				throw new IllegalStateException("JSF 2.0 API not available", ex);
+			}
 		}
 		else {
 			return null;
 		}
 	}
 
-	@Override
 	public String getSessionId() {
 		Object session = getExternalContext().getSession(true);
 		try {
-			// HttpSession has a getId() method.
-			Method getIdMethod = session.getClass().getMethod("getId");
-			return String.valueOf(ReflectionUtils.invokeMethod(getIdMethod, session));
+			// Both HttpSession and PortletSession have a getId() method.
+			Method getIdMethod = session.getClass().getMethod("getId", new Class[0]);
+			return ReflectionUtils.invokeMethod(getIdMethod, session).toString();
 		}
 		catch (NoSuchMethodException ex) {
 			throw new IllegalStateException("Session object [" + session + "] does not have a getId() method");
 		}
 	}
 
-	@Override
 	public Object getSessionMutex() {
-		// Enforce presence of a session first to allow listeners to create the mutex attribute
-		ExternalContext externalContext = getExternalContext();
-		Object session = externalContext.getSession(true);
-		Object mutex = externalContext.getSessionMap().get(WebUtils.SESSION_MUTEX_ATTRIBUTE);
+		// Enforce presence of a session first to allow listeners
+		// to create the mutex attribute, if any.
+		Object session = getExternalContext().getSession(true);
+		Object mutex = getExternalContext().getSessionMap().get(WebUtils.SESSION_MUTEX_ATTRIBUTE);
 		if (mutex == null) {
-			mutex = (session != null ? session : externalContext);
+			mutex = session;
 		}
 		return mutex;
+	}
+
+
+	/**
+	 * Inner class to avoid hard-coded Portlet API dependency.
+ 	 */
+	private static class PortletSessionAccessor {
+
+		public static Object getAttribute(String name, ExternalContext externalContext) {
+			Object session = externalContext.getSession(false);
+			if (session instanceof PortletSession) {
+				return ((PortletSession) session).getAttribute(name, PortletSession.APPLICATION_SCOPE);
+			}
+			else if (session != null) {
+				return externalContext.getSessionMap().get(name);
+			}
+			else {
+				return null;
+			}
+		}
+
+		public static void setAttribute(String name, Object value, ExternalContext externalContext) {
+			Object session = externalContext.getSession(true);
+			if (session instanceof PortletSession) {
+				((PortletSession) session).setAttribute(name, value, PortletSession.APPLICATION_SCOPE);
+			}
+			else {
+				externalContext.getSessionMap().put(name, value);
+			}
+		}
+
+		public static void removeAttribute(String name, ExternalContext externalContext) {
+			Object session = externalContext.getSession(false);
+			if (session instanceof PortletSession) {
+				((PortletSession) session).removeAttribute(name, PortletSession.APPLICATION_SCOPE);
+			}
+			else if (session != null) {
+				externalContext.getSessionMap().remove(name);
+			}
+		}
+
+		public static String[] getAttributeNames(ExternalContext externalContext) {
+			Object session = externalContext.getSession(false);
+			if (session instanceof PortletSession) {
+				return StringUtils.toStringArray(
+						((PortletSession) session).getAttributeNames(PortletSession.APPLICATION_SCOPE));
+			}
+			else if (session != null) {
+				return StringUtils.toStringArray(externalContext.getSessionMap().keySet());
+			}
+			else {
+				return new String[0];
+			}
+		}
 	}
 
 }

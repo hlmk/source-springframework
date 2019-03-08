@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.springframework.beans.factory.xml.ResourceEntityResolver;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
-import org.springframework.lang.Nullable;
 
 /**
  * Convenient base class for {@link org.springframework.context.ApplicationContext}
@@ -58,7 +57,7 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	 * Create a new AbstractXmlApplicationContext with the given parent context.
 	 * @param parent the parent context
 	 */
-	public AbstractXmlApplicationContext(@Nullable ApplicationContext parent) {
+	public AbstractXmlApplicationContext(ApplicationContext parent) {
 		super(parent);
 	}
 
@@ -137,7 +136,6 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	 * @return an array of Resource objects, or {@code null} if none
 	 * @see #getConfigLocations()
 	 */
-	@Nullable
 	protected Resource[] getConfigResources() {
 		return null;
 	}

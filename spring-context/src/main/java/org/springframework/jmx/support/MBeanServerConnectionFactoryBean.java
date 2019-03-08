@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -54,23 +52,18 @@ import org.springframework.util.CollectionUtils;
 public class MBeanServerConnectionFactoryBean
 		implements FactoryBean<MBeanServerConnection>, BeanClassLoaderAware, InitializingBean, DisposableBean {
 
-	@Nullable
 	private JMXServiceURL serviceUrl;
 
-	private Map<String, Object> environment = new HashMap<>();
+	private Map<String, Object> environment = new HashMap<String, Object>();
 
 	private boolean connectOnStartup = true;
 
-	@Nullable
 	private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
-	@Nullable
 	private JMXConnector connector;
 
-	@Nullable
 	private MBeanServerConnection connection;
 
-	@Nullable
 	private JMXConnectorLazyInitTargetSource connectorTargetSource;
 
 
@@ -93,7 +86,7 @@ public class MBeanServerConnectionFactoryBean
 	 * Set the environment properties used to construct the {@code JMXConnector}
 	 * as a {@code Map} of String keys and arbitrary Object values.
 	 */
-	public void setEnvironmentMap(@Nullable Map<String, ?> environment) {
+	public void setEnvironmentMap(Map<String, ?> environment) {
 		if (environment != null) {
 			this.environment.putAll(environment);
 		}
@@ -108,7 +101,6 @@ public class MBeanServerConnectionFactoryBean
 		this.connectOnStartup = connectOnStartup;
 	}
 
-	@Override
 	public void setBeanClassLoader(ClassLoader classLoader) {
 		this.beanClassLoader = classLoader;
 	}
@@ -118,7 +110,6 @@ public class MBeanServerConnectionFactoryBean
 	 * Creates a {@code JMXConnector} for the given settings
 	 * and exposes the associated {@code MBeanServerConnection}.
 	 */
-	@Override
 	public void afterPropertiesSet() throws IOException {
 		if (this.serviceUrl == null) {
 			throw new IllegalArgumentException("Property 'serviceUrl' is required");
@@ -137,13 +128,12 @@ public class MBeanServerConnectionFactoryBean
 	 * environment properties.
 	 */
 	private void connect() throws IOException {
-		Assert.state(this.serviceUrl != null, "No JMXServiceURL set");
 		this.connector = JMXConnectorFactory.connect(this.serviceUrl, this.environment);
 		this.connection = this.connector.getMBeanServerConnection();
 	}
 
 	/**
-	 * Creates lazy proxies for the {@code JMXConnector} and {@code MBeanServerConnection}.
+	 * Creates lazy proxies for the {@code JMXConnector} and {@code MBeanServerConnection}
 	 */
 	private void createLazyConnection() {
 		this.connectorTargetSource = new JMXConnectorLazyInitTargetSource();
@@ -156,18 +146,14 @@ public class MBeanServerConnectionFactoryBean
 	}
 
 
-	@Override
-	@Nullable
 	public MBeanServerConnection getObject() {
 		return this.connection;
 	}
 
-	@Override
 	public Class<? extends MBeanServerConnection> getObjectType() {
 		return (this.connection != null ? this.connection.getClass() : MBeanServerConnection.class);
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}
@@ -176,10 +162,8 @@ public class MBeanServerConnectionFactoryBean
 	/**
 	 * Closes the underlying {@code JMXConnector}.
 	 */
-	@Override
 	public void destroy() throws IOException {
-		if (this.connector != null &&
-				(this.connectorTargetSource == null || this.connectorTargetSource.isInitialized())) {
+		if (this.connectorTargetSource == null || this.connectorTargetSource.isInitialized()) {
 			this.connector.close();
 		}
 	}
@@ -195,7 +179,6 @@ public class MBeanServerConnectionFactoryBean
 
 		@Override
 		protected Object createObject() throws Exception {
-			Assert.state(serviceUrl != null, "No JMXServiceURL set");
 			return JMXConnectorFactory.connect(serviceUrl, environment);
 		}
 
@@ -213,7 +196,6 @@ public class MBeanServerConnectionFactoryBean
 
 		@Override
 		protected Object createObject() throws Exception {
-			Assert.state(connector != null, "JMXConnector not initialized");
 			return connector.getMBeanServerConnection();
 		}
 

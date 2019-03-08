@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.beans.factory.support;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.lang.Nullable;
 
 /**
  * Simple interface for bean definition readers.
@@ -32,11 +31,6 @@ import org.springframework.lang.Nullable;
  * <p>Note that a bean definition reader does not have to implement
  * this interface. It only serves as suggestion for bean definition
  * readers that want to follow standard naming conventions.
- *
- *
- *
- * 主要定义资源文件读取并转换为 BeanDefinition 的各个功能。
- *
  *
  * @author Juergen Hoeller
  * @since 1.1
@@ -55,8 +49,8 @@ public interface BeanDefinitionReader {
 	 * Return the resource loader to use for resource locations.
 	 * Can be checked for the <b>ResourcePatternResolver</b> interface and cast
 	 * accordingly, for loading multiple resources for a given resource pattern.
-	 * <p>A {@code null} return value suggests that absolute resource loading
-	 * is not available for this bean definition reader.
+	 * <p>Null suggests that absolute resource loading is not available
+	 * for this bean definition reader.
 	 * <p>This is mainly meant to be used for importing further resources
 	 * from within a bean definition resource, for example via the "import"
 	 * tag in XML bean definitions. It is recommended, however, to apply
@@ -68,7 +62,6 @@ public interface BeanDefinitionReader {
 	 * @see #loadBeanDefinitions(String)
 	 * @see org.springframework.core.io.support.ResourcePatternResolver
 	 */
-	@Nullable
 	ResourceLoader getResourceLoader();
 
 	/**
@@ -77,7 +70,6 @@ public interface BeanDefinitionReader {
 	 * but rather to just register bean definitions with class names,
 	 * with the corresponding Classes to be resolved later (or never).
 	 */
-	@Nullable
 	ClassLoader getBeanClassLoader();
 
 	/**

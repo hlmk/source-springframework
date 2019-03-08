@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.jdbc.datasource.lookup;
 
 import org.springframework.core.Constants;
-import org.springframework.lang.Nullable;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -42,7 +41,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * DataSources are defined as individual Spring beans with names
  * "myRepeatableReadDataSource", "mySerializableDataSource" and "myDefaultDataSource":
  *
- * <pre class="code">
+ * <pre>
  * &lt;bean id="dataSourceRouter" class="org.springframework.jdbc.datasource.lookup.IsolationLevelDataSourceRouter"&gt;
  *   &lt;property name="targetDataSources"&gt;
  *     &lt;map&gt;
@@ -58,7 +57,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * names for a standard JNDI lookup. This allows for a single concise definition
  * without the need for separate DataSource bean definitions.
  *
- * <pre class="code">
+ * <pre>
  * &lt;bean id="dataSourceRouter" class="org.springframework.jdbc.datasource.lookup.IsolationLevelDataSourceRouter"&gt;
  *   &lt;property name="targetDataSources"&gt;
  *     &lt;map&gt;
@@ -75,7 +74,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * (By default, JtaTransactionManager will only accept a default isolation level
  * because of the lack of isolation level support in standard JTA itself.)
  *
- * <pre class="code">
+ * <pre>
  * &lt;bean id="transactionManager" class="org.springframework.transaction.jta.JtaTransactionManager"&gt;
  *   &lt;property name="allowCustomIsolationLevels" value="true"/&gt;
  * &lt;/bean&gt;</pre>
@@ -92,7 +91,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  */
 public class IsolationLevelDataSourceRouter extends AbstractRoutingDataSource {
 
-	/** Constants instance for TransactionDefinition. */
+	/** Constants instance for TransactionDefinition */
 	private static final Constants constants = new Constants(TransactionDefinition.class);
 
 
@@ -120,7 +119,6 @@ public class IsolationLevelDataSourceRouter extends AbstractRoutingDataSource {
 	}
 
 	@Override
-	@Nullable
 	protected Object determineCurrentLookupKey() {
 		return TransactionSynchronizationManager.getCurrentTransactionIsolationLevel();
 	}

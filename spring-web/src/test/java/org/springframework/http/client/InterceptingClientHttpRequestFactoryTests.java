@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.http.HttpHeaders;
@@ -36,24 +37,29 @@ import org.springframework.http.client.support.HttpRequestWrapper;
 
 import static org.junit.Assert.*;
 
-/**
- * @author Arjen Poutsma
- * @author Juergen Hoeller
- */
+/** @author Arjen Poutsma */
 public class InterceptingClientHttpRequestFactoryTests {
-
-	private RequestFactoryMock requestFactoryMock = new RequestFactoryMock();
-
-	private RequestMock requestMock = new RequestMock();
-
-	private ResponseMock responseMock = new ResponseMock();
 
 	private InterceptingClientHttpRequestFactory requestFactory;
 
+	private RequestFactoryMock requestFactoryMock;
+
+	private RequestMock requestMock;
+
+	private ResponseMock responseMock;
+
+	@Before
+	public void setUp() throws Exception {
+
+		requestFactoryMock = new RequestFactoryMock();
+		requestMock = new RequestMock();
+		responseMock = new ResponseMock();
+
+	}
 
 	@Test
 	public void basic() throws Exception {
-		List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
+		List<ClientHttpRequestInterceptor> interceptors = new ArrayList<ClientHttpRequestInterceptor>();
 		interceptors.add(new NoOpInterceptor());
 		interceptors.add(new NoOpInterceptor());
 		interceptors.add(new NoOpInterceptor());
@@ -71,7 +77,7 @@ public class InterceptingClientHttpRequestFactoryTests {
 
 	@Test
 	public void noExecution() throws Exception {
-		List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
+		List<ClientHttpRequestInterceptor> interceptors = new ArrayList<ClientHttpRequestInterceptor>();
 		interceptors.add(new ClientHttpRequestInterceptor() {
 			@Override
 			public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
@@ -95,29 +101,29 @@ public class InterceptingClientHttpRequestFactoryTests {
 	public void changeHeaders() throws Exception {
 		final String headerName = "Foo";
 		final String headerValue = "Bar";
-		final String otherValue = "Baz";
-
 		ClientHttpRequestInterceptor interceptor = new ClientHttpRequestInterceptor() {
 			@Override
 			public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
 					throws IOException {
-				HttpRequestWrapper wrapper = new HttpRequestWrapper(request);
-				wrapper.getHeaders().add(headerName, otherValue);
-				return execution.execute(wrapper, body);
+
+				return execution.execute(new HttpRequestWrapper(request) {
+					@Override
+					public HttpHeaders getHeaders() {
+						HttpHeaders headers = new HttpHeaders();
+						headers.set(headerName, headerValue);
+						return headers;
+					}
+				}, body);
 			}
 		};
 
 		requestMock = new RequestMock() {
 			@Override
 			public ClientHttpResponse execute() throws IOException {
-				List<String> headerValues = getHeaders().get(headerName);
-				assertEquals(2, headerValues.size());
-				assertEquals(headerValue, headerValues.get(0));
-				assertEquals(otherValue, headerValues.get(1));
+				assertEquals(headerValue, getHeaders().getFirst(headerName));
 				return super.execute();
 			}
 		};
-		requestMock.getHeaders().add(headerName, headerValue);
 
 		requestFactory =
 				new InterceptingClientHttpRequestFactory(requestFactoryMock, Collections.singletonList(interceptor));
@@ -129,11 +135,11 @@ public class InterceptingClientHttpRequestFactoryTests {
 	@Test
 	public void changeURI() throws Exception {
 		final URI changedUri = new URI("http://example.com/2");
-
 		ClientHttpRequestInterceptor interceptor = new ClientHttpRequestInterceptor() {
 			@Override
 			public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
 					throws IOException {
+
 				return execution.execute(new HttpRequestWrapper(request) {
 					@Override
 					public URI getURI() {
@@ -162,11 +168,11 @@ public class InterceptingClientHttpRequestFactoryTests {
 	@Test
 	public void changeMethod() throws Exception {
 		final HttpMethod changedMethod = HttpMethod.POST;
-
 		ClientHttpRequestInterceptor interceptor = new ClientHttpRequestInterceptor() {
 			@Override
 			public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
 					throws IOException {
+
 				return execution.execute(new HttpRequestWrapper(request) {
 					@Override
 					public HttpMethod getMethod() {
@@ -195,11 +201,11 @@ public class InterceptingClientHttpRequestFactoryTests {
 	@Test
 	public void changeBody() throws Exception {
 		final byte[] changedBody = "Foo".getBytes();
-
 		ClientHttpRequestInterceptor interceptor = new ClientHttpRequestInterceptor() {
 			@Override
 			public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
 					throws IOException {
+
 				return execution.execute(request, changedBody);
 			}
 		};
@@ -211,7 +217,6 @@ public class InterceptingClientHttpRequestFactoryTests {
 		request.execute();
 		assertTrue(Arrays.equals(changedBody, requestMock.body.toByteArray()));
 	}
-
 
 	private static class NoOpInterceptor implements ClientHttpRequestInterceptor {
 
@@ -225,7 +230,6 @@ public class InterceptingClientHttpRequestFactoryTests {
 		}
 	}
 
-
 	private class RequestFactoryMock implements ClientHttpRequestFactory {
 
 		@Override
@@ -236,7 +240,6 @@ public class InterceptingClientHttpRequestFactoryTests {
 		}
 
 	}
-
 
 	private class RequestMock implements ClientHttpRequest {
 
@@ -267,11 +270,6 @@ public class InterceptingClientHttpRequestFactoryTests {
 			return method;
 		}
 
-		@Override
-		public String getMethodValue() {
-			return method.name();
-		}
-
 		public void setMethod(HttpMethod method) {
 			this.method = method;
 		}
@@ -292,7 +290,6 @@ public class InterceptingClientHttpRequestFactoryTests {
 			return responseMock;
 		}
 	}
-
 
 	private static class ResponseMock implements ClientHttpResponse {
 
@@ -331,5 +328,4 @@ public class InterceptingClientHttpRequestFactoryTests {
 		public void close() {
 		}
 	}
-
 }

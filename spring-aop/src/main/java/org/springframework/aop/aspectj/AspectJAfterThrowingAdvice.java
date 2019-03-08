@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.aop.aspectj;
 
-import java.io.Serializable;
 import java.lang.reflect.Method;
 
 import org.aopalliance.intercept.MethodInterceptor;
@@ -30,9 +29,7 @@ import org.springframework.aop.AfterAdvice;
  * @author Rod Johnson
  * @since 2.0
  */
-@SuppressWarnings("serial")
-public class AspectJAfterThrowingAdvice extends AbstractAspectJAdvice
-		implements MethodInterceptor, AfterAdvice, Serializable {
+public class AspectJAfterThrowingAdvice extends AbstractAspectJAdvice implements MethodInterceptor, AfterAdvice {
 
 	public AspectJAfterThrowingAdvice(
 			Method aspectJBeforeAdviceMethod, AspectJExpressionPointcut pointcut, AspectInstanceFactory aif) {
@@ -40,13 +37,10 @@ public class AspectJAfterThrowingAdvice extends AbstractAspectJAdvice
 		super(aspectJBeforeAdviceMethod, pointcut, aif);
 	}
 
-
-	@Override
 	public boolean isBeforeAdvice() {
 		return false;
 	}
 
-	@Override
 	public boolean isAfterAdvice() {
 		return true;
 	}
@@ -56,16 +50,15 @@ public class AspectJAfterThrowingAdvice extends AbstractAspectJAdvice
 		setThrowingNameNoCheck(name);
 	}
 
-	@Override
 	public Object invoke(MethodInvocation mi) throws Throwable {
 		try {
 			return mi.proceed();
 		}
-		catch (Throwable ex) {
-			if (shouldInvokeOnThrowing(ex)) {
-				invokeAdviceMethod(getJoinPointMatch(), null, ex);
+		catch (Throwable t) {
+			if (shouldInvokeOnThrowing(t)) {
+				invokeAdviceMethod(getJoinPointMatch(), null, t);
 			}
-			throw ex;
+			throw t;
 		}
 	}
 
@@ -73,8 +66,9 @@ public class AspectJAfterThrowingAdvice extends AbstractAspectJAdvice
 	 * In AspectJ semantics, after throwing advice that specifies a throwing clause
 	 * is only invoked if the thrown exception is a subtype of the given throwing type.
 	 */
-	private boolean shouldInvokeOnThrowing(Throwable ex) {
-		return getDiscoveredThrowingType().isAssignableFrom(ex.getClass());
+	private boolean shouldInvokeOnThrowing(Throwable t) {
+		Class throwingType = getDiscoveredThrowingType();
+		return throwingType.isAssignableFrom(t.getClass());
 	}
 
 }

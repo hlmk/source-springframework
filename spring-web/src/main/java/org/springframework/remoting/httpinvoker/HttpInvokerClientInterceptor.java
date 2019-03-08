@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
 import org.springframework.aop.support.AopUtils;
-import org.springframework.lang.Nullable;
 import org.springframework.remoting.RemoteAccessException;
 import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.remoting.RemoteInvocationFailureException;
@@ -39,7 +38,7 @@ import org.springframework.remoting.support.RemoteInvocationResult;
  *
  * <p>Serializes remote invocation objects and deserializes remote invocation
  * result objects. Uses Java serialization just like RMI, but provides the
- * same ease of setup as Caucho's HTTP-based Hessian protocol.
+ * same ease of setup as Caucho's HTTP-based Hessian and Burlap protocols.
  *
  * <P>HTTP invoker is a very extensible and customizable protocol.
  * It supports the RemoteInvocationFactory mechanism, like RMI invoker,
@@ -47,18 +46,13 @@ import org.springframework.remoting.support.RemoteInvocationResult;
  * a security context). Furthermore, it allows to customize request
  * execution via the {@link HttpInvokerRequestExecutor} strategy.
  *
- * <p>Can use the JDK's {@link java.rmi.server.RMIClassLoader} to load classes
- * from a given {@link #setCodebaseUrl codebase}, performing on-demand dynamic
- * code download from a remote location. The codebase can consist of multiple
- * URLs, separated by spaces. Note that RMIClassLoader requires a SecurityManager
- * to be set, analogous to when using dynamic class download with standard RMI!
+ * <p>Can use the JDK's {@link java.rmi.server.RMIClassLoader} to load
+ * classes from a given {@link #setCodebaseUrl codebase}, performing
+ * on-demand dynamic code download from a remote location. The codebase
+ * can consist of multiple URLs, separated by spaces. Note that
+ * RMIClassLoader requires a SecurityManager to be set, analogous to
+ * when using dynamic class download with standard RMI!
  * (See the RMI documentation for details.)
- *
- * <p><b>WARNING: Be aware of vulnerabilities due to unsafe Java deserialization:
- * Manipulated input streams could lead to unwanted code execution on the server
- * during the deserialization step. As a consequence, do not expose HTTP invoker
- * endpoints to untrusted clients but rather just between your own services.</b>
- * In general, we strongly recommend any other message format (e.g. JSON) instead.
  *
  * @author Juergen Hoeller
  * @since 1.1
@@ -73,10 +67,8 @@ import org.springframework.remoting.support.RemoteInvocationResult;
 public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 		implements MethodInterceptor, HttpInvokerClientConfiguration {
 
-	@Nullable
 	private String codebaseUrl;
 
-	@Nullable
 	private HttpInvokerRequestExecutor httpInvokerRequestExecutor;
 
 
@@ -92,15 +84,13 @@ public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 	 * @see org.springframework.remoting.rmi.CodebaseAwareObjectInputStream
 	 * @see java.rmi.server.RMIClassLoader
 	 */
-	public void setCodebaseUrl(@Nullable String codebaseUrl) {
+	public void setCodebaseUrl(String codebaseUrl) {
 		this.codebaseUrl = codebaseUrl;
 	}
 
 	/**
 	 * Return the codebase URL to download classes from if not found locally.
 	 */
-	@Override
-	@Nullable
 	public String getCodebaseUrl() {
 		return this.codebaseUrl;
 	}
@@ -141,7 +131,6 @@ public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 	}
 
 
-	@Override
 	public Object invoke(MethodInvocation methodInvocation) throws Throwable {
 		if (AopUtils.isToStringMethod(methodInvocation.getMethod())) {
 			return "HTTP invoker proxy for service URL [" + getServiceUrl() + "]";
@@ -149,15 +138,12 @@ public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 
 		RemoteInvocation invocation = createRemoteInvocation(methodInvocation);
 		RemoteInvocationResult result;
-
 		try {
 			result = executeRequest(invocation, methodInvocation);
 		}
 		catch (Throwable ex) {
-			RemoteAccessException rae = convertHttpInvokerAccessException(ex);
-			throw (rae != null ? rae : ex);
+			throw convertHttpInvokerAccessException(ex);
 		}
-
 		try {
 			return recreateRemoteInvocationResult(result);
 		}
@@ -173,7 +159,7 @@ public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 	}
 
 	/**
-	 * Execute the given remote invocation via the {@link HttpInvokerRequestExecutor}.
+	 * Execute the given remote invocation via the HttpInvokerRequestExecutor.
 	 * <p>This implementation delegates to {@link #executeRequest(RemoteInvocation)}.
 	 * Can be overridden to react to the specific original MethodInvocation.
 	 * @param invocation the RemoteInvocation to execute
@@ -189,7 +175,7 @@ public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 	}
 
 	/**
-	 * Execute the given remote invocation via the {@link HttpInvokerRequestExecutor}.
+	 * Execute the given remote invocation via the HttpInvokerRequestExecutor.
 	 * <p>Can be overridden in subclasses to pass a different configuration object
 	 * to the executor. Alternatively, add further configuration properties in a
 	 * subclass of this accessor: By default, the accessor passed itself as
@@ -208,12 +194,10 @@ public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 
 	/**
 	 * Convert the given HTTP invoker access exception to an appropriate
-	 * Spring {@link RemoteAccessException}.
+	 * Spring RemoteAccessException.
 	 * @param ex the exception to convert
-	 * @return the RemoteAccessException to throw, or {@code null} to have the
-	 * original exception propagated to the caller
+	 * @return the RemoteAccessException to throw
 	 */
-	@Nullable
 	protected RemoteAccessException convertHttpInvokerAccessException(Throwable ex) {
 		if (ex instanceof ConnectException) {
 			return new RemoteConnectFailureException(
@@ -226,13 +210,8 @@ public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 					"Could not deserialize result from HTTP invoker remote service [" + getServiceUrl() + "]", ex);
 		}
 
-		if (ex instanceof Exception) {
-			return new RemoteAccessException(
+		return new RemoteAccessException(
 					"Could not access HTTP invoker remote service at [" + getServiceUrl() + "]", ex);
-		}
-
-		// For any other Throwable, e.g. OutOfMemoryError: let it get propagated as-is.
-		return null;
 	}
 
 }

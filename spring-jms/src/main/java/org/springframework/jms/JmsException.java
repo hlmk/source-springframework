@@ -19,7 +19,6 @@ package org.springframework.jms;
 import javax.jms.JMSException;
 
 import org.springframework.core.NestedRuntimeException;
-import org.springframework.lang.Nullable;
 
 /**
  * Base class for exception thrown by the framework whenever it
@@ -47,7 +46,7 @@ public abstract class JmsException extends NestedRuntimeException {
 	 * expected to be a proper subclass of {@link javax.jms.JMSException},
 	 * but can also be a JNDI NamingException or the like.
 	 */
-	public JmsException(String msg, @Nullable Throwable cause) {
+	public JmsException(String msg, Throwable cause) {
 		super(msg, cause);
 	}
 
@@ -57,7 +56,7 @@ public abstract class JmsException extends NestedRuntimeException {
 	 * @param cause the cause of the exception. This argument is generally
 	 * expected to be a proper subclass of {@link javax.jms.JMSException}.
 	 */
-	public JmsException(@Nullable Throwable cause) {
+	public JmsException(Throwable cause) {
 		super(cause != null ? cause.getMessage() : null, cause);
 	}
 
@@ -68,7 +67,6 @@ public abstract class JmsException extends NestedRuntimeException {
 	 * @return a string specifying the vendor-specific error code if the
 	 * root cause is an instance of JMSException, or {@code null}
 	 */
-	@Nullable
 	public String getErrorCode() {
 		Throwable cause = getCause();
 		if (cause instanceof JMSException) {
@@ -82,8 +80,6 @@ public abstract class JmsException extends NestedRuntimeException {
 	 * if there is one.
 	 * @see javax.jms.JMSException#getLinkedException()
 	 */
-	@Override
-	@Nullable
 	public String getMessage() {
 		String message = super.getMessage();
 		Throwable cause = getCause();

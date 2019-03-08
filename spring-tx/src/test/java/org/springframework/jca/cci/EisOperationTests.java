@@ -25,7 +25,6 @@ import javax.resource.cci.Record;
 import javax.resource.cci.RecordFactory;
 
 import org.junit.Test;
-
 import org.springframework.jca.cci.core.RecordCreator;
 import org.springframework.jca.cci.object.MappingRecordOperation;
 import org.springframework.jca.cci.object.SimpleRecordOperation;

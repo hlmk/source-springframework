@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.springframework.transaction.support;
 
-import java.io.Flushable;
-
 /**
  * Interface to be implemented by transaction objects that are able to
  * return an internal rollback-only marker, typically from a another
@@ -31,7 +29,7 @@ import java.io.Flushable;
  * @since 1.1
  * @see DefaultTransactionStatus#isRollbackOnly
  */
-public interface SmartTransactionObject extends Flushable {
+public interface SmartTransactionObject {
 
 	/**
 	 * Return whether the transaction is internally marked as rollback-only.
@@ -45,7 +43,6 @@ public interface SmartTransactionObject extends Flushable {
 	 * Flush the underlying sessions to the datastore, if applicable:
 	 * for example, all affected Hibernate/JPA sessions.
 	 */
-	@Override
 	void flush();
 
 }

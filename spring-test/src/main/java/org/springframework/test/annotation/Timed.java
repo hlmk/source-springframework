@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,30 +23,29 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Test annotation for use with JUnit 4 to indicate that a test method has to finish
- * execution in a {@linkplain #millis() specified time period}.
- *
- * <p>If the text execution takes longer than the specified time period, then
- * the test is considered to have failed.
- *
- * <p>Note that the time period includes execution of the test method itself,
- * any {@linkplain Repeat repetitions} of the test, and any <em>set up</em> or
+ * <p>
+ * Test-specific annotation to indicate that a test method has to finish
+ * execution in a {@link #millis() specified time period}.
+ * </p>
+ * <p>
+ * If the text execution takes longer than the specified time period, then the
+ * test is to be considered failed.
+ * </p>
+ * <p>
+ * Note that the time period includes execution of the test method itself, any
+ * {@link Repeat repetitions} of the test, and any <em>set up</em> or
  * <em>tear down</em> of the test fixture.
- *
- * <p>As of Spring Framework 4.0, this annotation may be used as a
- * <em>meta-annotation</em> to create custom <em>composed annotations</em>.
+ * </p>
  *
  * @author Rod Johnson
  * @author Sam Brannen
  * @since 2.0
- * @see org.springframework.test.annotation.Repeat
- * @see org.springframework.test.context.junit4.SpringJUnit4ClassRunner
- * @see org.springframework.test.context.junit4.rules.SpringMethodRule
- * @see org.springframework.test.context.junit4.statements.SpringFailOnTimeout
+ * @see Repeat
+ * @see AbstractAnnotationAwareTransactionalTests
  */
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-@Retention(RetentionPolicy.RUNTIME)
 @Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
 public @interface Timed {
 
 	/**

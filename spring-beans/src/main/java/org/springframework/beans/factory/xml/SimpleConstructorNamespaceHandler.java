@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.core.Conventions;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -64,19 +63,15 @@ public class SimpleConstructorNamespaceHandler implements NamespaceHandler {
 	private static final String DELIMITER_PREFIX = "_";
 
 
-	@Override
 	public void init() {
 	}
 
-	@Override
-	@Nullable
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
 		parserContext.getReaderContext().error(
 				"Class [" + getClass().getName() + "] does not support custom elements.", element);
 		return null;
 	}
 
-	@Override
 	public BeanDefinitionHolder decorate(Node node, BeanDefinitionHolder definition, ParserContext parserContext) {
 		if (node instanceof Attr) {
 			Attr attr = (Attr) node;
@@ -118,7 +113,7 @@ public class SimpleConstructorNamespaceHandler implements NamespaceHandler {
 								"Constructor argument '" + argName + "' specifies a negative index", attr);
 					}
 
-					if (cvs.hasIndexedArgumentValue(index)) {
+					if (cvs.hasIndexedArgumentValue(index)){
 						parserContext.getReaderContext().error(
 								"Constructor argument '" + argName + "' with index "+ index+" already defined using <constructor-arg>." +
 								" Only one approach may be used per argument.", attr);
@@ -130,7 +125,7 @@ public class SimpleConstructorNamespaceHandler implements NamespaceHandler {
 			// no escaping -> ctr name
 			else {
 				String name = Conventions.attributeNameToPropertyName(argName);
-				if (containsArgWithName(name, cvs)) {
+				if (containsArgWithName(name, cvs)){
 					parserContext.getReaderContext().error(
 							"Constructor argument '" + argName + "' already defined using <constructor-arg>." +
 							" Only one approach may be used per argument.", attr);

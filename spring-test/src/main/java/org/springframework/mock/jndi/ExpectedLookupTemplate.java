@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import org.springframework.jndi.JndiTemplate;
  */
 public class ExpectedLookupTemplate extends JndiTemplate {
 
-	private final Map<String, Object> jndiObjects = new ConcurrentHashMap<>(16);
+	private final Map<String, Object> jndiObjects = new ConcurrentHashMap<String, Object>(16);
 
 
 	/**
@@ -53,7 +53,6 @@ public class ExpectedLookupTemplate extends JndiTemplate {
 		addObject(name, object);
 	}
 
-
 	/**
 	 * Add the given object to the list of JNDI objects that this template will expose.
 	 * @param name the name the client is expected to look up
@@ -68,7 +67,6 @@ public class ExpectedLookupTemplate extends JndiTemplate {
 	 * object provided in the constructor. If the name is unexpected, a
 	 * respective NamingException gets thrown.
 	 */
-	@Override
 	public Object lookup(String name) throws NamingException {
 		Object object = this.jndiObjects.get(name);
 		if (object == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,11 @@ package org.springframework.context.support;
 import java.io.Serializable;
 
 import org.springframework.context.MessageSourceResolvable;
-import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * Spring's default implementation of the {@link MessageSourceResolvable} interface.
+ * Default implementation of the {@link MessageSourceResolvable} interface.
  * Offers an easy way to store all the necessary values needed to resolve
  * a message via a {@link org.springframework.context.MessageSource}.
  *
@@ -35,13 +34,10 @@ import org.springframework.util.StringUtils;
 @SuppressWarnings("serial")
 public class DefaultMessageSourceResolvable implements MessageSourceResolvable, Serializable {
 
-	@Nullable
 	private final String[] codes;
 
-	@Nullable
 	private final Object[] arguments;
 
-	@Nullable
 	private final String defaultMessage;
 
 
@@ -85,9 +81,7 @@ public class DefaultMessageSourceResolvable implements MessageSourceResolvable, 
 	 * @param arguments the array of arguments to be used to resolve this message
 	 * @param defaultMessage the default message to be used to resolve this message
 	 */
-	public DefaultMessageSourceResolvable(
-			@Nullable String[] codes, @Nullable Object[] arguments, @Nullable String defaultMessage) {
-
+	public DefaultMessageSourceResolvable(String[] codes, Object[] arguments, String defaultMessage) {
 		this.codes = codes;
 		this.arguments = arguments;
 		this.defaultMessage = defaultMessage;
@@ -102,29 +96,22 @@ public class DefaultMessageSourceResolvable implements MessageSourceResolvable, 
 	}
 
 
-	/**
-	 * Return the default code of this resolvable, that is,
-	 * the last one in the codes array.
-	 */
-	@Nullable
-	public String getCode() {
-		return (this.codes != null && this.codes.length > 0 ? this.codes[this.codes.length - 1] : null);
-	}
-
-	@Override
-	@Nullable
 	public String[] getCodes() {
 		return this.codes;
 	}
 
-	@Override
-	@Nullable
+	/**
+	 * Return the default code of this resolvable, that is,
+	 * the last one in the codes array.
+	 */
+	public String getCode() {
+		return (this.codes != null && this.codes.length > 0) ? this.codes[this.codes.length - 1] : null;
+	}
+
 	public Object[] getArguments() {
 		return this.arguments;
 	}
 
-	@Override
-	@Nullable
 	public String getDefaultMessage() {
 		return this.defaultMessage;
 	}
@@ -137,14 +124,14 @@ public class DefaultMessageSourceResolvable implements MessageSourceResolvable, 
 	protected final String resolvableToString() {
 		StringBuilder result = new StringBuilder();
 		result.append("codes [").append(StringUtils.arrayToDelimitedString(this.codes, ","));
-		result.append("]; arguments [").append(StringUtils.arrayToDelimitedString(this.arguments, ","));
+		result.append("]; arguments [" + StringUtils.arrayToDelimitedString(this.arguments, ","));
 		result.append("]; default message [").append(this.defaultMessage).append(']');
 		return result.toString();
 	}
 
 	/**
-	 * The default implementation exposes the attributes of this MessageSourceResolvable.
-	 * <p>To be overridden in more specific subclasses, potentially including the
+	 * Default implementation exposes the attributes of this MessageSourceResolvable.
+	 * To be overridden in more specific subclasses, potentially including the
 	 * resolvable content through {@code resolvableToString()}.
 	 * @see #resolvableToString()
 	 */
@@ -163,9 +150,9 @@ public class DefaultMessageSourceResolvable implements MessageSourceResolvable, 
 			return false;
 		}
 		MessageSourceResolvable otherResolvable = (MessageSourceResolvable) other;
-		return (ObjectUtils.nullSafeEquals(getCodes(), otherResolvable.getCodes()) &&
+		return ObjectUtils.nullSafeEquals(getCodes(), otherResolvable.getCodes()) &&
 				ObjectUtils.nullSafeEquals(getArguments(), otherResolvable.getArguments()) &&
-				ObjectUtils.nullSafeEquals(getDefaultMessage(), otherResolvable.getDefaultMessage()));
+				ObjectUtils.nullSafeEquals(getDefaultMessage(), otherResolvable.getDefaultMessage());
 	}
 
 	@Override

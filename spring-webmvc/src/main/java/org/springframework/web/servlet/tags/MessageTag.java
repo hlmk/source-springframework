@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,23 @@ package org.springframework.web.servlet.tags;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspTagException;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
-import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.util.ExpressionEvaluationUtils;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.JavaScriptUtils;
 import org.springframework.web.util.TagUtils;
 
 /**
- * The {@code <message>} tag looks up a message in the scope of this page.
- * Messages are resolved using the ApplicationContext and thus support
- * internationalization.
+ * Custom JSP tag to look up a message in the scope of this page. Messages are
+ * resolved using the ApplicationContext and thus support internationalization.
  *
  * <p>Detects an HTML escaping setting, either on this tag instance, the page level,
  * or the {@code web.xml} level. Can also apply JavaScript escaping.
@@ -44,131 +42,34 @@ import org.springframework.web.util.TagUtils;
  * <p>If "code" isn't set or cannot be resolved, "text" will be used as default
  * message. Thus, this tag can also be used for HTML escaping of any texts.
  *
- * <p>Message arguments can be specified via the {@link #setArguments(Object) arguments}
- * attribute or by using nested {@code <spring:argument>} tags.
- *
- * <table>
- * <caption>Attribute Summary</caption>
- * <thead>
- * <tr>
- * <th>Attribute</th>
- * <th>Required?</th>
- * <th>Runtime Expression?</th>
- * <th>Description</th>
- * </tr>
- * </thead>
- * <tbody>
- * <tr>
- * <td>arguments</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Set optional message arguments for this tag, as a (comma-)delimited
- * String (each String argument can contain JSP EL), an Object array (used as
- * argument array), or a single Object (used as single argument).</td>
- * </tr>
- * <tr>
- * <td>argumentSeparator</td>
- * <td>false</td>
- * <td>true</td>
- * <td>The separator character to be used for splitting the arguments string
- * value; defaults to a 'comma' (',').</td>
- * </tr>
- * <tr>
- * <td>code</td>
- * <td>false</td>
- * <td>true</td>
- * <td>The code (key) to use when looking up the message.
- * If code is not provided, the text attribute will be used.</td>
- * </tr>
- * <tr>
- * <td>htmlEscape</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Set HTML escaping for this tag, as boolean value.
- * Overrides the default HTML escaping setting for the current page.</td>
- * </tr>
- * <tr>
- * <td>javaScriptEscape</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Set JavaScript escaping for this tag, as boolean value.
- * Default is false.</td>
- * </tr>
- * <tr>
- * <td>message</td>
- * <td>false</td>
- * <td>true</td>
- * <td>A MessageSourceResolvable argument (direct or through JSP EL).
- * Fits nicely when used in conjunction with Spring’s own validation error
- * classes which all implement the MessageSourceResolvable interface.
- * For example, this allows you to iterate over all of the errors in a form,
- * passing each error (using a runtime expression) as the value of this
- * 'message' attribute, thus effecting the easy display of such error
- * messages.</td>
- * </tr>
- * <tr>
- * <td>scope</td>
- * <td>false</td>
- * <td>true</td>
- * <td>The scope to use when exporting the result to a variable. This attribute
- * is only used when var is also set. Possible values are page, request, session
- * and application.</td>
- * </tr>
- * <tr>
- * <td>text</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Default text to output when a message for the given code could not be
- * found. If both text and code are not set, the tag will output null.</td>
- * </tr>
- * <tr>
- * <td>var</td>
- * <td>false</td>
- * <td>true</td>
- * <td>The string to use when binding the result to the page, request, session
- * or application scope. If not specified, the result gets outputted to the writer
- * (i.e. typically directly to the JSP).</td>
- * </tr>
- * </tbody>
- * </table>
- *
  * @author Rod Johnson
  * @author Juergen Hoeller
- * @author Nicholas Williams
  * @see #setCode
  * @see #setText
  * @see #setHtmlEscape
  * @see #setJavaScriptEscape
  * @see HtmlEscapeTag#setDefaultHtmlEscape
  * @see org.springframework.web.util.WebUtils#HTML_ESCAPE_CONTEXT_PARAM
- * @see ArgumentTag
  */
 @SuppressWarnings("serial")
-public class MessageTag extends HtmlEscapingAwareTag implements ArgumentAware {
+public class MessageTag extends HtmlEscapingAwareTag {
 
 	/**
-	 * Default separator for splitting an arguments String: a comma (",").
+	 * Default separator for splitting an arguments String: a comma (",")
 	 */
 	public static final String DEFAULT_ARGUMENT_SEPARATOR = ",";
 
 
-	@Nullable
-	private MessageSourceResolvable message;
+	private Object message;
 
-	@Nullable
 	private String code;
 
-	@Nullable
 	private Object arguments;
 
 	private String argumentSeparator = DEFAULT_ARGUMENT_SEPARATOR;
 
-	private List<Object> nestedArguments = Collections.emptyList();
-
-	@Nullable
 	private String text;
 
-	@Nullable
 	private String var;
 
 	private String scope = TagUtils.SCOPE_PAGE;
@@ -178,10 +79,12 @@ public class MessageTag extends HtmlEscapingAwareTag implements ArgumentAware {
 
 	/**
 	 * Set the MessageSourceResolvable for this tag.
+	 * Accepts a direct MessageSourceResolvable instance as well as a JSP
+	 * expression language String that points to a MessageSourceResolvable.
 	 * <p>If a MessageSourceResolvable is specified, it effectively overrides
 	 * any code, arguments or text specified on this tag.
 	 */
-	public void setMessage(MessageSourceResolvable message) {
+	public void setMessage(Object message) {
 		this.message = message;
 	}
 
@@ -208,11 +111,6 @@ public class MessageTag extends HtmlEscapingAwareTag implements ArgumentAware {
 	 */
 	public void setArgumentSeparator(String argumentSeparator) {
 		this.argumentSeparator = argumentSeparator;
-	}
-
-	@Override
-	public void addArgument(@Nullable Object argument) throws JspTagException {
-		this.nestedArguments.add(argument);
 	}
 
 	/**
@@ -247,16 +145,11 @@ public class MessageTag extends HtmlEscapingAwareTag implements ArgumentAware {
 	 * Set JavaScript escaping for this tag, as boolean value.
 	 * Default is "false".
 	 */
-	public void setJavaScriptEscape(boolean javaScriptEscape) throws JspException {
-		this.javaScriptEscape = javaScriptEscape;
+	public void setJavaScriptEscape(String javaScriptEscape) throws JspException {
+		this.javaScriptEscape =
+				ExpressionEvaluationUtils.evaluateBoolean("javaScriptEscape", javaScriptEscape, pageContext);
 	}
 
-
-	@Override
-	protected final int doStartTagInternal() throws JspException, IOException {
-		this.nestedArguments = new LinkedList<>();
-		return EVAL_BODY_INCLUDE;
-	}
 
 	/**
 	 * Resolves the message, escapes it if demanded,
@@ -267,39 +160,31 @@ public class MessageTag extends HtmlEscapingAwareTag implements ArgumentAware {
 	 * @see #writeMessage(String)
 	 */
 	@Override
-	public int doEndTag() throws JspException {
+	protected final int doStartTagInternal() throws JspException, IOException {
 		try {
 			// Resolve the unescaped message.
 			String msg = resolveMessage();
 
 			// HTML and/or JavaScript escape, if demanded.
-			msg = htmlEscape(msg);
+			msg = isHtmlEscape() ? HtmlUtils.htmlEscape(msg) : msg;
 			msg = this.javaScriptEscape ? JavaScriptUtils.javaScriptEscape(msg) : msg;
 
 			// Expose as variable, if demanded, else write to the page.
-			if (this.var != null) {
-				this.pageContext.setAttribute(this.var, msg, TagUtils.getScope(this.scope));
+			String resolvedVar = ExpressionEvaluationUtils.evaluateString("var", this.var, pageContext);
+			if (resolvedVar != null) {
+				String resolvedScope = ExpressionEvaluationUtils.evaluateString("scope", this.scope, pageContext);
+				pageContext.setAttribute(resolvedVar, msg, TagUtils.getScope(resolvedScope));
 			}
 			else {
 				writeMessage(msg);
 			}
 
-			return EVAL_PAGE;
-		}
-		catch (IOException ex) {
-			throw new JspTagException(ex.getMessage(), ex);
+			return EVAL_BODY_INCLUDE;
 		}
 		catch (NoSuchMessageException ex) {
 			throw new JspTagException(getNoSuchMessageExceptionDescription(ex));
 		}
 	}
-
-	@Override
-	public void release() {
-		super.release();
-		this.arguments = null;
-	}
-
 
 	/**
 	 * Resolve the specified message into a concrete message String.
@@ -307,44 +192,46 @@ public class MessageTag extends HtmlEscapingAwareTag implements ArgumentAware {
 	 */
 	protected String resolveMessage() throws JspException, NoSuchMessageException {
 		MessageSource messageSource = getMessageSource();
-
-		// Evaluate the specified MessageSourceResolvable, if any.
-		if (this.message != null) {
-			// We have a given MessageSourceResolvable.
-			return messageSource.getMessage(this.message, getRequestContext().getLocale());
+		if (messageSource == null) {
+			throw new JspTagException("No corresponding MessageSource found");
 		}
 
-		if (this.code != null || this.text != null) {
+		// Evaluate the specified MessageSourceResolvable, if any.
+		MessageSourceResolvable resolvedMessage = null;
+		if (this.message instanceof MessageSourceResolvable) {
+			resolvedMessage = (MessageSourceResolvable) this.message;
+		}
+		else if (this.message != null) {
+			String expr = this.message.toString();
+			resolvedMessage = (MessageSourceResolvable)
+					ExpressionEvaluationUtils.evaluate("message", expr, MessageSourceResolvable.class, pageContext);
+		}
+
+		if (resolvedMessage != null) {
+			// We have a given MessageSourceResolvable.
+			return messageSource.getMessage(resolvedMessage, getRequestContext().getLocale());
+		}
+
+		String resolvedCode = ExpressionEvaluationUtils.evaluateString("code", this.code, pageContext);
+		String resolvedText = ExpressionEvaluationUtils.evaluateString("text", this.text, pageContext);
+
+		if (resolvedCode != null || resolvedText != null) {
 			// We have a code or default text that we need to resolve.
 			Object[] argumentsArray = resolveArguments(this.arguments);
-			if (!this.nestedArguments.isEmpty()) {
-				argumentsArray = appendArguments(argumentsArray, this.nestedArguments.toArray());
-			}
-
-			if (this.text != null) {
+			if (resolvedText != null) {
 				// We have a fallback text to consider.
-				String msg = messageSource.getMessage(
-						this.code, argumentsArray, this.text, getRequestContext().getLocale());
-				return (msg != null ? msg : "");
+				return messageSource.getMessage(
+						resolvedCode, argumentsArray, resolvedText, getRequestContext().getLocale());
 			}
 			else {
 				// We have no fallback text to consider.
 				return messageSource.getMessage(
-						this.code, argumentsArray, getRequestContext().getLocale());
+						resolvedCode, argumentsArray, getRequestContext().getLocale());
 			}
 		}
 
-		throw new JspTagException("No resolvable message");
-	}
-
-	private Object[] appendArguments(@Nullable Object[] sourceArguments, Object[] additionalArguments) {
-		if (ObjectUtils.isEmpty(sourceArguments)) {
-			return additionalArguments;
-		}
-		Object[] arguments = new Object[sourceArguments.length + additionalArguments.length];
-		System.arraycopy(sourceArguments, 0, arguments, 0, sourceArguments.length);
-		System.arraycopy(additionalArguments, 0, arguments, sourceArguments.length, additionalArguments.length);
-		return arguments;
+		// All we have is a specified literal text.
+		return resolvedText;
 	}
 
 	/**
@@ -354,13 +241,12 @@ public class MessageTag extends HtmlEscapingAwareTag implements ArgumentAware {
 	 * @throws JspException if argument conversion failed
 	 * @see #setArguments
 	 */
-	@Nullable
-	protected Object[] resolveArguments(@Nullable Object arguments) throws JspException {
+	protected Object[] resolveArguments(Object arguments) throws JspException {
 		if (arguments instanceof String) {
 			String[] stringArray =
 					StringUtils.delimitedListToStringArray((String) arguments, this.argumentSeparator);
 			if (stringArray.length == 1) {
-				Object argument = stringArray[0];
+				Object argument = ExpressionEvaluationUtils.evaluate("argument", stringArray[0], pageContext);
 				if (argument != null && argument.getClass().isArray()) {
 					return ObjectUtils.toObjectArray(argument);
 				}
@@ -369,14 +255,19 @@ public class MessageTag extends HtmlEscapingAwareTag implements ArgumentAware {
 				}
 			}
 			else {
-				return stringArray;
+				Object[] argumentsArray = new Object[stringArray.length];
+				for (int i = 0; i < stringArray.length; i++) {
+					argumentsArray[i] =
+							ExpressionEvaluationUtils.evaluate("argument[" + i + "]", stringArray[i], pageContext);
+				}
+				return argumentsArray;
 			}
 		}
 		else if (arguments instanceof Object[]) {
 			return (Object[]) arguments;
 		}
 		else if (arguments instanceof Collection) {
-			return ((Collection<?>) arguments).toArray();
+			return ((Collection) arguments).toArray();
 		}
 		else if (arguments != null) {
 			// Assume a single argument object.
@@ -394,7 +285,7 @@ public class MessageTag extends HtmlEscapingAwareTag implements ArgumentAware {
 	 * @throws IOException if writing failed
 	 */
 	protected void writeMessage(String msg) throws IOException {
-		this.pageContext.getOut().write(String.valueOf(msg));
+		pageContext.getOut().write(String.valueOf(msg));
 	}
 
 	/**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,37 +20,28 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /**
- * Used to {@linkplain #setDatabasePopulator set up} a database during
- * initialization and {@link #setDatabaseCleaner clean up} a database during
- * destruction.
+ * Used to populate a database during initialization.
  *
  * @author Dave Syer
- * @author Sam Brannen
  * @since 3.0
  * @see DatabasePopulator
  */
 public class DataSourceInitializer implements InitializingBean, DisposableBean {
 
-	@Nullable
 	private DataSource dataSource;
 
-	@Nullable
 	private DatabasePopulator databasePopulator;
 
-	@Nullable
 	private DatabasePopulator databaseCleaner;
 
 	private boolean enabled = true;
 
 
 	/**
-	 * The {@link DataSource} for the database to populate when this component
-	 * is initialized and to clean up when this component is shut down.
-	 * <p>This property is mandatory with no default provided.
+	 * The {@link DataSource} to populate when this component is initialized.
+	 * Mandatory with no default.
 	 * @param dataSource the DataSource
 	 */
 	public void setDataSource(DataSource dataSource) {
@@ -58,29 +49,26 @@ public class DataSourceInitializer implements InitializingBean, DisposableBean {
 	}
 
 	/**
-	 * Set the {@link DatabasePopulator} to execute during the bean initialization phase.
-	 * @param databasePopulator the {@code DatabasePopulator} to use during initialization
-	 * @see #setDatabaseCleaner
+	 * The {@link DatabasePopulator} to use to populate the data source.
+	 * Mandatory with no default.
+	 * @param databasePopulator the database populator to use.
 	 */
 	public void setDatabasePopulator(DatabasePopulator databasePopulator) {
 		this.databasePopulator = databasePopulator;
 	}
 
 	/**
-	 * Set the {@link DatabasePopulator} to execute during the bean destruction
-	 * phase, cleaning up the database and leaving it in a known state for others.
-	 * @param databaseCleaner the {@code DatabasePopulator} to use during destruction
-	 * @see #setDatabasePopulator
+	 * Set a script execution to be run in the bean destruction callback,
+	 * cleaning up the database and leaving it in a known state for others.
+	 * @param databaseCleaner the database script executor to run on destroy
 	 */
 	public void setDatabaseCleaner(DatabasePopulator databaseCleaner) {
 		this.databaseCleaner = databaseCleaner;
 	}
 
 	/**
-	 * Flag to explicitly enable or disable the {@linkplain #setDatabasePopulator
-	 * database populator} and {@linkplain #setDatabaseCleaner database cleaner}.
-	 * @param enabled {@code true} if the database populator and database cleaner
-	 * should be called on startup and shutdown, respectively
+	 * Flag to explicitly enable or disable the database populator.
+	 * @param enabled true if the database populator will be called on startup
 	 */
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
@@ -88,27 +76,20 @@ public class DataSourceInitializer implements InitializingBean, DisposableBean {
 
 
 	/**
-	 * Use the {@linkplain #setDatabasePopulator database populator} to set up
-	 * the database.
+	 * Use the populator to set up data in the data source.
 	 */
-	@Override
 	public void afterPropertiesSet() {
-		execute(this.databasePopulator);
+		if (this.databasePopulator != null && this.enabled) {
+			DatabasePopulatorUtils.execute(this.databasePopulator, this.dataSource);
+		}
 	}
 
 	/**
-	 * Use the {@linkplain #setDatabaseCleaner database cleaner} to clean up the
-	 * database.
+	 * Use the populator to clean up data in the data source.
 	 */
-	@Override
 	public void destroy() {
-		execute(this.databaseCleaner);
-	}
-
-	private void execute(@Nullable DatabasePopulator populator) {
-		Assert.state(this.dataSource != null, "DataSource must be set");
-		if (this.enabled && populator != null) {
-			DatabasePopulatorUtils.execute(populator, this.dataSource);
+		if (this.databaseCleaner != null && this.enabled) {
+			DatabasePopulatorUtils.execute(this.databaseCleaner, this.dataSource);
 		}
 	}
 

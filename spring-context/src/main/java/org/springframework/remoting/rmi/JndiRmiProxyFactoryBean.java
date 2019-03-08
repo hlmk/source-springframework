@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import javax.naming.NamingException;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -70,7 +69,6 @@ public class JndiRmiProxyFactoryBean extends JndiRmiClientInterceptor
 	private Object serviceProxy;
 
 
-	@Override
 	public void setBeanClassLoader(ClassLoader classLoader) {
 		this.beanClassLoader = classLoader;
 	}
@@ -78,23 +76,21 @@ public class JndiRmiProxyFactoryBean extends JndiRmiClientInterceptor
 	@Override
 	public void afterPropertiesSet() throws NamingException {
 		super.afterPropertiesSet();
-		Class<?> ifc = getServiceInterface();
-		Assert.notNull(ifc, "Property 'serviceInterface' is required");
-		this.serviceProxy = new ProxyFactory(ifc, this).getProxy(this.beanClassLoader);
+		if (getServiceInterface() == null) {
+			throw new IllegalArgumentException("Property 'serviceInterface' is required");
+		}
+		this.serviceProxy = new ProxyFactory(getServiceInterface(), this).getProxy(this.beanClassLoader);
 	}
 
 
-	@Override
 	public Object getObject() {
 		return this.serviceProxy;
 	}
 
-	@Override
 	public Class<?> getObjectType() {
 		return getServiceInterface();
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}

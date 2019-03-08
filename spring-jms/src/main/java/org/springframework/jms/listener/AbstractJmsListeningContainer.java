@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.springframework.jms.JmsException;
 import org.springframework.jms.connection.ConnectionFactoryUtils;
 import org.springframework.jms.support.JmsUtils;
 import org.springframework.jms.support.destination.JmsDestinationAccessor;
-import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -61,17 +60,14 @@ import org.springframework.util.ClassUtils;
 public abstract class AbstractJmsListeningContainer extends JmsDestinationAccessor
 		implements BeanNameAware, DisposableBean, SmartLifecycle {
 
-	@Nullable
 	private String clientId;
 
 	private boolean autoStartup = true;
 
-	private int phase = DEFAULT_PHASE;
+	private int phase = Integer.MAX_VALUE;
 
-	@Nullable
 	private String beanName;
 
-	@Nullable
 	private Connection sharedConnection;
 
 	private boolean sharedConnectionStarted = false;
@@ -80,9 +76,9 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 
 	private boolean active = false;
 
-	private volatile boolean running = false;
+	private boolean running = false;
 
-	private final List<Object> pausedTasks = new LinkedList<>();
+	private final List<Object> pausedTasks = new LinkedList<Object>();
 
 	protected final Object lifecycleMonitor = new Object();
 
@@ -96,7 +92,7 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	 * @see javax.jms.Connection#setClientID
 	 * @see #setConnectionFactory
 	 */
-	public void setClientId(@Nullable String clientId) {
+	public void setClientId(String clientId) {
 		this.clientId = clientId;
 	}
 
@@ -104,7 +100,6 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	 * Return the JMS client ID for the shared Connection created and used
 	 * by this container, if any.
 	 */
-	@Nullable
 	public String getClientId() {
 		return this.clientId;
 	}
@@ -118,7 +113,6 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 		this.autoStartup = autoStartup;
 	}
 
-	@Override
 	public boolean isAutoStartup() {
 		return this.autoStartup;
 	}
@@ -137,13 +131,11 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	/**
 	 * Return the phase in which this container will be started and stopped.
 	 */
-	@Override
 	public int getPhase() {
 		return this.phase;
 	}
 
-	@Override
-	public void setBeanName(@Nullable String beanName) {
+	public void setBeanName(String beanName) {
 		this.beanName = beanName;
 	}
 
@@ -151,7 +143,6 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	 * Return the bean name that this listener container has been assigned
 	 * in its containing bean factory, if any.
 	 */
-	@Nullable
 	protected final String getBeanName() {
 		return this.beanName;
 	}
@@ -178,7 +169,6 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	 * Calls {@link #shutdown()} when the BeanFactory destroys the container instance.
 	 * @see #shutdown()
 	 */
-	@Override
 	public void destroy() {
 		shutdown();
 	}
@@ -270,7 +260,6 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	 * @throws JmsException if starting failed
 	 * @see #doStart
 	 */
-	@Override
 	public void start() throws JmsException {
 		try {
 			doStart();
@@ -309,7 +298,6 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	 * @throws JmsException if stopping failed
 	 * @see #doStop
 	 */
-	@Override
 	public void stop() throws JmsException {
 		try {
 			doStop();
@@ -317,6 +305,11 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 		catch (JMSException ex) {
 			throw convertJmsAccessException(ex);
 		}
+	}
+
+	public void stop(Runnable callback) {
+		this.stop();
+		callback.run();
 	}
 
 	/**
@@ -342,9 +335,10 @@ public abstract class AbstractJmsListeningContainer extends JmsDestinationAccess
 	 * @see #stop()
 	 * @see #runningAllowed()
 	 */
-	@Override
 	public final boolean isRunning() {
-		return (this.running && runningAllowed());
+		synchronized (this.lifecycleMonitor) {
+			return (this.running && runningAllowed());
+		}
 	}
 
 	/**

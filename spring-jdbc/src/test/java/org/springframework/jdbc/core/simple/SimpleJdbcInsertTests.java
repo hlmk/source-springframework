@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.util.HashMap;
+
 import javax.sql.DataSource;
 
 import org.junit.After;
@@ -27,7 +28,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 
 import static org.mockito.BDDMockito.*;
@@ -39,15 +39,12 @@ import static org.mockito.BDDMockito.*;
  */
 public class SimpleJdbcInsertTests {
 
-	private Connection connection;
-
-	private DatabaseMetaData databaseMetaData;
-
-	private DataSource dataSource;
-
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 
+	private Connection connection;
+	private DatabaseMetaData databaseMetaData;
+	private DataSource dataSource;
 
 	@Before
 	public void setUp() throws Exception {
@@ -62,7 +59,6 @@ public class SimpleJdbcInsertTests {
 	public void verifyClosed() throws Exception {
 		verify(connection).close();
 	}
-
 
 	@Test
 	public void testNoSuchTable() throws Exception {
@@ -79,11 +75,10 @@ public class SimpleJdbcInsertTests {
 		// Shouldn't succeed in inserting into table which doesn't exist
 		thrown.expect(InvalidDataAccessApiUsageException.class);
 		try {
-			insert.execute(new HashMap<>());
+			insert.execute(new HashMap<String, Object>());
 		}
 		finally {
 			verify(resultSet).close();
 		}
 	}
-
 }

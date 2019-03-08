@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,30 @@
 
 package org.springframework.beans;
 
+import static org.junit.Assert.assertEquals;
+
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
 import org.junit.Test;
 
-import org.springframework.tests.sample.beans.TestBean;
-
-import static org.junit.Assert.*;
-
 /**
- * Specific {@link DirectFieldAccessor} tests.
+ * Unit tests for {@link DirectFieldAccessor}
  *
  * @author Jose Luis Martin
  * @author Chris Beams
- * @author Stephane Nicoll
  */
-public class DirectFieldAccessorTests extends AbstractPropertyAccessorTests {
-
-	@Override
-	protected DirectFieldAccessor createAccessor(Object target) {
-		return new DirectFieldAccessor(target);
-	}
-
+public class DirectFieldAccessorTests {
 
 	@Test
-	public void withShadowedField() {
-		final StringBuilder sb = new StringBuilder();
-
+	public void withShadowedField() throws Exception {
 		@SuppressWarnings("serial")
-		TestBean target = new TestBean() {
+		JPanel p = new JPanel() {
 			@SuppressWarnings("unused")
-			StringBuilder name = sb;
+			JTextField name = new JTextField();
 		};
 
-		DirectFieldAccessor dfa = createAccessor(target);
-		assertEquals(StringBuilder.class, dfa.getPropertyType("name"));
-		assertEquals(sb, dfa.getPropertyValue("name"));
+		DirectFieldAccessor dfa = new DirectFieldAccessor(p);
+		assertEquals(JTextField.class, dfa.getPropertyType("name"));
 	}
-
 }

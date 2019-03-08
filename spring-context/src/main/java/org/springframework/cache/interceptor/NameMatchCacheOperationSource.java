@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.PatternMatchUtils;
 
@@ -34,7 +32,6 @@ import org.springframework.util.PatternMatchUtils;
  * by registered name.
  *
  * @author Costin Leau
- * @since 3.1
  */
 @SuppressWarnings("serial")
 public class NameMatchCacheOperationSource implements CacheOperationSource, Serializable {
@@ -45,10 +42,8 @@ public class NameMatchCacheOperationSource implements CacheOperationSource, Seri
 	 */
 	protected static final Log logger = LogFactory.getLog(NameMatchCacheOperationSource.class);
 
-
-	/** Keys are method names; values are TransactionAttributes. */
-	private Map<String, Collection<CacheOperation>> nameMap = new LinkedHashMap<>();
-
+	/** Keys are method names; values are TransactionAttributes */
+	private Map<String, Collection<CacheOperation>> nameMap = new LinkedHashMap<String, Collection<CacheOperation>>();
 
 	/**
 	 * Set a name/attribute map, consisting of method names
@@ -57,7 +52,9 @@ public class NameMatchCacheOperationSource implements CacheOperationSource, Seri
 	 * @see CacheOperation
 	 */
 	public void setNameMap(Map<String, Collection<CacheOperation>> nameMap) {
-		nameMap.forEach(this::addCacheMethod);
+		for (Map.Entry<String, Collection<CacheOperation>> entry : nameMap.entrySet()) {
+			addCacheMethod(entry.getKey(), entry.getValue());
+		}
 	}
 
 	/**
@@ -74,9 +71,7 @@ public class NameMatchCacheOperationSource implements CacheOperationSource, Seri
 		this.nameMap.put(methodName, ops);
 	}
 
-	@Override
-	@Nullable
-	public Collection<CacheOperation> getCacheOperations(Method method, @Nullable Class<?> targetClass) {
+	public Collection<CacheOperation> getCacheOperations(Method method, Class<?> targetClass) {
 		// look for direct name match
 		String methodName = method.getName();
 		Collection<CacheOperation> ops = this.nameMap.get(methodName);

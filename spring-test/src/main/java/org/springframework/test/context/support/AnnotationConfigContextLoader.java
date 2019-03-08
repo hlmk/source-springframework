@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.springframework.test.context.support;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.support.BeanDefinitionReader;
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
 import org.springframework.context.support.GenericApplicationContext;
@@ -50,18 +49,17 @@ import org.springframework.util.ObjectUtils;
  * @see #processContextConfiguration(ContextConfigurationAttributes)
  * @see #detectDefaultConfigurationClasses(Class)
  * @see #loadBeanDefinitions(GenericApplicationContext, MergedContextConfiguration)
- * @see GenericXmlContextLoader
- * @see GenericGroovyXmlContextLoader
  */
 public class AnnotationConfigContextLoader extends AbstractGenericContextLoader {
 
 	private static final Log logger = LogFactory.getLog(AnnotationConfigContextLoader.class);
 
 
-	// SmartContextLoader
+	// --- SmartContextLoader -----------------------------------------------
 
 	/**
 	 * Process <em>annotated classes</em> in the supplied {@link ContextConfigurationAttributes}.
+	 *
 	 * <p>If the <em>annotated classes</em> are {@code null} or empty and
 	 * {@link #isGenerateDefaultLocations()} returns {@code true}, this
 	 * {@code SmartContextLoader} will attempt to {@link
@@ -70,25 +68,27 @@ public class AnnotationConfigContextLoader extends AbstractGenericContextLoader 
 	 * {@link ContextConfigurationAttributes#setClasses(Class[]) set} in the
 	 * supplied configuration attributes. Otherwise, properties in the supplied
 	 * configuration attributes will not be modified.
+	 *
 	 * @param configAttributes the context configuration attributes to process
 	 * @see org.springframework.test.context.SmartContextLoader#processContextConfiguration(ContextConfigurationAttributes)
 	 * @see #isGenerateDefaultLocations()
 	 * @see #detectDefaultConfigurationClasses(Class)
 	 */
-	@Override
 	public void processContextConfiguration(ContextConfigurationAttributes configAttributes) {
-		if (!configAttributes.hasClasses() && isGenerateDefaultLocations()) {
-			configAttributes.setClasses(detectDefaultConfigurationClasses(configAttributes.getDeclaringClass()));
+		if (ObjectUtils.isEmpty(configAttributes.getClasses()) && isGenerateDefaultLocations()) {
+			Class<?>[] defaultConfigClasses = detectDefaultConfigurationClasses(configAttributes.getDeclaringClass());
+			configAttributes.setClasses(defaultConfigClasses);
 		}
 	}
 
-
-	// AnnotationConfigContextLoader
+	// --- AnnotationConfigContextLoader ---------------------------------------
 
 	/**
 	 * Detect the default configuration classes for the supplied test class.
+	 *
 	 * <p>The default implementation simply delegates to
 	 * {@link AnnotationConfigContextLoaderUtils#detectDefaultConfigurationClasses(Class)}.
+	 *
 	 * @param declaringClass the test class that declared {@code @ContextConfiguration}
 	 * @return an array of default configuration classes, potentially empty but
 	 * never {@code null}
@@ -98,21 +98,21 @@ public class AnnotationConfigContextLoader extends AbstractGenericContextLoader 
 		return AnnotationConfigContextLoaderUtils.detectDefaultConfigurationClasses(declaringClass);
 	}
 
-
-	// AbstractContextLoader
+	// --- AbstractContextLoader -----------------------------------------------
 
 	/**
 	 * {@code AnnotationConfigContextLoader} should be used as a
 	 * {@link org.springframework.test.context.SmartContextLoader SmartContextLoader},
 	 * not as a legacy {@link org.springframework.test.context.ContextLoader ContextLoader}.
 	 * Consequently, this method is not supported.
-	 * @throws UnsupportedOperationException in this implementation
+	 *
 	 * @see AbstractContextLoader#modifyLocations
+	 * @throws UnsupportedOperationException
 	 */
 	@Override
 	protected String[] modifyLocations(Class<?> clazz, String... locations) {
 		throw new UnsupportedOperationException(
-				"AnnotationConfigContextLoader does not support the modifyLocations(Class, String...) method");
+			"AnnotationConfigContextLoader does not support the modifyLocations(Class, String...) method");
 	}
 
 	/**
@@ -120,13 +120,14 @@ public class AnnotationConfigContextLoader extends AbstractGenericContextLoader 
 	 * {@link org.springframework.test.context.SmartContextLoader SmartContextLoader},
 	 * not as a legacy {@link org.springframework.test.context.ContextLoader ContextLoader}.
 	 * Consequently, this method is not supported.
-	 * @throws UnsupportedOperationException in this implementation
+	 *
 	 * @see AbstractContextLoader#generateDefaultLocations
+	 * @throws UnsupportedOperationException
 	 */
 	@Override
 	protected String[] generateDefaultLocations(Class<?> clazz) {
 		throw new UnsupportedOperationException(
-				"AnnotationConfigContextLoader does not support the generateDefaultLocations(Class) method");
+			"AnnotationConfigContextLoader does not support the generateDefaultLocations(Class) method");
 	}
 
 	/**
@@ -134,47 +135,33 @@ public class AnnotationConfigContextLoader extends AbstractGenericContextLoader 
 	 * {@link org.springframework.test.context.SmartContextLoader SmartContextLoader},
 	 * not as a legacy {@link org.springframework.test.context.ContextLoader ContextLoader}.
 	 * Consequently, this method is not supported.
-	 * @throws UnsupportedOperationException in this implementation
+	 *
 	 * @see AbstractContextLoader#getResourceSuffix
+	 * @throws UnsupportedOperationException
 	 */
 	@Override
 	protected String getResourceSuffix() {
 		throw new UnsupportedOperationException(
-				"AnnotationConfigContextLoader does not support the getResourceSuffix() method");
+			"AnnotationConfigContextLoader does not support the getResourceSuffix() method");
 	}
 
-
-	// AbstractGenericContextLoader
-
-	/**
-	 * Ensure that the supplied {@link MergedContextConfiguration} does not
-	 * contain {@link MergedContextConfiguration#getLocations() locations}.
-	 * @since 4.0.4
-	 * @see AbstractGenericContextLoader#validateMergedContextConfiguration
-	 */
-	@Override
-	protected void validateMergedContextConfiguration(MergedContextConfiguration mergedConfig) {
-		if (mergedConfig.hasLocations()) {
-			String msg = String.format("Test class [%s] has been configured with @ContextConfiguration's 'locations' " +
-							"(or 'value') attribute %s, but %s does not support resource locations.",
-					mergedConfig.getTestClass().getName(), ObjectUtils.nullSafeToString(mergedConfig.getLocations()),
-					getClass().getSimpleName());
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-	}
+	// --- AbstractGenericContextLoader ----------------------------------------
 
 	/**
 	 * Register classes in the supplied {@link GenericApplicationContext context}
 	 * from the classes in the supplied {@link MergedContextConfiguration}.
+	 *
 	 * <p>Each class must represent an <em>annotated class</em>. An
 	 * {@link AnnotatedBeanDefinitionReader} is used to register the appropriate
 	 * bean definitions.
+	 *
 	 * <p>Note that this method does not call {@link #createBeanDefinitionReader}
 	 * since {@code AnnotatedBeanDefinitionReader} is not an instance of
 	 * {@link BeanDefinitionReader}.
+	 *
 	 * @param context the context in which the annotated classes should be registered
 	 * @param mergedConfig the merged configuration from which the classes should be retrieved
+	 *
 	 * @see AbstractGenericContextLoader#loadBeanDefinitions
 	 */
 	@Override
@@ -191,14 +178,15 @@ public class AnnotationConfigContextLoader extends AbstractGenericContextLoader 
 	 * {@link org.springframework.test.context.SmartContextLoader SmartContextLoader},
 	 * not as a legacy {@link org.springframework.test.context.ContextLoader ContextLoader}.
 	 * Consequently, this method is not supported.
-	 * @throws UnsupportedOperationException in this implementation
+	 *
 	 * @see #loadBeanDefinitions
 	 * @see AbstractGenericContextLoader#createBeanDefinitionReader
+	 * @throws UnsupportedOperationException
 	 */
 	@Override
 	protected BeanDefinitionReader createBeanDefinitionReader(GenericApplicationContext context) {
 		throw new UnsupportedOperationException(
-				"AnnotationConfigContextLoader does not support the createBeanDefinitionReader(GenericApplicationContext) method");
+			"AnnotationConfigContextLoader does not support the createBeanDefinitionReader(GenericApplicationContext) method");
 	}
 
 }

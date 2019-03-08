@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,14 @@
 
 package org.springframework.aop.config;
 
+import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Before;
 import org.junit.Test;
-
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.context.ApplicationContext;
@@ -32,34 +37,30 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
-import static java.lang.String.format;
-import static org.junit.Assert.*;
-
 /**
  * Integration tests for scoped proxy use in conjunction with aop: namespace.
  * Deemed an integration test because .web mocks and application contexts are required.
  *
+ * @see org.springframework.aop.config.AopNamespaceHandlerTests
+ *
  * @author Rob Harrop
  * @author Juergen Hoeller
  * @author Chris Beams
- * @see org.springframework.aop.config.AopNamespaceHandlerTests
  */
-public class AopNamespaceHandlerScopeIntegrationTests {
+public final class AopNamespaceHandlerScopeIntegrationTests {
 
-	private static final String CONTEXT = format("classpath:%s-context.xml",
-			ClassUtils.convertClassNameToResourcePath(AopNamespaceHandlerScopeIntegrationTests.class.getName()));
+	private static final String CLASSNAME = AopNamespaceHandlerScopeIntegrationTests.class.getName();
+	private static final String CONTEXT = format("classpath:%s-context.xml", ClassUtils.convertClassNameToResourcePath(CLASSNAME));
 
 	private ApplicationContext context;
-
 
 	@Before
 	public void setUp() {
 		XmlWebApplicationContext wac = new XmlWebApplicationContext();
-		wac.setConfigLocations(CONTEXT);
+		wac.setConfigLocations(new String[] {CONTEXT});
 		wac.refresh();
 		this.context = wac;
 	}
-
 
 	@Test
 	public void testSingletonScoping() throws Exception {

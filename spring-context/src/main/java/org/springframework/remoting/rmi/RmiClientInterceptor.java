@@ -34,7 +34,6 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
 import org.springframework.aop.support.AopUtils;
-import org.springframework.lang.Nullable;
 import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.remoting.RemoteLookupFailureException;
@@ -254,7 +253,6 @@ public class RmiClientInterceptor extends RemoteInvocationBasedAccessor
 	 * @see java.rmi.ConnectIOException
 	 * @see java.rmi.NoSuchObjectException
 	 */
-	@Override
 	public Object invoke(MethodInvocation invocation) throws Throwable {
 		Remote stub = getStub();
 		try {
@@ -296,7 +294,6 @@ public class RmiClientInterceptor extends RemoteInvocationBasedAccessor
 	 * @see #setRefreshStubOnConnectFailure
 	 * @see #doInvoke
 	 */
-	@Nullable
 	private Object handleRemoteConnectFailure(MethodInvocation invocation, Exception ex) throws Throwable {
 		if (this.refreshStubOnConnectFailure) {
 			String msg = "Could not connect to RMI service [" + getServiceUrl() + "] - retrying";
@@ -321,7 +318,6 @@ public class RmiClientInterceptor extends RemoteInvocationBasedAccessor
 	 * @throws Throwable in case of invocation failure
 	 * @see #invoke
 	 */
-	@Nullable
 	protected Object refreshAndRetry(MethodInvocation invocation) throws Throwable {
 		Remote freshStub = null;
 		synchronized (this.stubMonitor) {
@@ -341,7 +337,6 @@ public class RmiClientInterceptor extends RemoteInvocationBasedAccessor
 	 * @return the invocation result, if any
 	 * @throws Throwable in case of invocation failure
 	 */
-	@Nullable
 	protected Object doInvoke(MethodInvocation invocation, Remote stub) throws Throwable {
 		if (stub instanceof RmiInvocationHandler) {
 			// RMI invoker
@@ -393,7 +388,6 @@ public class RmiClientInterceptor extends RemoteInvocationBasedAccessor
 	 * @throws InvocationTargetException if the method invocation resulted in an exception
 	 * @see org.springframework.remoting.support.RemoteInvocation
 	 */
-	@Nullable
 	protected Object doInvoke(MethodInvocation methodInvocation, RmiInvocationHandler invocationHandler)
 		throws RemoteException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 

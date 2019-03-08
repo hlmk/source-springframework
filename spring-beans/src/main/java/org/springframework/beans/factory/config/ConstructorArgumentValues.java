@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package org.springframework.beans.factory.config;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.BeanMetadataElement;
 import org.springframework.beans.Mergeable;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
@@ -43,9 +42,9 @@ import org.springframework.util.ObjectUtils;
  */
 public class ConstructorArgumentValues {
 
-	private final Map<Integer, ValueHolder> indexedArgumentValues = new LinkedHashMap<>();
+	private final Map<Integer, ValueHolder> indexedArgumentValues = new LinkedHashMap<Integer, ValueHolder>(0);
 
-	private final List<ValueHolder> genericArgumentValues = new ArrayList<>();
+	private final List<ValueHolder> genericArgumentValues = new LinkedList<ValueHolder>();
 
 
 	/**
@@ -70,14 +69,16 @@ public class ConstructorArgumentValues {
 	 * to allow for merging and re-merging of argument value definitions. Distinct
 	 * ValueHolder instances carrying the same content are of course allowed.
 	 */
-	public void addArgumentValues(@Nullable ConstructorArgumentValues other) {
+	public void addArgumentValues(ConstructorArgumentValues other) {
 		if (other != null) {
-			other.indexedArgumentValues.forEach(
-				(index, argValue) -> addOrMergeIndexedArgumentValue(index, argValue.copy())
-			);
-			other.genericArgumentValues.stream()
-					.filter(valueHolder -> !this.genericArgumentValues.contains(valueHolder))
-					.forEach(valueHolder -> addOrMergeGenericArgumentValue(valueHolder.copy()));
+			for (Map.Entry<Integer, ValueHolder> entry : other.indexedArgumentValues.entrySet()) {
+				addOrMergeIndexedArgumentValue(entry.getKey(), entry.getValue().copy());
+			}
+			for (ValueHolder valueHolder : other.genericArgumentValues) {
+				if (!this.genericArgumentValues.contains(valueHolder)) {
+					addOrMergeGenericArgumentValue(valueHolder.copy());
+				}
+			}
 		}
 	}
 
@@ -87,7 +88,7 @@ public class ConstructorArgumentValues {
 	 * @param index the index in the constructor argument list
 	 * @param value the argument value
 	 */
-	public void addIndexedArgumentValue(int index, @Nullable Object value) {
+	public void addIndexedArgumentValue(int index, Object value) {
 		addIndexedArgumentValue(index, new ValueHolder(value));
 	}
 
@@ -97,7 +98,7 @@ public class ConstructorArgumentValues {
 	 * @param value the argument value
 	 * @param type the type of the constructor argument
 	 */
-	public void addIndexedArgumentValue(int index, @Nullable Object value, String type) {
+	public void addIndexedArgumentValue(int index, Object value, String type) {
 		addIndexedArgumentValue(index, new ValueHolder(value, type));
 	}
 
@@ -145,8 +146,7 @@ public class ConstructorArgumentValues {
 	 * untyped values only)
 	 * @return the ValueHolder for the argument, or {@code null} if none set
 	 */
-	@Nullable
-	public ValueHolder getIndexedArgumentValue(int index, @Nullable Class<?> requiredType) {
+	public ValueHolder getIndexedArgumentValue(int index, Class<?> requiredType) {
 		return getIndexedArgumentValue(index, requiredType, null);
 	}
 
@@ -156,17 +156,16 @@ public class ConstructorArgumentValues {
 	 * @param requiredType the type to match (can be {@code null} to match
 	 * untyped values only)
 	 * @param requiredName the type to match (can be {@code null} to match
-	 * unnamed values only, or empty String to match any name)
+	 * unnamed values only)
 	 * @return the ValueHolder for the argument, or {@code null} if none set
 	 */
-	@Nullable
-	public ValueHolder getIndexedArgumentValue(int index, @Nullable Class<?> requiredType, @Nullable String requiredName) {
+	public ValueHolder getIndexedArgumentValue(int index, Class<?> requiredType, String requiredName) {
 		Assert.isTrue(index >= 0, "Index must not be negative");
 		ValueHolder valueHolder = this.indexedArgumentValues.get(index);
 		if (valueHolder != null &&
 				(valueHolder.getType() == null ||
 						(requiredType != null && ClassUtils.matchesTypeName(requiredType, valueHolder.getType()))) &&
-				(valueHolder.getName() == null || "".equals(requiredName) ||
+				(valueHolder.getName() == null ||
 						(requiredName != null && requiredName.equals(valueHolder.getName())))) {
 			return valueHolder;
 		}
@@ -248,7 +247,6 @@ public class ConstructorArgumentValues {
 	 * @param requiredType the type to match
 	 * @return the ValueHolder for the argument, or {@code null} if none set
 	 */
-	@Nullable
 	public ValueHolder getGenericArgumentValue(Class<?> requiredType) {
 		return getGenericArgumentValue(requiredType, null, null);
 	}
@@ -259,7 +257,6 @@ public class ConstructorArgumentValues {
 	 * @param requiredName the name to match
 	 * @return the ValueHolder for the argument, or {@code null} if none set
 	 */
-	@Nullable
 	public ValueHolder getGenericArgumentValue(Class<?> requiredType, String requiredName) {
 		return getGenericArgumentValue(requiredType, requiredName, null);
 	}
@@ -271,18 +268,17 @@ public class ConstructorArgumentValues {
 	 * @param requiredType the type to match (can be {@code null} to find
 	 * an arbitrary next generic argument value)
 	 * @param requiredName the name to match (can be {@code null} to not
-	 * match argument values by name, or empty String to match any name)
+	 * match argument values by name)
 	 * @param usedValueHolders a Set of ValueHolder objects that have already been used
 	 * in the current resolution process and should therefore not be returned again
 	 * @return the ValueHolder for the argument, or {@code null} if none found
 	 */
-	@Nullable
-	public ValueHolder getGenericArgumentValue(@Nullable Class<?> requiredType, @Nullable String requiredName, @Nullable Set<ValueHolder> usedValueHolders) {
+	public ValueHolder getGenericArgumentValue(Class<?> requiredType, String requiredName, Set<ValueHolder> usedValueHolders) {
 		for (ValueHolder valueHolder : this.genericArgumentValues) {
 			if (usedValueHolders != null && usedValueHolders.contains(valueHolder)) {
 				continue;
 			}
-			if (valueHolder.getName() != null && !"".equals(requiredName) &&
+			if (valueHolder.getName() != null &&
 					(requiredName == null || !valueHolder.getName().equals(requiredName))) {
 				continue;
 			}
@@ -316,7 +312,6 @@ public class ConstructorArgumentValues {
 	 * @param requiredType the parameter type to match
 	 * @return the ValueHolder for the argument, or {@code null} if none set
 	 */
-	@Nullable
 	public ValueHolder getArgumentValue(int index, Class<?> requiredType) {
 		return getArgumentValue(index, requiredType, null, null);
 	}
@@ -329,7 +324,6 @@ public class ConstructorArgumentValues {
 	 * @param requiredName the parameter name to match
 	 * @return the ValueHolder for the argument, or {@code null} if none set
 	 */
-	@Nullable
 	public ValueHolder getArgumentValue(int index, Class<?> requiredType, String requiredName) {
 		return getArgumentValue(index, requiredType, requiredName, null);
 	}
@@ -341,15 +335,14 @@ public class ConstructorArgumentValues {
 	 * @param requiredType the parameter type to match (can be {@code null}
 	 * to find an untyped argument value)
 	 * @param requiredName the parameter name to match (can be {@code null}
-	 * to find an unnamed argument value, or empty String to match any name)
+	 * to find an unnamed argument value)
 	 * @param usedValueHolders a Set of ValueHolder objects that have already
 	 * been used in the current resolution process and should therefore not
 	 * be returned again (allowing to return the next generic argument match
 	 * in case of multiple generic argument values of the same type)
 	 * @return the ValueHolder for the argument, or {@code null} if none set
 	 */
-	@Nullable
-	public ValueHolder getArgumentValue(int index, @Nullable Class<?> requiredType, @Nullable String requiredName, @Nullable Set<ValueHolder> usedValueHolders) {
+	public ValueHolder getArgumentValue(int index, Class<?> requiredType, String requiredName, Set<ValueHolder> usedValueHolders) {
 		Assert.isTrue(index >= 0, "Index must not be negative");
 		ValueHolder valueHolder = getIndexedArgumentValue(index, requiredType, requiredName);
 		if (valueHolder == null) {
@@ -435,28 +428,23 @@ public class ConstructorArgumentValues {
 	 */
 	public static class ValueHolder implements BeanMetadataElement {
 
-		@Nullable
 		private Object value;
 
-		@Nullable
 		private String type;
 
-		@Nullable
 		private String name;
 
-		@Nullable
 		private Object source;
 
 		private boolean converted = false;
 
-		@Nullable
 		private Object convertedValue;
 
 		/**
 		 * Create a new ValueHolder for the given value.
 		 * @param value the argument value
 		 */
-		public ValueHolder(@Nullable Object value) {
+		public ValueHolder(Object value) {
 			this.value = value;
 		}
 
@@ -465,7 +453,7 @@ public class ConstructorArgumentValues {
 		 * @param value the argument value
 		 * @param type the type of the constructor argument
 		 */
-		public ValueHolder(@Nullable Object value, @Nullable String type) {
+		public ValueHolder(Object value, String type) {
 			this.value = value;
 			this.type = type;
 		}
@@ -476,7 +464,7 @@ public class ConstructorArgumentValues {
 		 * @param type the type of the constructor argument
 		 * @param name the name of the constructor argument
 		 */
-		public ValueHolder(@Nullable Object value, @Nullable String type, @Nullable String name) {
+		public ValueHolder(Object value, String type, String name) {
 			this.value = value;
 			this.type = type;
 			this.name = name;
@@ -484,15 +472,15 @@ public class ConstructorArgumentValues {
 
 		/**
 		 * Set the value for the constructor argument.
+		 * @see PropertyPlaceholderConfigurer
 		 */
-		public void setValue(@Nullable Object value) {
+		public void setValue(Object value) {
 			this.value = value;
 		}
 
 		/**
 		 * Return the value for the constructor argument.
 		 */
-		@Nullable
 		public Object getValue() {
 			return this.value;
 		}
@@ -500,14 +488,13 @@ public class ConstructorArgumentValues {
 		/**
 		 * Set the type of the constructor argument.
 		 */
-		public void setType(@Nullable String type) {
+		public void setType(String type) {
 			this.type = type;
 		}
 
 		/**
 		 * Return the type of the constructor argument.
 		 */
-		@Nullable
 		public String getType() {
 			return this.type;
 		}
@@ -515,14 +502,13 @@ public class ConstructorArgumentValues {
 		/**
 		 * Set the name of the constructor argument.
 		 */
-		public void setName(@Nullable String name) {
+		public void setName(String name) {
 			this.name = name;
 		}
 
 		/**
 		 * Return the name of the constructor argument.
 		 */
-		@Nullable
 		public String getName() {
 			return this.name;
 		}
@@ -531,12 +517,10 @@ public class ConstructorArgumentValues {
 		 * Set the configuration source {@code Object} for this metadata element.
 		 * <p>The exact type of the object will depend on the configuration mechanism used.
 		 */
-		public void setSource(@Nullable Object source) {
+		public void setSource(Object source) {
 			this.source = source;
 		}
 
-		@Override
-		@Nullable
 		public Object getSource() {
 			return this.source;
 		}
@@ -553,8 +537,8 @@ public class ConstructorArgumentValues {
 		 * Set the converted value of the constructor argument,
 		 * after processed type conversion.
 		 */
-		public synchronized void setConvertedValue(@Nullable Object value) {
-			this.converted = (value != null);
+		public synchronized void setConvertedValue(Object value) {
+			this.converted = true;
 			this.convertedValue = value;
 		}
 
@@ -562,7 +546,6 @@ public class ConstructorArgumentValues {
 		 * Return the converted value of the constructor argument,
 		 * after processed type conversion.
 		 */
-		@Nullable
 		public synchronized Object getConvertedValue() {
 			return this.convertedValue;
 		}

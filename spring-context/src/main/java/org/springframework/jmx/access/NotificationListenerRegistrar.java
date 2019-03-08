@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.Map;
+
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.remote.JMXServiceURL;
@@ -32,7 +33,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.jmx.JmxException;
 import org.springframework.jmx.MBeanServerNotFoundException;
 import org.springframework.jmx.support.NotificationListenerHolder;
-import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -49,24 +49,19 @@ import org.springframework.util.CollectionUtils;
 public class NotificationListenerRegistrar extends NotificationListenerHolder
 		implements InitializingBean, DisposableBean {
 
-	/** Logger available to subclasses. */
+	/** Logger available to subclasses */
 	protected final Log logger = LogFactory.getLog(getClass());
+
+	private MBeanServerConnection server;
+
+	private JMXServiceURL serviceUrl;
+
+	private Map<String, ?> environment;
+
+	private String agentId;
 
 	private final ConnectorDelegate connector = new ConnectorDelegate();
 
-	@Nullable
-	private MBeanServerConnection server;
-
-	@Nullable
-	private JMXServiceURL serviceUrl;
-
-	@Nullable
-	private Map<String, ?> environment;
-
-	@Nullable
-	private String agentId;
-
-	@Nullable
 	private ObjectName[] actualObjectNames;
 
 
@@ -82,7 +77,7 @@ public class NotificationListenerRegistrar extends NotificationListenerHolder
 	 * Specify the environment for the JMX connector.
 	 * @see javax.management.remote.JMXConnectorFactory#connect(javax.management.remote.JMXServiceURL, java.util.Map)
 	 */
-	public void setEnvironment(@Nullable Map<String, ?> environment) {
+	public void setEnvironment(Map<String, ?> environment) {
 		this.environment = environment;
 	}
 
@@ -93,7 +88,6 @@ public class NotificationListenerRegistrar extends NotificationListenerHolder
 	 * "environment[myKey]". This is particularly useful for
 	 * adding or overriding entries in child bean definitions.
 	 */
-	@Nullable
 	public Map<String, ?> getEnvironment() {
 		return this.environment;
 	}
@@ -118,7 +112,6 @@ public class NotificationListenerRegistrar extends NotificationListenerHolder
 	}
 
 
-	@Override
 	public void afterPropertiesSet() {
 		if (getNotificationListener() == null) {
 			throw new IllegalArgumentException("Property 'notificationListener' is required");
@@ -140,14 +133,12 @@ public class NotificationListenerRegistrar extends NotificationListenerHolder
 		}
 		try {
 			this.actualObjectNames = getResolvedObjectNames();
-			if (this.actualObjectNames != null) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Registering NotificationListener for MBeans " + Arrays.asList(this.actualObjectNames));
-				}
-				for (ObjectName actualObjectName : this.actualObjectNames) {
-					this.server.addNotificationListener(
-							actualObjectName, getNotificationListener(), getNotificationFilter(), getHandback());
-				}
+			if (logger.isDebugEnabled()) {
+				logger.debug("Registering NotificationListener for MBeans " + Arrays.asList(this.actualObjectNames));
+			}
+			for (ObjectName actualObjectName : this.actualObjectNames) {
+				this.server.addNotificationListener(
+						actualObjectName, getNotificationListener(), getNotificationFilter(), getHandback());
 			}
 		}
 		catch (IOException ex) {
@@ -162,10 +153,9 @@ public class NotificationListenerRegistrar extends NotificationListenerHolder
 	/**
 	 * Unregisters the specified {@code NotificationListener}.
 	 */
-	@Override
 	public void destroy() {
 		try {
-			if (this.server != null && this.actualObjectNames != null) {
+			if (this.actualObjectNames != null) {
 				for (ObjectName actualObjectName : this.actualObjectNames) {
 					try {
 						this.server.removeNotificationListener(

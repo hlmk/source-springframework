@@ -20,7 +20,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-import org.springframework.lang.Nullable;
 import org.springframework.remoting.support.RemoteInvocation;
 
 /**
@@ -41,7 +40,6 @@ public interface RmiInvocationHandler extends Remote {
 	 * @throws RemoteException in case of communication errors
 	 * @see RmiServiceExporter#getServiceInterface()
 	 */
-	@Nullable
 	public String getTargetInterfaceName() throws RemoteException;
 
 	/**
@@ -55,7 +53,6 @@ public interface RmiInvocationHandler extends Remote {
 	 * @throws IllegalAccessException if the method could not be accessed
 	 * @throws InvocationTargetException if the method invocation resulted in an exception
 	 */
-	@Nullable
 	public Object invoke(RemoteInvocation invocation)
 			throws RemoteException, NoSuchMethodException, IllegalAccessException, InvocationTargetException;
 

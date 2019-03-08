@@ -16,8 +16,10 @@
 
 package org.springframework.aop.support;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.springframework.tests.TestResourceUtils.qualifiedResource;
 
+import org.junit.Test;
 import org.springframework.aop.framework.Advised;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
@@ -29,14 +31,12 @@ import org.springframework.tests.sample.beans.Person;
 import org.springframework.tests.sample.beans.TestBean;
 import org.springframework.util.SerializationTestUtils;
 
-import static org.junit.Assert.*;
-import static org.springframework.tests.TestResourceUtils.*;
 
 /**
  * @author Rod Johnson
  * @author Chris Beams
  */
-public class RegexpMethodPointcutAdvisorIntegrationTests {
+public final class RegexpMethodPointcutAdvisorIntegrationTests {
 
 	private static final Resource CONTEXT =
 		qualifiedResource(RegexpMethodPointcutAdvisorIntegrationTests.class, "context.xml");

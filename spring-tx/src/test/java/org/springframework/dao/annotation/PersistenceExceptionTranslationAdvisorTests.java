@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package org.springframework.dao.annotation;
 
+import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import javax.persistence.PersistenceException;
 
-import org.junit.Test;
+import junit.framework.TestCase;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.dao.DataAccessException;
@@ -31,8 +31,6 @@ import org.springframework.dao.support.DataAccessUtilsTests.MapPersistenceExcept
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.stereotype.Repository;
 
-import static org.junit.Assert.*;
-
 /**
  * Tests for PersistenceExceptionTranslationAdvisor's exception translation, as applied by
  * PersistenceExceptionTranslationPostProcessor.
@@ -40,7 +38,7 @@ import static org.junit.Assert.*;
  * @author Rod Johnson
  * @author Juergen Hoeller
  */
-public class PersistenceExceptionTranslationAdvisorTests {
+public class PersistenceExceptionTranslationAdvisorTests extends TestCase {
 
 	private RuntimeException doNotTranslate = new RuntimeException();
 
@@ -59,8 +57,7 @@ public class PersistenceExceptionTranslationAdvisorTests {
 		pf.addAdvisor(new PersistenceExceptionTranslationAdvisor(pet, Repository.class));
 	}
 
-	@Test
-	public void noTranslationNeeded() {
+	public void testNoTranslationNeeded() {
 		RepositoryInterfaceImpl target = new RepositoryInterfaceImpl();
 		RepositoryInterface ri = createProxy(target);
 
@@ -84,8 +81,7 @@ public class PersistenceExceptionTranslationAdvisorTests {
 		}
 	}
 
-	@Test
-	public void translationNotNeededForTheseExceptions() {
+	public void testTranslationNotNeededForTheseExceptions() {
 		RepositoryInterfaceImpl target = new StereotypedRepositoryInterfaceImpl();
 		RepositoryInterface ri = createProxy(target);
 
@@ -109,28 +105,23 @@ public class PersistenceExceptionTranslationAdvisorTests {
 		}
 	}
 
-	@Test
-	public void translationNeededForTheseExceptions() {
+	public void testTranslationNeededForTheseExceptions() {
 		doTestTranslationNeededForTheseExceptions(new StereotypedRepositoryInterfaceImpl());
 	}
 
-	@Test
-	public void translationNeededForTheseExceptionsOnSuperclass() {
+	public void testTranslationNeededForTheseExceptionsOnSuperclass() {
 		doTestTranslationNeededForTheseExceptions(new MyStereotypedRepositoryInterfaceImpl());
 	}
 
-	@Test
-	public void translationNeededForTheseExceptionsWithCustomStereotype() {
+	public void testTranslationNeededForTheseExceptionsWithCustomStereotype() {
 		doTestTranslationNeededForTheseExceptions(new CustomStereotypedRepositoryInterfaceImpl());
 	}
 
-	@Test
-	public void translationNeededForTheseExceptionsOnInterface() {
+	public void testTranslationNeededForTheseExceptionsOnInterface() {
 		doTestTranslationNeededForTheseExceptions(new MyInterfaceStereotypedRepositoryInterfaceImpl());
 	}
 
-	@Test
-	public void translationNeededForTheseExceptionsOnInheritedInterface() {
+	public void testTranslationNeededForTheseExceptionsOnInheritedInterface() {
 		doTestTranslationNeededForTheseExceptions(new MyInterfaceInheritedStereotypedRepositoryInterfaceImpl());
 	}
 
@@ -167,6 +158,7 @@ public class PersistenceExceptionTranslationAdvisorTests {
 		void throwsPersistenceException() throws PersistenceException;
 	}
 
+
 	public static class RepositoryInterfaceImpl implements RepositoryInterface {
 
 		private RuntimeException runtimeException;
@@ -190,37 +182,52 @@ public class PersistenceExceptionTranslationAdvisorTests {
 		}
 	}
 
+
 	@Repository
 	public static class StereotypedRepositoryInterfaceImpl extends RepositoryInterfaceImpl {
 		// Extends above class just to add repository annotation
 	}
 
+
 	public static class MyStereotypedRepositoryInterfaceImpl extends StereotypedRepositoryInterfaceImpl {
+
 	}
+
 
 	@MyRepository
 	public static class CustomStereotypedRepositoryInterfaceImpl extends RepositoryInterfaceImpl {
+
 	}
+
 
 	@Target({ElementType.TYPE})
 	@Retention(RetentionPolicy.RUNTIME)
 	@Repository
 	public @interface MyRepository {
+
 	}
+
 
 	@Repository
 	public interface StereotypedInterface {
+
 	}
+
 
 	public static class MyInterfaceStereotypedRepositoryInterfaceImpl extends RepositoryInterfaceImpl
 			implements StereotypedInterface {
+
 	}
 
+
 	public interface StereotypedInheritingInterface extends StereotypedInterface {
+
 	}
+
 
 	public static class MyInterfaceInheritedStereotypedRepositoryInterfaceImpl extends RepositoryInterfaceImpl
 			implements StereotypedInheritingInterface {
+
 	}
 
 }

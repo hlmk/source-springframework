@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.springframework.test.context.hierarchies.standard;
 
+import static org.junit.Assert.*;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -26,8 +27,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextHierarchy;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Sam Brannen
@@ -40,7 +39,7 @@ import static org.junit.Assert.*;
 public class SingleTestClassWithTwoLevelContextHierarchyTests {
 
 	@Configuration
-	public static class ParentConfig {
+	static class ParentConfig {
 
 		@Bean
 		public String foo() {
@@ -54,7 +53,7 @@ public class SingleTestClassWithTwoLevelContextHierarchyTests {
 	}
 
 	@Configuration
-	public static class ChildConfig {
+	static class ChildConfig {
 
 		@Bean
 		public String bar() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,11 @@ import java.util.Properties;
 
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.framework.AbstractSingletonProxyFactoryBean;
-import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.ListableBeanFactory;
-import org.springframework.lang.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
@@ -80,25 +78,26 @@ import org.springframework.transaction.PlatformTransactionManager;
  * This reduces the per-bean definition effort to a minimum.
  *
  * <pre code="class">
- * &lt;bean id="baseTransactionProxy" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean"
- *     abstract="true"&gt;
- *   &lt;property name="transactionManager" ref="transactionManager"/&gt;
- *   &lt;property name="transactionAttributes"&gt;
- *     &lt;props&gt;
- *       &lt;prop key="insert*"&gt;PROPAGATION_REQUIRED&lt;/prop&gt;
- *       &lt;prop key="update*"&gt;PROPAGATION_REQUIRED&lt;/prop&gt;
- *       &lt;prop key="*"&gt;PROPAGATION_REQUIRED,readOnly&lt;/prop&gt;
- *     &lt;/props&gt;
- *   &lt;/property&gt;
- * &lt;/bean&gt;
+ * {@code
+ * <bean id="baseTransactionProxy" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean"
+ *     abstract="true">
+ *   <property name="transactionManager" ref="transactionManager"/>
+ *   <property name="transactionAttributes">
+ *     <props>
+ *       <prop key="insert*">PROPAGATION_REQUIRED</prop>
+ *       <prop key="update*">PROPAGATION_REQUIRED</prop>
+ *       <prop key="*">PROPAGATION_REQUIRED,readOnly</prop>
+ *     </props>
+ *   </property>
+ * </bean>
  *
- * &lt;bean id="myProxy" parent="baseTransactionProxy"&gt;
- *   &lt;property name="target" ref="myTarget"/&gt;
- * &lt;/bean&gt;
+ * <bean id="myProxy" parent="baseTransactionProxy">
+ *   <property name="target" ref="myTarget"/>
+ * </bean>
  *
- * &lt;bean id="yourProxy" parent="baseTransactionProxy"&gt;
- *   &lt;property name="target" ref="yourTarget"/&gt;
- * &lt;/bean&gt;</pre>
+ * <bean id="yourProxy" parent="baseTransactionProxy">
+ *   <property name="target" ref="yourTarget"/>
+ * </bean>}</pre>
  *
  * @author Juergen Hoeller
  * @author Dmitriy Kopylenko
@@ -117,12 +116,11 @@ public class TransactionProxyFactoryBean extends AbstractSingletonProxyFactoryBe
 
 	private final TransactionInterceptor transactionInterceptor = new TransactionInterceptor();
 
-	@Nullable
 	private Pointcut pointcut;
 
 
 	/**
-	 * Set the default transaction manager. This will perform actual
+	 * Set the transaction manager. This will perform actual
 	 * transaction management: This class is just a way of invoking it.
 	 * @see TransactionInterceptor#setTransactionManager
 	 */
@@ -180,7 +178,6 @@ public class TransactionProxyFactoryBean extends AbstractSingletonProxyFactoryBe
 	 * @see org.springframework.beans.factory.BeanFactory#getBean(Class)
 	 * @see org.springframework.transaction.PlatformTransactionManager
 	 */
-	@Override
 	public void setBeanFactory(BeanFactory beanFactory) {
 		this.transactionInterceptor.setBeanFactory(beanFactory);
 	}
@@ -199,15 +196,6 @@ public class TransactionProxyFactoryBean extends AbstractSingletonProxyFactoryBe
 			// Rely on default pointcut.
 			return new TransactionAttributeSourceAdvisor(this.transactionInterceptor);
 		}
-	}
-
-	/**
-	 * As of 4.2, this method adds {@link TransactionalProxy} to the set of
-	 * proxy interfaces in order to avoid re-processing of transaction metadata.
-	 */
-	@Override
-	protected void postProcessProxyFactory(ProxyFactory proxyFactory) {
-		proxyFactory.addInterface(TransactionalProxy.class);
 	}
 
 }

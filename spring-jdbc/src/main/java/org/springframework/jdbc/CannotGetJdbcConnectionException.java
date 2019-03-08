@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,11 @@ package org.springframework.jdbc;
 import java.sql.SQLException;
 
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.lang.Nullable;
 
 /**
  * Fatal exception thrown when we can't connect to an RDBMS using JDBC.
  *
  * @author Rod Johnson
- * @author Juergen Hoeller
  */
 @SuppressWarnings("serial")
 public class CannotGetJdbcConnectionException extends DataAccessResourceFailureException {
@@ -33,18 +31,21 @@ public class CannotGetJdbcConnectionException extends DataAccessResourceFailureE
 	/**
 	 * Constructor for CannotGetJdbcConnectionException.
 	 * @param msg the detail message
-	 * @since 5.0
+	 * @param ex SQLException root cause
 	 */
-	public CannotGetJdbcConnectionException(String msg) {
-		super(msg);
+	public CannotGetJdbcConnectionException(String msg, SQLException ex) {
+		super(msg, ex);
 	}
 
 	/**
 	 * Constructor for CannotGetJdbcConnectionException.
 	 * @param msg the detail message
-	 * @param ex the root cause SQLException
+	 * @param ex ClassNotFoundException root cause
+	 * @deprecated since Spring 2.5, in favor of throwing an
+	 * IllegalStateException in case of the driver not being found
 	 */
-	public CannotGetJdbcConnectionException(String msg, @Nullable SQLException ex) {
+	@Deprecated
+	public CannotGetJdbcConnectionException(String msg, ClassNotFoundException ex) {
 		super(msg, ex);
 	}
 

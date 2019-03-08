@@ -22,15 +22,15 @@ import org.springframework.beans.factory.config.BeanDefinitionHolder;
 
 /**
  * Interface used by the {@link DefaultBeanDefinitionDocumentReader}
- * to handle custom, nested (directly under a {@code <bean>}) tags.
+ * to handle custom, nested (directly under a {@code &lt;bean&gt;}) tags.
  *
  * <p>Decoration may also occur based on custom attributes applied to the
- * {@code <bean>} tag. Implementations are free to turn the metadata in the
+ * {@code &lt;bean&gt;} tag. Implementations are free to turn the metadata in the
  * custom tag into as many
  * {@link org.springframework.beans.factory.config.BeanDefinition BeanDefinitions} as
  * required and to transform the
  * {@link org.springframework.beans.factory.config.BeanDefinition} of the enclosing
- * {@code <bean>} tag, potentially even returning a completely different
+ * {@code &lt;bean&gt;} tag, potentially even returning a completely different
  * {@link org.springframework.beans.factory.config.BeanDefinition} to replace the
  * original.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,6 @@
 package org.springframework.core.env;
 
 import java.util.List;
-
-import org.springframework.lang.Nullable;
-import org.springframework.util.StringUtils;
 
 /**
  * {@link CommandLinePropertySource} implementation backed by a simple String array.
@@ -98,21 +95,12 @@ public class SimpleCommandLinePropertySource extends CommandLinePropertySource<C
 		super(name, new SimpleCommandLineArgsParser().parse(args));
 	}
 
-	/**
-	 * Get the property names for the option arguments.
-	 */
-	@Override
-	public String[] getPropertyNames() {
-		return StringUtils.toStringArray(this.source.getOptionNames());
-	}
-
 	@Override
 	protected boolean containsOption(String name) {
 		return this.source.containsOption(name);
 	}
 
 	@Override
-	@Nullable
 	protected List<String> getOptionValues(String name) {
 		return this.source.getOptionValues(name);
 	}

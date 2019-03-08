@@ -38,7 +38,6 @@ import org.springframework.util.ObjectUtils;
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
- * @author Stephane Nicoll
  * @since 15 April 2001
  */
 public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOther, Comparable<Object> {
@@ -59,8 +58,6 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 
 	private boolean jedi;
 
-	private ITestBean spouse;
-
 	protected ITestBean[] spouses;
 
 	private String touchy;
@@ -79,13 +76,13 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 
 	private Float myFloat = new Float(0.0);
 
-	private Collection<? super Object> friends = new LinkedList<>();
+	private Collection<? super Object> friends = new LinkedList<Object>();
 
-	private Set<?> someSet = new HashSet<>();
+	private Set<?> someSet = new HashSet<Object>();
 
-	private Map<?, ?> someMap = new HashMap<>();
+	private Map<?, ?> someMap = new HashMap<Object, Object>();
 
-	private List<?> someList = new ArrayList<>();
+	private List<?> someList = new ArrayList<Object>();
 
 	private Properties someProperties = new Properties();
 
@@ -116,7 +113,7 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 	}
 
 	public TestBean(ITestBean spouse) {
-		this.spouse = spouse;
+		this.spouses = new ITestBean[] {spouse};
 	}
 
 	public TestBean(String name, int age) {
@@ -125,7 +122,7 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 	}
 
 	public TestBean(ITestBean spouse, Properties someProperties) {
-		this.spouse = spouse;
+		this.spouses = new ITestBean[] {spouse};
 		this.someProperties = someProperties;
 	}
 
@@ -213,17 +210,17 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 
 	@Override
 	public ITestBean getSpouse() {
-		return this.spouse;
+		return (spouses != null ? spouses[0] : null);
 	}
 
 	@Override
 	public void setSpouse(ITestBean spouse) {
-		this.spouse = spouse;
+		this.spouses = new ITestBean[] {spouse};
 	}
 
 	@Override
 	public ITestBean[] getSpouses() {
-		return (spouse != null ? new ITestBean[] {spouse} : null);
+		return spouses;
 	}
 
 	public String getTouchy() {

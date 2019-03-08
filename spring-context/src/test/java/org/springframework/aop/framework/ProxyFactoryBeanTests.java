@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,17 @@
 
 package org.springframework.aop.framework;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -28,9 +39,6 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.junit.Before;
 import org.junit.Test;
-import test.mixin.Lockable;
-import test.mixin.LockedException;
-
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.IntroductionAdvisor;
 import org.springframework.aop.IntroductionInterceptor;
@@ -49,7 +57,6 @@ import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.TestListener;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.lang.Nullable;
 import org.springframework.tests.TimeStamped;
 import org.springframework.tests.aop.advice.CountingBeforeAdvice;
 import org.springframework.tests.aop.advice.MyThrowsHandler;
@@ -61,8 +68,8 @@ import org.springframework.tests.sample.beans.SideEffectBean;
 import org.springframework.tests.sample.beans.TestBean;
 import org.springframework.util.SerializationTestUtils;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import test.mixin.Lockable;
+import test.mixin.LockedException;
 
 /**
  * @since 13.03.2003
@@ -70,7 +77,7 @@ import static org.junit.Assert.*;
  * @author Juergen Hoeller
  * @author Chris Beams
  */
-public class ProxyFactoryBeanTests {
+public final class ProxyFactoryBeanTests {
 
 	private static final Class<?> CLASS = ProxyFactoryBeanTests.class;
 	private static final String CLASSNAME = CLASS.getSimpleName();
@@ -89,7 +96,6 @@ public class ProxyFactoryBeanTests {
 
 	private BeanFactory factory;
 
-
 	@Before
 	public void setUp() throws Exception {
 		DefaultListableBeanFactory parent = new DefaultListableBeanFactory();
@@ -98,7 +104,6 @@ public class ProxyFactoryBeanTests {
 		new XmlBeanDefinitionReader((BeanDefinitionRegistry) this.factory).loadBeanDefinitions(
 				new ClassPathResource(CONTEXT, getClass()));
 	}
-
 
 	@Test
 	public void testIsDynamicProxyWhenInterfaceSpecified() {
@@ -145,7 +150,7 @@ public class ProxyFactoryBeanTests {
 		catch (BeanCreationException ex) {
 			// Root cause of the problem must be an AOP exception
 			AopConfigException aex = (AopConfigException) ex.getCause();
-			assertTrue(aex.getMessage().contains("TargetSource"));
+			assertTrue(aex.getMessage().indexOf("TargetSource") != -1);
 		}
 	}
 
@@ -160,7 +165,7 @@ public class ProxyFactoryBeanTests {
 		catch (BeanCreationException ex) {
 			// Root cause of the problem must be an AOP exception
 			AopConfigException aex = (AopConfigException) ex.getCause();
-			assertTrue(aex.getMessage().contains("interceptorNames"));
+			assertTrue(aex.getMessage().indexOf("interceptorNames") != -1);
 		}
 	}
 
@@ -260,22 +265,22 @@ public class ProxyFactoryBeanTests {
 
 		// Check it works without AOP
 		SideEffectBean raw = (SideEffectBean) bf.getBean("prototypeTarget");
-		assertEquals(INITIAL_COUNT, raw.getCount());
+		assertEquals(INITIAL_COUNT, raw.getCount() );
 		raw.doWork();
-		assertEquals(INITIAL_COUNT+1, raw.getCount());
+		assertEquals(INITIAL_COUNT+1, raw.getCount() );
 		raw = (SideEffectBean) bf.getBean("prototypeTarget");
-		assertEquals(INITIAL_COUNT, raw.getCount());
+		assertEquals(INITIAL_COUNT, raw.getCount() );
 
 		// Now try with advised instances
 		SideEffectBean prototype2FirstInstance = (SideEffectBean) bf.getBean(beanName);
-		assertEquals(INITIAL_COUNT, prototype2FirstInstance.getCount());
+		assertEquals(INITIAL_COUNT, prototype2FirstInstance.getCount() );
 		prototype2FirstInstance.doWork();
-		assertEquals(INITIAL_COUNT + 1, prototype2FirstInstance.getCount());
+		assertEquals(INITIAL_COUNT + 1, prototype2FirstInstance.getCount() );
 
 		SideEffectBean prototype2SecondInstance = (SideEffectBean) bf.getBean(beanName);
 		assertFalse("Prototypes are not ==", prototype2FirstInstance == prototype2SecondInstance);
-		assertEquals(INITIAL_COUNT, prototype2SecondInstance.getCount());
-		assertEquals(INITIAL_COUNT + 1, prototype2FirstInstance.getCount());
+		assertEquals(INITIAL_COUNT, prototype2SecondInstance.getCount() );
+		assertEquals(INITIAL_COUNT + 1, prototype2FirstInstance.getCount() );
 
 		return prototype2FirstInstance;
 	}
@@ -332,6 +337,13 @@ public class ProxyFactoryBeanTests {
 		}
 		catch (Exception thrown) {
 			assertTrue(thrown == ex);
+		}
+	}
+
+	public static class DependsOnITestBean {
+		public final ITestBean tb;
+		public DependsOnITestBean(ITestBean tb) {
+			this.tb = tb;
 		}
 	}
 
@@ -398,7 +410,7 @@ public class ProxyFactoryBeanTests {
 		config.removeAdvice(debugInterceptor);
 		it.getSpouse();
 
-		// Still invoked with old reference
+		// Still invoked wiht old reference
 		assertEquals(2, debugInterceptor.getCount());
 
 		// not invoked with new object
@@ -707,15 +719,13 @@ public class ProxyFactoryBeanTests {
 		ITestBean proxy = (ITestBean) fb.getObject();
 		assertTrue(AopUtils.isJdkDynamicProxy(proxy));
 	}
-
-
 	/**
 	 * Fires only on void methods. Saves list of methods intercepted.
 	 */
 	@SuppressWarnings("serial")
 	public static class PointcutForVoid extends DefaultPointcutAdvisor {
 
-		public static List<String> methodNames = new LinkedList<>();
+		public static List<String> methodNames = new LinkedList<String>();
 
 		public static void reset() {
 			methodNames.clear();
@@ -731,7 +741,7 @@ public class ProxyFactoryBeanTests {
 			});
 			setPointcut(new DynamicMethodMatcherPointcut() {
 				@Override
-				public boolean matches(Method m, @Nullable Class<?> targetClass, Object... args) {
+				public boolean matches(Method m, Class<?> targetClass, Object[] args) {
 					return m.getReturnType() == Void.TYPE;
 				}
 			});
@@ -739,20 +749,10 @@ public class ProxyFactoryBeanTests {
 	}
 
 
-	public static class DependsOnITestBean {
-
-		public final ITestBean tb;
-
-		public DependsOnITestBean(ITestBean tb) {
-			this.tb = tb;
-		}
-	}
-
 	/**
 	 * Aspect interface
 	 */
 	public interface AddedGlobalInterface {
-
 		int globalsAdded();
 	}
 

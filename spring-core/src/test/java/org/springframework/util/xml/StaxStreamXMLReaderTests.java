@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.util.xml;
 
 import java.io.InputStream;
 import java.io.StringReader;
+
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -30,7 +31,8 @@ import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.BDDMockito.*;
 
 public class StaxStreamXMLReaderTests extends AbstractStaxXMLReaderTestCase {
 
@@ -42,13 +44,13 @@ public class StaxStreamXMLReaderTests extends AbstractStaxXMLReaderTestCase {
 	}
 
 	@Test
-	public void partial() throws Exception {
+	public void testPartial() throws Exception {
 		XMLInputFactory inputFactory = XMLInputFactory.newInstance();
 		XMLStreamReader streamReader = inputFactory.createXMLStreamReader(new StringReader(CONTENT));
-		streamReader.nextTag();  // skip to root
+		streamReader.nextTag(); // skip to root
 		assertEquals("Invalid element", new QName("http://springframework.org/spring-ws", "root"),
 				streamReader.getName());
-		streamReader.nextTag();  // skip to child
+		streamReader.nextTag(); // skip to child
 		assertEquals("Invalid element", new QName("http://springframework.org/spring-ws", "child"),
 				streamReader.getName());
 		StaxStreamXMLReader xmlReader = new StaxStreamXMLReader(streamReader);

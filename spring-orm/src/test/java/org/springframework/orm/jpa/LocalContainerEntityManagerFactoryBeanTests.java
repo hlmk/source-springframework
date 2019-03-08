@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.orm.jpa;
 
 import java.util.Map;
 import java.util.Properties;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -26,10 +27,8 @@ import javax.persistence.PersistenceException;
 import javax.persistence.spi.PersistenceProvider;
 import javax.persistence.spi.PersistenceUnitInfo;
 import javax.persistence.spi.PersistenceUnitTransactionType;
-import javax.persistence.spi.ProviderUtil;
 
 import org.junit.Test;
-
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -47,7 +46,6 @@ import static org.mockito.BDDMockito.*;
  * @author Juergen Hoeller
  * @author Phillip Webb
  */
-@SuppressWarnings("rawtypes")
 public class LocalContainerEntityManagerFactoryBeanTests extends AbstractEntityManagerFactoryBeanTests {
 
 	// Static fields set by inner class DummyPersistenceProvider
@@ -317,21 +315,6 @@ public class LocalContainerEntityManagerFactoryBeanTests extends AbstractEntityM
 
 		@Override
 		public EntityManagerFactory createEntityManagerFactory(String emfName, Map properties) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public ProviderUtil getProviderUtil() {
-			throw new UnsupportedOperationException();
-		}
-
-		// JPA 2.1 method
-		public void generateSchema(PersistenceUnitInfo persistenceUnitInfo, Map map) {
-			throw new UnsupportedOperationException();
-		}
-
-		// JPA 2.1 method
-		public boolean generateSchema(String persistenceUnitName, Map map) {
 			throw new UnsupportedOperationException();
 		}
 	}

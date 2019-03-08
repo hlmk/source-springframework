@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package org.springframework.ejb.access;
 
 import java.lang.reflect.Proxy;
 import java.rmi.RemoteException;
+
 import javax.ejb.CreateException;
 import javax.ejb.EJBHome;
 import javax.ejb.EJBObject;
 import javax.naming.NamingException;
 
 import org.junit.Test;
-
 import org.springframework.jndi.JndiTemplate;
 import org.springframework.remoting.RemoteAccessException;
 
@@ -279,25 +279,26 @@ public class SimpleRemoteStatelessSessionProxyFactoryBeanTests extends SimpleRem
 	}
 
 
-	protected interface MyHome extends EJBHome {
+	protected static interface MyHome extends EJBHome {
 
 		MyBusinessMethods create() throws CreateException, RemoteException;
 	}
 
 
-	protected interface MyBusinessMethods  {
+	protected static interface MyBusinessMethods  {
 
 		int getValue() throws RemoteException;
 	}
 
 
-	protected interface MyLocalBusinessMethods  {
+	protected static interface MyLocalBusinessMethods  {
 
 		int getValue();
 	}
 
 
-	protected interface MyEjb extends EJBObject, MyBusinessMethods {
+	protected static interface MyEjb extends EJBObject, MyBusinessMethods {
+
 	}
 
 }

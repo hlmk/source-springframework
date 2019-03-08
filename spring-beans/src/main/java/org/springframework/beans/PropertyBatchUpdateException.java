@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.beans;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
@@ -39,8 +38,8 @@ import org.springframework.util.ObjectUtils;
 @SuppressWarnings("serial")
 public class PropertyBatchUpdateException extends BeansException {
 
-	/** List of PropertyAccessException objects. */
-	private final PropertyAccessException[] propertyAccessExceptions;
+	/** List of PropertyAccessException objects */
+	private PropertyAccessException[] propertyAccessExceptions;
 
 
 	/**
@@ -48,7 +47,7 @@ public class PropertyBatchUpdateException extends BeansException {
 	 * @param propertyAccessExceptions the List of PropertyAccessExceptions
 	 */
 	public PropertyBatchUpdateException(PropertyAccessException[] propertyAccessExceptions) {
-		super(null, null);
+		super(null);
 		Assert.notEmpty(propertyAccessExceptions, "At least 1 PropertyAccessException required");
 		this.propertyAccessExceptions = propertyAccessExceptions;
 	}
@@ -72,7 +71,6 @@ public class PropertyBatchUpdateException extends BeansException {
 	/**
 	 * Return the exception for this field, or {@code null} if there isn't any.
 	 */
-	@Nullable
 	public PropertyAccessException getPropertyAccessException(String propertyName) {
 		for (PropertyAccessException pae : this.propertyAccessExceptions) {
 			if (ObjectUtils.nullSafeEquals(propertyName, pae.getPropertyName())) {
@@ -132,7 +130,7 @@ public class PropertyBatchUpdateException extends BeansException {
 	}
 
 	@Override
-	public boolean contains(@Nullable Class<?> exType) {
+	public boolean contains(Class<?> exType) {
 		if (exType == null) {
 			return false;
 		}

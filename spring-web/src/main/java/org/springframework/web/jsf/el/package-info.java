@@ -1,10 +1,12 @@
+
 /**
- * ELResolvers for integrating a JSF web layer with a Spring service layer
+ *
+ * Support classes for integrating a JSF 1.2 web tier with a Spring middle tier
  * which is hosted in a Spring root WebApplicationContext.
+ *
+ * <p>Supports JSF 1.2's ELResolver mechanism, providing closer integration
+ * than JSF 1.1's VariableResolver mechanism allowed for.
+ *
  */
-@NonNullApi
-@NonNullFields
 package org.springframework.web.jsf.el;
 
-import org.springframework.lang.NonNullApi;
-import org.springframework.lang.NonNullFields;

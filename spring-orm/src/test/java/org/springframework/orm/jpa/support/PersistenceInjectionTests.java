@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import javax.persistence.PersistenceContextType;
 import javax.persistence.PersistenceProperty;
 import javax.persistence.PersistenceUnit;
 
+import org.hibernate.ejb.HibernateEntityManager;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -37,7 +38,6 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.lang.Nullable;
 import org.springframework.orm.jpa.AbstractEntityManagerFactoryBeanTests;
 import org.springframework.orm.jpa.DefaultJpaDialect;
 import org.springframework.orm.jpa.EntityManagerFactoryInfo;
@@ -58,7 +58,6 @@ import static org.mockito.BDDMockito.*;
  * @author Juergen Hoeller
  * @author Phillip Webb
  */
-@SuppressWarnings("resource")
 public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanTests {
 
 	@Test
@@ -164,7 +163,7 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 	@Test
 	public void testPublicExtendedPersistenceContextSetterWithSerialization() throws Exception {
 		DummyInvocationHandler ih = new DummyInvocationHandler();
-		Object mockEm = Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] {EntityManager.class}, ih);
+		Object mockEm = Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] {EntityManager.class}, ih);
 		given(mockEmf.createEntityManager()).willReturn((EntityManager) mockEm);
 
 		GenericApplicationContext gac = new GenericApplicationContext();
@@ -190,7 +189,7 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 	}
 
 	@Test
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("unchecked")
 	public void testPublicExtendedPersistenceContextSetterWithEntityManagerInfoAndSerialization() throws Exception {
 		EntityManager mockEm = mock(EntityManager.class, withSettings().serializable());
 		given(mockEm.isOpen()).willReturn(true);
@@ -331,15 +330,14 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 		assertSame(mockEmf2, bean2.emf);
 	}
 
-	@Test
 	@Ignore
-	public void testPersistenceUnitsFromJndi() {
+	public void ignoreTestPersistenceUnitsFromJndi() {
 		EntityManager mockEm = mock(EntityManager.class);
 		given(mockEmf.createEntityManager()).willReturn(mockEm);
 
 		EntityManagerFactoryWithInfo mockEmf2 = mock(EntityManagerFactoryWithInfo.class);
 
-		Map<String, String> persistenceUnits = new HashMap<>();
+		Map<String, String> persistenceUnits = new HashMap<String, String>();
 		persistenceUnits.put("", "pu1");
 		persistenceUnits.put("Person", "pu2");
 		ExpectedLookupTemplate jt = new ExpectedLookupTemplate();
@@ -378,7 +376,7 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 	public void testPersistenceUnitsFromJndiWithDefaultUnit() {
 		EntityManagerFactoryWithInfo mockEmf2 = mock(EntityManagerFactoryWithInfo.class);
 
-		Map<String, String> persistenceUnits = new HashMap<>();
+		Map<String, String> persistenceUnits = new HashMap<String, String>();
 		persistenceUnits.put("System", "pu1");
 		persistenceUnits.put("Person", "pu2");
 		ExpectedLookupTemplate jt = new ExpectedLookupTemplate();
@@ -406,7 +404,7 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 
 	@Test
 	public void testSinglePersistenceUnitFromJndi() {
-		Map<String, String> persistenceUnits = new HashMap<>();
+		Map<String, String> persistenceUnits = new HashMap<String, String>();
 		persistenceUnits.put("Person", "pu1");
 		ExpectedLookupTemplate jt = new ExpectedLookupTemplate();
 		jt.addObject("java:comp/env/pu1", mockEmf);
@@ -435,10 +433,10 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 		EntityManager mockEm2 = mock(EntityManager.class);
 		EntityManager mockEm3 = mock(EntityManager.class);
 
-		Map<String, String> persistenceContexts = new HashMap<>();
+		Map<String, String> persistenceContexts = new HashMap<String, String>();
 		persistenceContexts.put("", "pc1");
 		persistenceContexts.put("Person", "pc2");
-		Map<String, String> extendedPersistenceContexts = new HashMap<>();
+		Map<String, String> extendedPersistenceContexts = new HashMap<String, String>();
 		extendedPersistenceContexts .put("", "pc3");
 		ExpectedLookupTemplate jt = new ExpectedLookupTemplate();
 		jt.addObject("java:comp/env/pc1", mockEm);
@@ -475,10 +473,10 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 		EntityManager mockEm2 = mock(EntityManager.class);
 		EntityManager mockEm3 = mock(EntityManager.class);
 
-		Map<String, String> persistenceContexts = new HashMap<>();
+		Map<String, String> persistenceContexts = new HashMap<String, String>();
 		persistenceContexts.put("System", "pc1");
 		persistenceContexts.put("Person", "pc2");
-		Map<String, String> extendedPersistenceContexts = new HashMap<>();
+		Map<String, String> extendedPersistenceContexts = new HashMap<String, String>();
 		extendedPersistenceContexts .put("System", "pc3");
 		ExpectedLookupTemplate jt = new ExpectedLookupTemplate();
 		jt.addObject("java:comp/env/pc1", mockEm);
@@ -515,9 +513,9 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 		EntityManager mockEm = mock(EntityManager.class);
 		EntityManager mockEm2 = mock(EntityManager.class);
 
-		Map<String, String> persistenceContexts = new HashMap<>();
+		Map<String, String> persistenceContexts = new HashMap<String, String>();
 		persistenceContexts.put("System", "pc1");
-		Map<String, String> extendedPersistenceContexts = new HashMap<>();
+		Map<String, String> extendedPersistenceContexts = new HashMap<String, String>();
 		extendedPersistenceContexts .put("System", "pc2");
 		ExpectedLookupTemplate jt = new ExpectedLookupTemplate();
 		jt.addObject("java:comp/env/pc1", mockEm);
@@ -544,9 +542,9 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 
 	@Test
 	public void testFieldOfWrongTypeAnnotatedWithPersistenceUnit() {
-		PersistenceAnnotationBeanPostProcessor pabpp = new PersistenceAnnotationBeanPostProcessor();
+		PersistenceAnnotationBeanPostProcessor babpp = new PersistenceAnnotationBeanPostProcessor();
 		try {
-			pabpp.postProcessProperties(null, new FieldOfWrongTypeAnnotatedWithPersistenceUnit(), "bean");
+			babpp.postProcessPropertyValues(null, null, new FieldOfWrongTypeAnnotatedWithPersistenceUnit(), "bean");
 			fail("Can't inject this field");
 		}
 		catch (IllegalStateException ex) {
@@ -556,9 +554,9 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 
 	@Test
 	public void testSetterOfWrongTypeAnnotatedWithPersistenceUnit() {
-		PersistenceAnnotationBeanPostProcessor pabpp = new PersistenceAnnotationBeanPostProcessor();
+		PersistenceAnnotationBeanPostProcessor babpp = new PersistenceAnnotationBeanPostProcessor();
 		try {
-			pabpp.postProcessProperties(null, new SetterOfWrongTypeAnnotatedWithPersistenceUnit(), "bean");
+			babpp.postProcessPropertyValues(null, null, new SetterOfWrongTypeAnnotatedWithPersistenceUnit(), "bean");
 			fail("Can't inject this setter");
 		}
 		catch (IllegalStateException ex) {
@@ -568,9 +566,9 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 
 	@Test
 	public void testSetterWithNoArgs() {
-		PersistenceAnnotationBeanPostProcessor pabpp = new PersistenceAnnotationBeanPostProcessor();
+		PersistenceAnnotationBeanPostProcessor babpp = new PersistenceAnnotationBeanPostProcessor();
 		try {
-			pabpp.postProcessProperties(null, new SetterWithNoArgs(), "bean");
+			babpp.postProcessPropertyValues(null, null, new SetterWithNoArgs(), "bean");
 			fail("Can't inject this setter");
 		}
 		catch (IllegalStateException ex) {
@@ -578,28 +576,28 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 		}
 	}
 
-	@Test
-	public void testNoPropertiesPassedIn() {
+	@Ignore
+	public void ignoreTestNoPropertiesPassedIn() {
 		EntityManager mockEm = mock(EntityManager.class);
 		given(mockEmf.createEntityManager()).willReturn(mockEm);
 
-		PersistenceAnnotationBeanPostProcessor pabpp = new MockPersistenceAnnotationBeanPostProcessor();
+		PersistenceAnnotationBeanPostProcessor babpp = new MockPersistenceAnnotationBeanPostProcessor();
 		DefaultPrivatePersistenceContextFieldExtended dppcf = new DefaultPrivatePersistenceContextFieldExtended();
-		pabpp.postProcessProperties(null, dppcf, "bean");
+		babpp.postProcessAfterInstantiation(dppcf, "bean name does not matter");
 		assertNotNull(dppcf.em);
 	}
 
-	@Test
-	public void testPropertiesPassedIn() {
+	@Ignore
+	public void ignoreTestPropertiesPassedIn() {
 		Properties props = new Properties();
 		props.put("foo", "bar");
 		EntityManager mockEm = mock(EntityManager.class);
 		given(mockEmf.createEntityManager(props)).willReturn(mockEm);
 
-		PersistenceAnnotationBeanPostProcessor pabpp = new MockPersistenceAnnotationBeanPostProcessor();
+		PersistenceAnnotationBeanPostProcessor babpp = new MockPersistenceAnnotationBeanPostProcessor();
 		DefaultPrivatePersistenceContextFieldExtendedWithProps dppcf =
 				new DefaultPrivatePersistenceContextFieldExtendedWithProps();
-		pabpp.postProcessProperties(null, dppcf, "bean");
+		babpp.postProcessAfterInstantiation(dppcf, "bean name does not matter");
 		assertNotNull(dppcf.em);
 	}
 
@@ -612,10 +610,10 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 		given(em.getDelegate()).willReturn(new Object());
 		given(em.isOpen()).willReturn(true);
 
-		PersistenceAnnotationBeanPostProcessor pabpp = new MockPersistenceAnnotationBeanPostProcessor();
+		PersistenceAnnotationBeanPostProcessor babpp = new MockPersistenceAnnotationBeanPostProcessor();
 		DefaultPrivatePersistenceContextFieldWithProperties transactionalField =
 				new DefaultPrivatePersistenceContextFieldWithProperties();
-		pabpp.postProcessProperties(null, transactionalField, "bean");
+		babpp.postProcessPropertyValues(null, null, transactionalField, "bean");
 
 		assertNotNull(transactionalField.em);
 		assertNotNull(transactionalField.em.getDelegate());
@@ -637,13 +635,13 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 		given(em.getDelegate()).willReturn(new Object());
 		given(em.isOpen()).willReturn(true);
 
-		PersistenceAnnotationBeanPostProcessor pabpp = new MockPersistenceAnnotationBeanPostProcessor();
+		PersistenceAnnotationBeanPostProcessor babpp = new MockPersistenceAnnotationBeanPostProcessor();
 		DefaultPrivatePersistenceContextFieldWithProperties transactionalFieldWithProperties =
 				new DefaultPrivatePersistenceContextFieldWithProperties();
 		DefaultPrivatePersistenceContextField transactionalField = new DefaultPrivatePersistenceContextField();
 
-		pabpp.postProcessProperties(null, transactionalFieldWithProperties, "bean1");
-		pabpp.postProcessProperties(null, transactionalField, "bean2");
+		babpp.postProcessPropertyValues(null, null, transactionalFieldWithProperties, "bean1");
+		babpp.postProcessPropertyValues(null, null, transactionalField, "bean2");
 
 		assertNotNull(transactionalFieldWithProperties.em);
 		assertNotNull(transactionalField.em);
@@ -670,13 +668,13 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 		given(em.getDelegate()).willReturn(new Object(), 2);
 		given(em.isOpen()).willReturn(true);
 
-		PersistenceAnnotationBeanPostProcessor pabpp = new MockPersistenceAnnotationBeanPostProcessor();
+		PersistenceAnnotationBeanPostProcessor babpp = new MockPersistenceAnnotationBeanPostProcessor();
 		DefaultPrivatePersistenceContextFieldWithProperties transactionalFieldWithProperties =
 				new DefaultPrivatePersistenceContextFieldWithProperties();
 		DefaultPrivatePersistenceContextField transactionalField = new DefaultPrivatePersistenceContextField();
 
-		pabpp.postProcessProperties(null, transactionalFieldWithProperties, "bean1");
-		pabpp.postProcessProperties(null, transactionalField, "bean2");
+		babpp.postProcessPropertyValues(null, null, transactionalFieldWithProperties, "bean1");
+		babpp.postProcessPropertyValues(null, null, transactionalField, "bean2");
 
 		assertNotNull(transactionalFieldWithProperties.em);
 		assertNotNull(transactionalField.em);
@@ -698,7 +696,7 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 	private static class MockPersistenceAnnotationBeanPostProcessor extends PersistenceAnnotationBeanPostProcessor {
 
 		@Override
-		protected EntityManagerFactory findEntityManagerFactory(@Nullable String emfName, String requestingBeanName) {
+		protected EntityManagerFactory findEntityManagerFactory(String emfName, String requestingBeanName) {
 			return mockEmf;
 		}
 	}
@@ -714,12 +712,10 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 	public static class DefaultVendorSpecificPrivatePersistenceContextField {
 
 		@PersistenceContext
-		@SuppressWarnings("deprecation")
-		private org.hibernate.ejb.HibernateEntityManager em;
+		private HibernateEntityManager em;
 	}
 
 
-	@SuppressWarnings("rawtypes")
 	public static class FactoryBeanWithPersistenceContextField implements FactoryBean {
 
 		@PersistenceContext
@@ -843,7 +839,6 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 	public static class SetterOfWrongTypeAnnotatedWithPersistenceUnit {
 
 		@PersistenceUnit
-		@SuppressWarnings("rawtypes")
 		public void setSomething(Comparable c) {
 		}
 	}
@@ -896,5 +891,4 @@ public class PersistenceInjectionTests extends AbstractEntityManagerFactoryBeanT
 			throw new IllegalStateException();
 		}
 	}
-
 }

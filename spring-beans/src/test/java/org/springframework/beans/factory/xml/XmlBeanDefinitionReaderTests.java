@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.springframework.beans.factory.xml;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import junit.framework.TestCase;
 import org.xml.sax.InputSource;
 
 import org.springframework.beans.factory.BeanDefinitionStoreException;
@@ -31,30 +31,49 @@ import org.springframework.core.io.Resource;
 import org.springframework.tests.sample.beans.TestBean;
 import org.springframework.util.ObjectUtils;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Rick Evans
  * @author Juergen Hoeller
- * @author Sam Brannen
  */
-public class XmlBeanDefinitionReaderTests {
+public class XmlBeanDefinitionReaderTests extends TestCase {
 
-	@Test
-	public void setParserClassSunnyDay() {
+	public void testSetParserClassSunnyDay() {
 		SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
 		new XmlBeanDefinitionReader(registry).setDocumentReaderClass(DefaultBeanDefinitionDocumentReader.class);
 	}
 
-	@Test(expected = BeanDefinitionStoreException.class)
-	public void withOpenInputStream() {
-		SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
-		Resource resource = new InputStreamResource(getClass().getResourceAsStream("test.xml"));
-		new XmlBeanDefinitionReader(registry).loadBeanDefinitions(resource);
+	public void testSetParserClassToNull() {
+		try {
+			SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
+			new XmlBeanDefinitionReader(registry).setDocumentReaderClass(null);
+			fail("Should have thrown IllegalArgumentException (null parserClass)");
+		}
+		catch (IllegalArgumentException expected) {
+		}
 	}
 
-	@Test
-	public void withOpenInputStreamAndExplicitValidationMode() {
+	public void testSetParserClassToUnsupportedParserType() throws Exception {
+		try {
+			SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
+			new XmlBeanDefinitionReader(registry).setDocumentReaderClass(String.class);
+			fail("Should have thrown IllegalArgumentException (unsupported parserClass)");
+		}
+		catch (IllegalArgumentException expected) {
+		}
+	}
+
+	public void testWithOpenInputStream() {
+		try {
+			SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
+			Resource resource = new InputStreamResource(getClass().getResourceAsStream("test.xml"));
+			new XmlBeanDefinitionReader(registry).loadBeanDefinitions(resource);
+			fail("Should have thrown BeanDefinitionStoreException (can't determine validation mode)");
+		}
+		catch (BeanDefinitionStoreException expected) {
+		}
+	}
+
+	public void testWithOpenInputStreamAndExplicitValidationMode() {
 		SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
 		Resource resource = new InputStreamResource(getClass().getResourceAsStream("test.xml"));
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(registry);
@@ -63,31 +82,32 @@ public class XmlBeanDefinitionReaderTests {
 		testBeanDefinitions(registry);
 	}
 
-	@Test
-	public void withImport() {
+	public void testWithImport() {
 		SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
 		Resource resource = new ClassPathResource("import.xml", getClass());
 		new XmlBeanDefinitionReader(registry).loadBeanDefinitions(resource);
 		testBeanDefinitions(registry);
 	}
 
-	@Test
-	public void withWildcardImport() {
+	public void testWithWildcardImport() {
 		SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
 		Resource resource = new ClassPathResource("importPattern.xml", getClass());
 		new XmlBeanDefinitionReader(registry).loadBeanDefinitions(resource);
 		testBeanDefinitions(registry);
 	}
 
-	@Test(expected = BeanDefinitionStoreException.class)
-	public void withInputSource() {
-		SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
-		InputSource resource = new InputSource(getClass().getResourceAsStream("test.xml"));
-		new XmlBeanDefinitionReader(registry).loadBeanDefinitions(resource);
+	public void testWithInputSource() {
+		try {
+			SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
+			InputSource resource = new InputSource(getClass().getResourceAsStream("test.xml"));
+			new XmlBeanDefinitionReader(registry).loadBeanDefinitions(resource);
+			fail("Should have thrown BeanDefinitionStoreException (can't determine validation mode)");
+		}
+		catch (BeanDefinitionStoreException expected) {
+		}
 	}
 
-	@Test
-	public void withInputSourceAndExplicitValidationMode() {
+	public void testWithInputSourceAndExplicitValidationMode() {
 		SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
 		InputSource resource = new InputSource(getClass().getResourceAsStream("test.xml"));
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(registry);
@@ -96,8 +116,7 @@ public class XmlBeanDefinitionReaderTests {
 		testBeanDefinitions(registry);
 	}
 
-	@Test
-	public void withFreshInputStream() {
+	public void testWithFreshInputStream() {
 		SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
 		Resource resource = new ClassPathResource("test.xml", getClass());
 		new XmlBeanDefinitionReader(registry).loadBeanDefinitions(resource);
@@ -120,17 +139,15 @@ public class XmlBeanDefinitionReaderTests {
 		assertTrue(ObjectUtils.containsElement(aliases, "youralias"));
 	}
 
-	@Test
-	public void dtdValidationAutodetect() {
+	public void testDtdValidationAutodetect() throws Exception {
 		doTestValidation("validateWithDtd.xml");
 	}
 
-	@Test
-	public void xsdValidationAutodetect() {
+	public void testXsdValidationAutodetect() throws Exception {
 		doTestValidation("validateWithXsd.xml");
 	}
 
-	private void doTestValidation(String resourceName) {
+	private void doTestValidation(String resourceName) throws Exception {
 		DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
 		Resource resource = new ClassPathResource(resourceName, getClass());
 		new XmlBeanDefinitionReader(factory).loadBeanDefinitions(resource);

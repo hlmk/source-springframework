@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,40 +17,32 @@
 package org.springframework.oxm.jibx;
 
 import java.io.ByteArrayInputStream;
+
 import javax.xml.transform.stream.StreamSource;
 
-import org.junit.Assume;
-import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-
 import org.springframework.oxm.AbstractUnmarshallerTests;
+import org.springframework.oxm.Unmarshaller;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 
 /**
+ * @author Arjen Poutsma
+ *
  * NOTE: These tests fail under Eclipse/IDEA because JiBX binding does
  * not occur by default. The Gradle build should succeed, however.
- *
- * @author Arjen Poutsma
- * @author Sam Brannen
  */
-@Deprecated
-public class JibxUnmarshallerTests extends AbstractUnmarshallerTests<JibxMarshaller> {
+public class JibxUnmarshallerTests extends AbstractUnmarshallerTests {
 
 	protected static final String INPUT_STRING_WITH_SPECIAL_CHARACTERS =
 			"<tns:flights xmlns:tns=\"http://samples.springframework.org/flight\">" +
 					"<tns:flight><tns:airline>Air Libert\u00e9</tns:airline><tns:number>42</tns:number></tns:flight></tns:flights>";
 
-
-	@BeforeClass
-	public static void compilerAssumptions() {
-		// JiBX compiler is currently not compatible with JDK 9
-		Assume.assumeTrue(System.getProperty("java.version").startsWith("1.8."));
-	}
-
-
 	@Override
-	protected JibxMarshaller createUnmarshaller() throws Exception {
+	protected Unmarshaller createUnmarshaller() throws Exception {
 		JibxMarshaller unmarshaller = new JibxMarshaller();
 		unmarshaller.setTargetClass(Flights.class);
 		unmarshaller.afterPropertiesSet();
@@ -72,9 +64,8 @@ public class JibxUnmarshallerTests extends AbstractUnmarshallerTests<JibxMarshal
 		assertEquals("Number is invalid", 42L, flight.getNumber());
 	}
 
-
-	@Test
 	@Override
+	@Ignore
 	public void unmarshalPartialStaxSourceXmlStreamReader() throws Exception {
 		// JiBX does not support reading XML fragments, hence the override here
 	}
@@ -82,7 +73,7 @@ public class JibxUnmarshallerTests extends AbstractUnmarshallerTests<JibxMarshal
 	@Test
 	public void unmarshalStreamSourceInputStreamUsingNonDefaultEncoding() throws Exception {
 		String encoding = "ISO-8859-1";
-		unmarshaller.setEncoding(encoding);
+		((JibxMarshaller)unmarshaller).setEncoding(encoding);
 
 		StreamSource source = new StreamSource(new ByteArrayInputStream(INPUT_STRING_WITH_SPECIAL_CHARACTERS.getBytes(encoding)));
 		Object flights = unmarshaller.unmarshal(source);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.springframework.lang.Nullable;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.support.DelegatingErrorHandlingRunnable;
 import org.springframework.scheduling.support.SimpleTriggerContext;
-import org.springframework.util.Assert;
 import org.springframework.util.ErrorHandler;
 
 /**
@@ -51,26 +49,21 @@ class ReschedulingRunnable extends DelegatingErrorHandlingRunnable implements Sc
 
 	private final ScheduledExecutorService executor;
 
-	@Nullable
-	private ScheduledFuture<?> currentFuture;
+	private ScheduledFuture currentFuture;
 
-	@Nullable
 	private Date scheduledExecutionTime;
 
 	private final Object triggerContextMonitor = new Object();
 
 
-	public ReschedulingRunnable(
-			Runnable delegate, Trigger trigger, ScheduledExecutorService executor, ErrorHandler errorHandler) {
-
+	public ReschedulingRunnable(Runnable delegate, Trigger trigger, ScheduledExecutorService executor, ErrorHandler errorHandler) {
 		super(delegate, errorHandler);
 		this.trigger = trigger;
 		this.executor = executor;
 	}
 
 
-	@Nullable
-	public ScheduledFuture<?> schedule() {
+	public ScheduledFuture schedule() {
 		synchronized (this.triggerContextMonitor) {
 			this.scheduledExecutionTime = this.trigger.nextExecutionTime(this.triggerContext);
 			if (this.scheduledExecutionTime == null) {
@@ -82,75 +75,62 @@ class ReschedulingRunnable extends DelegatingErrorHandlingRunnable implements Sc
 		}
 	}
 
-	private ScheduledFuture<?> obtainCurrentFuture() {
-		Assert.state(this.currentFuture != null, "No scheduled future");
-		return this.currentFuture;
-	}
-
 	@Override
 	public void run() {
 		Date actualExecutionTime = new Date();
 		super.run();
 		Date completionTime = new Date();
 		synchronized (this.triggerContextMonitor) {
-			Assert.state(this.scheduledExecutionTime != null, "No scheduled execution");
 			this.triggerContext.update(this.scheduledExecutionTime, actualExecutionTime, completionTime);
-			if (!obtainCurrentFuture().isCancelled()) {
+			if (!this.currentFuture.isCancelled()) {
 				schedule();
 			}
 		}
 	}
 
 
-	@Override
 	public boolean cancel(boolean mayInterruptIfRunning) {
 		synchronized (this.triggerContextMonitor) {
-			return obtainCurrentFuture().cancel(mayInterruptIfRunning);
+			return this.currentFuture.cancel(mayInterruptIfRunning);
 		}
 	}
 
-	@Override
 	public boolean isCancelled() {
 		synchronized (this.triggerContextMonitor) {
-			return obtainCurrentFuture().isCancelled();
+			return this.currentFuture.isCancelled();
 		}
 	}
 
-	@Override
 	public boolean isDone() {
 		synchronized (this.triggerContextMonitor) {
-			return obtainCurrentFuture().isDone();
+			return this.currentFuture.isDone();
 		}
 	}
 
-	@Override
 	public Object get() throws InterruptedException, ExecutionException {
-		ScheduledFuture<?> curr;
+		ScheduledFuture curr;
 		synchronized (this.triggerContextMonitor) {
-			curr = obtainCurrentFuture();
+			curr = this.currentFuture;
 		}
 		return curr.get();
 	}
 
-	@Override
 	public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-		ScheduledFuture<?> curr;
+		ScheduledFuture curr;
 		synchronized (this.triggerContextMonitor) {
-			curr = obtainCurrentFuture();
+			curr = this.currentFuture;
 		}
 		return curr.get(timeout, unit);
 	}
 
-	@Override
 	public long getDelay(TimeUnit unit) {
-		ScheduledFuture<?> curr;
+		ScheduledFuture curr;
 		synchronized (this.triggerContextMonitor) {
-			curr = obtainCurrentFuture();
+			curr = this.currentFuture;
 		}
 		return curr.getDelay(unit);
 	}
 
-	@Override
 	public int compareTo(Delayed other) {
 		if (this == other) {
 			return 0;

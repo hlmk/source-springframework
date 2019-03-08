@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@ package org.springframework.beans.factory.xml;
 
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import junit.framework.TestCase;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -33,45 +32,40 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.tests.beans.CollectingReaderEventListener;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Rob Harrop
  * @author Juergen Hoeller
  */
-@SuppressWarnings("rawtypes")
-public class EventPublicationTests {
+public class EventPublicationTests extends TestCase {
 
 	private final DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
 
 	private final CollectingReaderEventListener eventListener = new CollectingReaderEventListener();
 
 
-
-	@Before
-	public void setUp() throws Exception {
+	@Override
+	protected void setUp() throws Exception {
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(this.beanFactory);
 		reader.setEventListener(this.eventListener);
 		reader.setSourceExtractor(new PassThroughSourceExtractor());
 		reader.loadBeanDefinitions(new ClassPathResource("beanEvents.xml", getClass()));
 	}
 
-	@Test
-	public void defaultsEventReceived() throws Exception {
+	public void testDefaultsEventReceived() throws Exception {
 		List defaultsList = this.eventListener.getDefaults();
 		assertTrue(!defaultsList.isEmpty());
 		assertTrue(defaultsList.get(0) instanceof DocumentDefaultsDefinition);
 		DocumentDefaultsDefinition defaults = (DocumentDefaultsDefinition) defaultsList.get(0);
 		assertEquals("true", defaults.getLazyInit());
 		assertEquals("constructor", defaults.getAutowire());
+		assertEquals("objects", defaults.getDependencyCheck());
 		assertEquals("myInit", defaults.getInitMethod());
 		assertEquals("myDestroy", defaults.getDestroyMethod());
 		assertEquals("true", defaults.getMerge());
 		assertTrue(defaults.getSource() instanceof Element);
 	}
 
-	@Test
-	public void beanEventReceived() throws Exception {
+	public void testBeanEventReceived() throws Exception {
 		ComponentDefinition componentDefinition1 = this.eventListener.getComponentDefinition("testBean");
 		assertTrue(componentDefinition1 instanceof BeanComponentDefinition);
 		assertEquals(1, componentDefinition1.getBeanDefinitions().length);
@@ -100,8 +94,7 @@ public class EventPublicationTests {
 		assertTrue(componentDefinition2.getSource() instanceof Element);
 	}
 
-	@Test
-	public void aliasEventReceived() throws Exception {
+	public void testAliasEventReceived() throws Exception {
 		List aliases = this.eventListener.getAliases("testBean");
 		assertEquals(2, aliases.size());
 		AliasDefinition aliasDefinition1 = (AliasDefinition) aliases.get(0);
@@ -112,8 +105,7 @@ public class EventPublicationTests {
 		assertTrue(aliasDefinition2.getSource() instanceof Element);
 	}
 
-	@Test
-	public void importEventReceived() throws Exception {
+	public void testImportEventReceived() throws Exception {
 		List imports = this.eventListener.getImports();
 		assertEquals(1, imports.size());
 		ImportDefinition importDefinition = (ImportDefinition) imports.get(0);

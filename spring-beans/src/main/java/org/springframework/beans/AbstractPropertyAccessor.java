@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package org.springframework.beans;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.lang.Nullable;
 
 /**
  * Abstract implementation of the {@link PropertyAccessor} interface.
@@ -29,7 +27,6 @@ import org.springframework.lang.Nullable;
  * implementation of actual property access left to subclasses.
  *
  * @author Juergen Hoeller
- * @author Stephane Nicoll
  * @since 2.0
  * @see #getPropertyValue
  * @see #setPropertyValue
@@ -38,51 +35,32 @@ public abstract class AbstractPropertyAccessor extends TypeConverterSupport impl
 
 	private boolean extractOldValueForEditor = false;
 
-	private boolean autoGrowNestedPaths = false;
 
-
-	@Override
 	public void setExtractOldValueForEditor(boolean extractOldValueForEditor) {
 		this.extractOldValueForEditor = extractOldValueForEditor;
 	}
 
-	@Override
 	public boolean isExtractOldValueForEditor() {
 		return this.extractOldValueForEditor;
 	}
 
-	@Override
-	public void setAutoGrowNestedPaths(boolean autoGrowNestedPaths) {
-		this.autoGrowNestedPaths = autoGrowNestedPaths;
-	}
 
-	@Override
-	public boolean isAutoGrowNestedPaths() {
-		return this.autoGrowNestedPaths;
-	}
-
-
-	@Override
 	public void setPropertyValue(PropertyValue pv) throws BeansException {
 		setPropertyValue(pv.getName(), pv.getValue());
 	}
 
-	@Override
 	public void setPropertyValues(Map<?, ?> map) throws BeansException {
 		setPropertyValues(new MutablePropertyValues(map));
 	}
 
-	@Override
 	public void setPropertyValues(PropertyValues pvs) throws BeansException {
 		setPropertyValues(pvs, false, false);
 	}
 
-	@Override
 	public void setPropertyValues(PropertyValues pvs, boolean ignoreUnknown) throws BeansException {
 		setPropertyValues(pvs, ignoreUnknown, false);
 	}
 
-	@Override
 	public void setPropertyValues(PropertyValues pvs, boolean ignoreUnknown, boolean ignoreInvalid)
 			throws BeansException {
 
@@ -110,7 +88,7 @@ public abstract class AbstractPropertyAccessor extends TypeConverterSupport impl
 			}
 			catch (PropertyAccessException ex) {
 				if (propertyAccessExceptions == null) {
-					propertyAccessExceptions = new ArrayList<>();
+					propertyAccessExceptions = new LinkedList<PropertyAccessException>();
 				}
 				propertyAccessExceptions.add(ex);
 			}
@@ -118,7 +96,8 @@ public abstract class AbstractPropertyAccessor extends TypeConverterSupport impl
 
 		// If we encountered individual exceptions, throw the composite exception.
 		if (propertyAccessExceptions != null) {
-			PropertyAccessException[] paeArray = propertyAccessExceptions.toArray(new PropertyAccessException[0]);
+			PropertyAccessException[] paeArray =
+					propertyAccessExceptions.toArray(new PropertyAccessException[propertyAccessExceptions.size()]);
 			throw new PropertyBatchUpdateException(paeArray);
 		}
 	}
@@ -126,7 +105,6 @@ public abstract class AbstractPropertyAccessor extends TypeConverterSupport impl
 
 	// Redefined with public visibility.
 	@Override
-	@Nullable
 	public Class<?> getPropertyType(String propertyPath) {
 		return null;
 	}
@@ -140,8 +118,6 @@ public abstract class AbstractPropertyAccessor extends TypeConverterSupport impl
 	 * @throws PropertyAccessException if the property was valid but the
 	 * accessor method failed
 	 */
-	@Override
-	@Nullable
 	public abstract Object getPropertyValue(String propertyName) throws BeansException;
 
 	/**
@@ -153,7 +129,6 @@ public abstract class AbstractPropertyAccessor extends TypeConverterSupport impl
 	 * @throws PropertyAccessException if the property was valid but the
 	 * accessor method failed or a type mismatch occurred
 	 */
-	@Override
-	public abstract void setPropertyValue(String propertyName, @Nullable Object value) throws BeansException;
+	public abstract void setPropertyValue(String propertyName, Object value) throws BeansException;
 
 }

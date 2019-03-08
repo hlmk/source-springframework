@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
@@ -79,7 +78,7 @@ import static org.junit.Assert.*;
  * @author Chris Beams
  * @author Sam Brannen
  */
-public class XmlBeanFactoryTests {
+public final class XmlBeanFactoryTests {
 
 	private static final Class<?> CLASS = XmlBeanFactoryTests.class;
 	private static final String CLASSNAME = CLASS.getSimpleName();
@@ -113,8 +112,14 @@ public class XmlBeanFactoryTests {
 	private static final ClassPathResource NO_SUCH_FACTORY_METHOD_CONTEXT = classPathResource("-noSuchFactoryMethod.xml");
 	private static final ClassPathResource RECURSIVE_IMPORT_CONTEXT = classPathResource("-recursiveImport.xml");
 	private static final ClassPathResource RESOURCE_CONTEXT = classPathResource("-resource.xml");
+	private static final ClassPathResource SATISFIED_ALL_DEP_CONTEXT = classPathResource("-satisfiedAllDepCheck.xml");
+	private static final ClassPathResource SATISFIED_OBJECT_DEP_CONTEXT = classPathResource("-satisfiedObjectDepCheck.xml");
+	private static final ClassPathResource SATISFIED_SIMPLE_DEP_CONTEXT = classPathResource("-satisfiedSimpleDepCheck.xml");
 	private static final ClassPathResource TEST_WITH_DUP_NAMES_CONTEXT = classPathResource("-testWithDuplicateNames.xml");
 	private static final ClassPathResource TEST_WITH_DUP_NAME_IN_ALIAS_CONTEXT = classPathResource("-testWithDuplicateNameInAlias.xml");
+	private static final ClassPathResource UNSATISFIED_ALL_DEP_CONTEXT = classPathResource("-unsatisfiedAllDepCheckMissingObjects.xml");
+	private static final ClassPathResource UNSATISFIED_OBJECT_DEP_CONTEXT = classPathResource("-unsatisfiedObjectDepCheck.xml");
+	private static final ClassPathResource UNSATISFIED_SIMPLE_DEP_CONTEXT = classPathResource("-unsatisfiedSimpleDepCheck.xml");
 	private static final ClassPathResource REFTYPES_CONTEXT = classPathResource("-reftypes.xml");
 	private static final ClassPathResource DEFAULT_LAZY_CONTEXT = classPathResource("-defaultLazyInit.xml");
 	private static final ClassPathResource DEFAULT_AUTOWIRE_CONTEXT = classPathResource("-defaultAutowire.xml");
@@ -482,7 +487,7 @@ public class XmlBeanFactoryTests {
 		}
 		catch (BeanDefinitionStoreException ex) {
 			// check exception message contains the name
-			assertTrue(ex.getMessage().contains("bogusParent"));
+			assertTrue(ex.getMessage().indexOf("bogusParent") != -1);
 			assertTrue(ex.getCause() instanceof NoSuchBeanDefinitionException);
 		}
 	}
@@ -650,11 +655,17 @@ public class XmlBeanFactoryTests {
 		assertEquals(5, xbf.getSingletonCount());
 	}
 
-	@Test(expected = BeanCreationException.class)
-	public void noSuchFactoryBeanMethod() {
-		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
-		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(NO_SUCH_FACTORY_METHOD_CONTEXT);
-		assertNotNull(xbf.getBean("defaultTestBean"));
+	@Test
+	public void testNoSuchFactoryBeanMethod() {
+		try {
+			DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
+			new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(NO_SUCH_FACTORY_METHOD_CONTEXT);
+			assertNotNull(xbf.getBean("defaultTestBean"));
+			fail("Should not get invalid bean");
+		}
+		catch (BeanCreationException ex) {
+			// Ok
+		}
 	}
 
 	@Test
@@ -678,7 +689,7 @@ public class XmlBeanFactoryTests {
 			fail();
 		}
 		catch (BeanCreationException ex) {
-			assertTrue(ex.getResourceDescription().contains("initializers.xml"));
+			assertTrue(ex.getResourceDescription().indexOf("initializers.xml") != -1);
 			assertEquals("init-method2", ex.getBeanName());
 			assertTrue(ex.getCause() instanceof IOException);
 		}
@@ -694,9 +705,9 @@ public class XmlBeanFactoryTests {
 		}
 		catch (FatalBeanException ex) {
 			// check message is helpful
-			assertTrue(ex.getMessage().contains("initializers.xml"));
-			assertTrue(ex.getMessage().contains("init-method3"));
-			assertTrue(ex.getMessage().contains("init"));
+			assertTrue(ex.getMessage().indexOf("initializers.xml") != -1);
+			assertTrue(ex.getMessage().indexOf("init-method3") != -1);
+			assertTrue(ex.getMessage().indexOf("init") != -1);
 		}
 	}
 
@@ -758,16 +769,89 @@ public class XmlBeanFactoryTests {
 		}
 	}
 
-	@Test(expected = BeanDefinitionStoreException.class)
-	public void noSuchXmlFile() throws Exception {
+	@Test
+	public void testNoSuchXmlFile() throws Exception {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
-		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(MISSING_CONTEXT);
+		try {
+			new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(MISSING_CONTEXT);
+			fail("Must not create factory from missing XML");
+		}
+		catch (BeanDefinitionStoreException expected) {
+		}
 	}
 
-	@Test(expected = BeanDefinitionStoreException.class)
-	public void invalidXmlFile() throws Exception {
+	@Test
+	public void testInvalidXmlFile() throws Exception {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
-		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(INVALID_CONTEXT);
+		try {
+			new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(INVALID_CONTEXT);
+			fail("Must not create factory from invalid XML");
+		}
+		catch (BeanDefinitionStoreException expected) {
+		}
+	}
+
+	@Test
+	public void testUnsatisfiedObjectDependencyCheck() throws Exception {
+		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
+		try {
+			new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(UNSATISFIED_OBJECT_DEP_CONTEXT);
+			xbf.getBean("a", DependenciesBean.class);
+			fail("Must have thrown an UnsatisfiedDependencyException");
+		}
+		catch (UnsatisfiedDependencyException ex) {
+		}
+	}
+
+	@Test
+	public void testUnsatisfiedSimpleDependencyCheck() throws Exception {
+		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
+		try {
+			new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(UNSATISFIED_SIMPLE_DEP_CONTEXT);
+			xbf.getBean("a", DependenciesBean.class);
+			fail("Must have thrown an UnsatisfiedDependencyException");
+		}
+		catch (UnsatisfiedDependencyException expected) {
+		}
+	}
+
+	@Test
+	public void testSatisfiedObjectDependencyCheck() throws Exception {
+		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
+		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(SATISFIED_OBJECT_DEP_CONTEXT);
+		DependenciesBean a = (DependenciesBean) xbf.getBean("a");
+		assertNotNull(a.getSpouse());
+		assertEquals(xbf, a.getBeanFactory());
+	}
+
+	@Test
+	public void testSatisfiedSimpleDependencyCheck() throws Exception {
+		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
+		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(SATISFIED_SIMPLE_DEP_CONTEXT);
+		DependenciesBean a = (DependenciesBean) xbf.getBean("a");
+		assertEquals(a.getAge(), 33);
+	}
+
+	@Test
+	public void testUnsatisfiedAllDependencyCheck() throws Exception {
+		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
+		try {
+			new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(UNSATISFIED_ALL_DEP_CONTEXT);
+			xbf.getBean("a", DependenciesBean.class);
+			fail("Must have thrown an UnsatisfiedDependencyException");
+		}
+		catch (UnsatisfiedDependencyException expected) {
+		}
+	}
+
+	@Test
+	public void testSatisfiedAllDependencyCheck() throws Exception {
+		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
+		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(SATISFIED_ALL_DEP_CONTEXT);
+		DependenciesBean a = (DependenciesBean) xbf.getBean("a");
+		assertEquals(a.getAge(), 33);
+		assertNotNull(a.getName());
+		assertNotNull(a.getSpouse());
 	}
 
 	@Test
@@ -855,6 +939,13 @@ public class XmlBeanFactoryTests {
 		// should have been autowired
 		assertNotNull(rod2.getSpouse());
 		assertTrue(rod2.getSpouse().getName().equals("Kerry"));
+
+		try {
+			xbf.getBean("rod3", DependenciesBean.class);
+			fail("Must have thrown UnsatisfiedDependencyException");
+		}
+		catch (UnsatisfiedDependencyException expected) {
+		}
 	}
 
 	@Test
@@ -934,7 +1025,7 @@ public class XmlBeanFactoryTests {
 			xbf.getBean("rod2Accessor");
 		}
 		catch (BeanCreationException ex) {
-			assertTrue(ex.toString().contains("touchy"));
+			assertTrue(ex.toString().indexOf("touchy") != -1);
 			ex.printStackTrace();
 			assertNull(ex.getRelatedCauses());
 		}
@@ -1013,18 +1104,28 @@ public class XmlBeanFactoryTests {
 		assertEquals(File.separator + "test", file.getPath());
 	}
 
-	@Test(expected = BeanCreationException.class)
-	public void throwsExceptionOnTooManyArguments() throws Exception {
+	@Test
+	public void testThrowsExceptionOnTooManyArguments() throws Exception {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
 		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(CONSTRUCTOR_ARG_CONTEXT);
-		xbf.getBean("rod7", ConstructorDependenciesBean.class);
+		try {
+			xbf.getBean("rod7", ConstructorDependenciesBean.class);
+			fail("Should have thrown BeanCreationException");
+		}
+		catch (BeanCreationException expected) {
+		}
 	}
 
-	@Test(expected = UnsatisfiedDependencyException.class)
-	public void throwsExceptionOnAmbiguousResolution() throws Exception {
+	@Test
+	public void testThrowsExceptionOnAmbiguousResolution() throws Exception {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
 		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(CONSTRUCTOR_ARG_CONTEXT);
-		xbf.getBean("rod8", ConstructorDependenciesBean.class);
+		try {
+			xbf.getBean("rod8", ConstructorDependenciesBean.class);
+			fail("Must have thrown UnsatisfiedDependencyException");
+		}
+		catch (UnsatisfiedDependencyException expected) {
+		}
 	}
 
 	@Test
@@ -1115,7 +1216,7 @@ public class XmlBeanFactoryTests {
 			fail("Must have thrown a CannotLoadBeanClassException");
 		}
 		catch (CannotLoadBeanClassException ex) {
-			assertTrue(ex.getResourceDescription().contains("classNotFound.xml"));
+			assertTrue(ex.getResourceDescription().indexOf("classNotFound.xml") != -1);
 			assertTrue(ex.getCause() instanceof ClassNotFoundException);
 		}
 	}
@@ -1185,22 +1286,29 @@ public class XmlBeanFactoryTests {
 		xbf.getBean("resource2", ResourceTestBean.class);
 	}
 
-	@Test(expected = BeanDefinitionStoreException.class)
-	public void recursiveImport() {
+	@Test
+	public void testRecursiveImport() {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
-		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(RECURSIVE_IMPORT_CONTEXT);
+		try {
+			new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(RECURSIVE_IMPORT_CONTEXT);
+			fail("Should have thrown BeanDefinitionStoreException");
+		}
+		catch (BeanDefinitionStoreException ex) {
+			// expected
+			ex.printStackTrace();
+		}
 	}
 
 	/**
 	 * @since 3.2.8 and 4.0.2
-	 * @see <a href="https://jira.spring.io/browse/SPR-10785">SPR-10785</a> and <a
-	 *      href="https://jira.spring.io/browse/SPR-11420">SPR-11420</a>
+	 * @see <a href="https://jira.springsource.org/browse/SPR-10785">SPR-10785</a> and <a
+	 *      href="https://jira.springsource.org/browse/SPR-11420">SPR-11420</a>
 	 */
 	@Test
 	public void methodInjectedBeanMustBeOfSameEnhancedCglibSubclassTypeAcrossBeanFactories() {
 		Class<?> firstClass = null;
 
-		for (int i = 0; i < 10; i++) {
+		for (int i = 1; i <= 10; i++) {
 			DefaultListableBeanFactory bf = new DefaultListableBeanFactory();
 			new XmlBeanDefinitionReader(bf).loadBeanDefinitions(OVERRIDES_CONTEXT);
 
@@ -1218,15 +1326,15 @@ public class XmlBeanFactoryTests {
 	}
 
 	@Test
-	public void lookupOverrideMethodsWithSetterInjection() {
+	public void testLookupOverrideMethodsWithSetterInjection() {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(xbf);
 		reader.loadBeanDefinitions(OVERRIDES_CONTEXT);
 
-		lookupOverrideMethodsWithSetterInjection(xbf, "overrideOneMethod", true);
+		testLookupOverrideMethodsWithSetterInjection(xbf, "overrideOneMethod", true);
 		// Should work identically on subclass definition, in which lookup
 		// methods are inherited
-		lookupOverrideMethodsWithSetterInjection(xbf, "overrideInheritedMethod", true);
+		testLookupOverrideMethodsWithSetterInjection(xbf, "overrideInheritedMethod", true);
 
 		// Check cost of repeated construction of beans with method overrides
 		// Will pick up misuse of CGLIB
@@ -1234,10 +1342,10 @@ public class XmlBeanFactoryTests {
 		StopWatch sw = new StopWatch();
 		sw.start("Look up " + howMany + " prototype bean instances with method overrides");
 		for (int i = 0; i < howMany; i++) {
-			lookupOverrideMethodsWithSetterInjection(xbf, "overrideOnPrototype", false);
+			testLookupOverrideMethodsWithSetterInjection(xbf, "overrideOnPrototype", false);
 		}
 		sw.stop();
-		// System.out.println(sw);
+		System.out.println(sw);
 		if (!LogFactory.getLog(DefaultListableBeanFactory.class).isDebugEnabled()) {
 			assertTrue(sw.getTotalTimeMillis() < 2000);
 		}
@@ -1251,8 +1359,7 @@ public class XmlBeanFactoryTests {
 		assertEquals("Jenny", tb.getName());
 	}
 
-	private void lookupOverrideMethodsWithSetterInjection(BeanFactory xbf,
-			String beanName, boolean singleton) {
+	private void testLookupOverrideMethodsWithSetterInjection(BeanFactory xbf, String beanName, boolean singleton) {
 		OverrideOneMethod oom = (OverrideOneMethod) xbf.getBean(beanName);
 
 		if (singleton) {
@@ -1333,7 +1440,7 @@ public class XmlBeanFactoryTests {
 	}
 
 	@Test
-	public void lookupOverrideOneMethodWithConstructorInjection() {
+	public void testLookupOverrideOneMethodWithConstructorInjection() {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(xbf);
 		reader.loadBeanDefinitions(CONSTRUCTOR_OVERRIDES_CONTEXT);
@@ -1367,12 +1474,25 @@ public class XmlBeanFactoryTests {
 		}
 		catch (BeanDefinitionStoreException ex) {
 			// Check that the bogus method name was included in the error message
-			assertTrue("Bogus method name correctly reported", ex.getMessage().contains("bogusMethod"));
+			assertTrue("Bogus method name correctly reported", ex.getMessage().indexOf("bogusMethod") != -1);
 		}
 	}
 
+	/**
+	 * Assert the presence of this bug until we resolve it.
+	 */
 	@Test
-	public void serializableMethodReplacerAndSuperclass() throws Exception {
+	public void testSerializabilityOfMethodReplacer() throws Exception {
+		try {
+			BUGtestSerializableMethodReplacerAndSuperclass();
+			fail();
+		}
+		catch (AssertionError ex) {
+			System.err.println("****** SPR-356: Objects with MethodReplace overrides are not serializable");
+		}
+	}
+
+	public void BUGtestSerializableMethodReplacerAndSuperclass() throws IOException, ClassNotFoundException {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(xbf);
 		reader.loadBeanDefinitions(DELEGATION_OVERRIDES_CONTEXT);
@@ -1380,10 +1500,9 @@ public class XmlBeanFactoryTests {
 		String forwards = "this is forwards";
 		String backwards = new StringBuffer(forwards).reverse().toString();
 		assertEquals(backwards, s.replaceMe(forwards));
-		// SPR-356: lookup methods & method replacers are not serializable.
-		assertFalse(
-				"Lookup methods and method replacers are not meant to be serializable.",
-				SerializationTestUtils.isSerializable(s));
+		assertTrue(SerializationTestUtils.isSerializable(s));
+		s = (SerializableMethodReplacerCandidate) SerializationTestUtils.serializeAndDeserialize(s);
+		assertEquals("Method replace still works after serialization and deserialization", backwards, s.replaceMe(forwards));
 	}
 
 	@Test
@@ -1391,19 +1510,9 @@ public class XmlBeanFactoryTests {
 		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
 		XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(xbf);
 		reader.loadBeanDefinitions(OVERRIDES_CONTEXT);
-
-		TestBean jenny1 = (TestBean) xbf.getBean("jennyChild");
-		assertEquals(1, jenny1.getFriends().size());
-		Object friend1 = jenny1.getFriends().iterator().next();
-		assertTrue(friend1 instanceof TestBean);
-
-		TestBean jenny2 = (TestBean) xbf.getBean("jennyChild");
-		assertEquals(1, jenny2.getFriends().size());
-		Object friend2 = jenny2.getFriends().iterator().next();
-		assertTrue(friend2 instanceof TestBean);
-
-		assertNotSame(jenny1, jenny2);
-		assertNotSame(friend1, friend2);
+		TestBean jenny = (TestBean) xbf.getBean("jennyChild");
+		assertEquals(1, jenny.getFriends().size());
+		assertTrue(jenny.getFriends().iterator().next() instanceof TestBean);
 	}
 
 	@Test
@@ -1558,16 +1667,6 @@ public class XmlBeanFactoryTests {
 		ConstructorArrayTestBean bean = (ConstructorArrayTestBean) xbf.getBean("constructorArrayNoType");
 		assertTrue(bean.array instanceof String[]);
 		assertEquals(0, ((String[]) bean.array).length);
-	}
-
-	@Test
-	public void testConstructorWithUnresolvableParameterName() {
-		DefaultListableBeanFactory xbf = new DefaultListableBeanFactory();
-		new XmlBeanDefinitionReader(xbf).loadBeanDefinitions(CONSTRUCTOR_ARG_CONTEXT);
-		AtomicInteger bean = (AtomicInteger) xbf.getBean("constructorUnresolvableName");
-		assertEquals(1, bean.get());
-		bean = (AtomicInteger) xbf.getBean("constructorUnresolvableNameWithIndex");
-		assertEquals(1, bean.get());
 	}
 
 	@Test

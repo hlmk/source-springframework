@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -85,24 +82,15 @@ import org.springframework.web.servlet.ModelAndView;
 public class ServletWrappingController extends AbstractController
 		implements BeanNameAware, InitializingBean, DisposableBean {
 
-	@Nullable
 	private Class<? extends Servlet> servletClass;
 
-	@Nullable
 	private String servletName;
 
 	private Properties initParameters = new Properties();
 
-	@Nullable
 	private String beanName;
 
-	@Nullable
 	private Servlet servletInstance;
-
-
-	public ServletWrappingController() {
-		super(false);
-	}
 
 
 	/**
@@ -130,7 +118,6 @@ public class ServletWrappingController extends AbstractController
 		this.initParameters = initParameters;
 	}
 
-	@Override
 	public void setBeanName(String name) {
 		this.beanName = name;
 	}
@@ -140,7 +127,6 @@ public class ServletWrappingController extends AbstractController
 	 * Initialize the wrapped Servlet instance.
 	 * @see javax.servlet.Servlet#init(javax.servlet.ServletConfig)
 	 */
-	@Override
 	public void afterPropertiesSet() throws Exception {
 		if (this.servletClass == null) {
 			throw new IllegalArgumentException("'servletClass' is required");
@@ -148,7 +134,7 @@ public class ServletWrappingController extends AbstractController
 		if (this.servletName == null) {
 			this.servletName = this.beanName;
 		}
-		this.servletInstance = ReflectionUtils.accessibleConstructor(this.servletClass).newInstance();
+		this.servletInstance = this.servletClass.newInstance();
 		this.servletInstance.init(new DelegatingServletConfig());
 	}
 
@@ -161,7 +147,6 @@ public class ServletWrappingController extends AbstractController
 	protected ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response)
 			throws Exception {
 
-		Assert.state(this.servletInstance != null, "No Servlet instance");
 		this.servletInstance.service(request, response);
 		return null;
 	}
@@ -171,11 +156,8 @@ public class ServletWrappingController extends AbstractController
 	 * Destroy the wrapped Servlet instance.
 	 * @see javax.servlet.Servlet#destroy()
 	 */
-	@Override
 	public void destroy() {
-		if (this.servletInstance != null) {
-			this.servletInstance.destroy();
-		}
+		this.servletInstance.destroy();
 	}
 
 
@@ -186,27 +168,20 @@ public class ServletWrappingController extends AbstractController
 	 */
 	private class DelegatingServletConfig implements ServletConfig {
 
-		@Override
-		@Nullable
 		public String getServletName() {
 			return servletName;
 		}
 
-		@Override
-		@Nullable
 		public ServletContext getServletContext() {
 			return ServletWrappingController.this.getServletContext();
 		}
 
-		@Override
 		public String getInitParameter(String paramName) {
 			return initParameters.getProperty(paramName);
 		}
 
-		@Override
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		public Enumeration<String> getInitParameterNames() {
-			return (Enumeration) initParameters.keys();
+		public Enumeration getInitParameterNames() {
+			return initParameters.keys();
 		}
 	}
 

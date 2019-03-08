@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,11 @@ package org.springframework.scheduling.annotation;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.aspectj.lang.annotation.Aspect;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,14 +46,13 @@ import static org.mockito.BDDMockito.*;
  * as @Transactional or @Async processing.
  *
  * @author Chris Beams
- * @author Juergen Hoeller
  * @since 3.1
  */
 @SuppressWarnings("resource")
 public class ScheduledAndTransactionalAnnotationIntegrationTests {
 
 	@Before
-	public void assumePerformanceTests() {
+	public void setUp() {
 		Assume.group(TestGroup.PERFORMANCE);
 	}
 
@@ -70,7 +66,7 @@ public class ScheduledAndTransactionalAnnotationIntegrationTests {
 			fail("Should have thrown BeanCreationException");
 		}
 		catch (BeanCreationException ex) {
-			assertTrue(ex.getRootCause() instanceof IllegalStateException);
+			assertTrue(ex.getRootCause().getMessage().startsWith("@Scheduled method 'scheduled' found"));
 		}
 	}
 
@@ -80,11 +76,11 @@ public class ScheduledAndTransactionalAnnotationIntegrationTests {
 		ctx.register(Config.class, SubclassProxyTxConfig.class, RepoConfigA.class);
 		ctx.refresh();
 
-		Thread.sleep(100);  // allow @Scheduled method to be called several times
+		Thread.sleep(100); // allow @Scheduled method to be called several times
 
 		MyRepository repository = ctx.getBean(MyRepository.class);
 		CallCountingTransactionManager txManager = ctx.getBean(CallCountingTransactionManager.class);
-		assertThat("repository is not a proxy", AopUtils.isCglibProxy(repository), equalTo(true));
+		assertThat("repository is not a proxy", AopUtils.isAopProxy(repository), equalTo(true));
 		assertThat("@Scheduled method never called", repository.getInvocationCount(), greaterThan(0));
 		assertThat("no transactions were committed", txManager.commits, greaterThan(0));
 	}
@@ -95,26 +91,13 @@ public class ScheduledAndTransactionalAnnotationIntegrationTests {
 		ctx.register(Config.class, JdkProxyTxConfig.class, RepoConfigB.class);
 		ctx.refresh();
 
-		Thread.sleep(100);  // allow @Scheduled method to be called several times
+		Thread.sleep(50); // allow @Scheduled method to be called several times
 
 		MyRepositoryWithScheduledMethod repository = ctx.getBean(MyRepositoryWithScheduledMethod.class);
 		CallCountingTransactionManager txManager = ctx.getBean(CallCountingTransactionManager.class);
-		assertThat("repository is not a proxy", AopUtils.isJdkDynamicProxy(repository), is(true));
+		assertThat("repository is not a proxy", AopUtils.isAopProxy(repository), is(true));
 		assertThat("@Scheduled method never called", repository.getInvocationCount(), greaterThan(0));
 		assertThat("no transactions were committed", txManager.commits, greaterThan(0));
-	}
-
-	@Test
-	public void withAspectConfig() throws InterruptedException {
-		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-		ctx.register(AspectConfig.class, MyRepositoryWithScheduledMethodImpl.class);
-		ctx.refresh();
-
-		Thread.sleep(100);  // allow @Scheduled method to be called several times
-
-		MyRepositoryWithScheduledMethod repository = ctx.getBean(MyRepositoryWithScheduledMethod.class);
-		assertThat("repository is not a proxy", AopUtils.isCglibProxy(repository), is(true));
-		assertThat("@Scheduled method never called", repository.getInvocationCount(), greaterThan(0));
 	}
 
 
@@ -125,7 +108,7 @@ public class ScheduledAndTransactionalAnnotationIntegrationTests {
 
 
 	@Configuration
-	@EnableTransactionManagement(proxyTargetClass = true)
+	@EnableTransactionManagement(proxyTargetClass=true)
 	static class SubclassProxyTxConfig {
 	}
 
@@ -155,6 +138,11 @@ public class ScheduledAndTransactionalAnnotationIntegrationTests {
 	static class Config {
 
 		@Bean
+		public PersistenceExceptionTranslationPostProcessor peTranslationPostProcessor() {
+			return new PersistenceExceptionTranslationPostProcessor();
+		}
+
+		@Bean
 		public PlatformTransactionManager txManager() {
 			return new CallCountingTransactionManager();
 		}
@@ -162,41 +150,6 @@ public class ScheduledAndTransactionalAnnotationIntegrationTests {
 		@Bean
 		public PersistenceExceptionTranslator peTranslator() {
 			return mock(PersistenceExceptionTranslator.class);
-		}
-
-		@Bean
-		public static PersistenceExceptionTranslationPostProcessor peTranslationPostProcessor() {
-			return new PersistenceExceptionTranslationPostProcessor();
-		}
-	}
-
-
-	@Configuration
-	@EnableScheduling
-	static class AspectConfig {
-
-		@Bean
-		public static AnnotationAwareAspectJAutoProxyCreator autoProxyCreator() {
-			AnnotationAwareAspectJAutoProxyCreator apc = new AnnotationAwareAspectJAutoProxyCreator();
-			apc.setProxyTargetClass(true);
-			return apc;
-		}
-
-		@Bean
-		public static MyAspect myAspect() {
-			return new MyAspect();
-		}
-	}
-
-
-	@Aspect
-	public static class MyAspect {
-
-		private final AtomicInteger count = new AtomicInteger(0);
-
-		@org.aspectj.lang.annotation.Before("execution(* scheduled())")
-		public void checkTransaction() {
-			this.count.incrementAndGet();
 		}
 	}
 
@@ -238,9 +191,6 @@ public class ScheduledAndTransactionalAnnotationIntegrationTests {
 
 		private final AtomicInteger count = new AtomicInteger(0);
 
-		@Autowired(required = false)
-		private MyAspect myAspect;
-
 		@Override
 		@Transactional
 		@Scheduled(fixedDelay = 5)
@@ -250,9 +200,6 @@ public class ScheduledAndTransactionalAnnotationIntegrationTests {
 
 		@Override
 		public int getInvocationCount() {
-			if (this.myAspect != null) {
-				assertEquals(this.count.get(), this.myAspect.count.get());
-			}
 			return this.count.get();
 		}
 	}

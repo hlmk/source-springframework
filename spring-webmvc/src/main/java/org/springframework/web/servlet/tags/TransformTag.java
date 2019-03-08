@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,65 +18,22 @@ package org.springframework.web.servlet.tags;
 
 import java.beans.PropertyEditor;
 import java.io.IOException;
+
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
 
-import org.springframework.lang.Nullable;
+import org.springframework.web.util.ExpressionEvaluationUtils;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.TagUtils;
 
 /**
- * The {@code <transform>} tag provides transformation for reference data values
- * from controllers and other objects inside a {@code spring:bind} tag (or a
- * data-bound form element tag from Spring's form tag library).
+ * Tag for transforming reference data values from form controllers and
+ * other objects inside a {@code spring:bind} tag (or a data-bound
+ * form element tag from Spring's form tag library).
  *
  * <p>The BindTag has a PropertyEditor that it uses to transform properties of
- * a bean to a String, usable in HTML forms. This tag uses that PropertyEditor
+ * a bean to a String, useable in HTML forms. This tag uses that PropertyEditor
  * to transform objects passed into this tag.
- *
- * <table>
- * <caption>Attribute Summary</caption>
- * <thead>
- * <tr>
- * <th>Attribute</th>
- * <th>Required?</th>
- * <th>Runtime Expression?</th>
- * <th>Description</th>
- * </tr>
- * </thead>
- * <tbody>
- * <tr>
- * <td>htmlEscape</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Set HTML escaping for this tag, as boolean value. Overrides the default HTML
- * escaping setting for the current page.</td>
- * </tr>
- * <tr>
- * <td>scope</td>
- * <td>false</td>
- * <td>true</td>
- * <td>The scope to use when exported the result to a variable. This attribute
- * is only used when var is also set. Possible values are page, request, session
- * and application.</td>
- * </tr>
- * <tr>
- * <td>value</td>
- * <td>true</td>
- * <td>true</td>
- * <td>The value to transform. This is the actual object you want to have
- * transformed (for instance a Date). Using the PropertyEditor that is currently
- * in use by the 'spring:bind' tag.</td>
- * </tr>
- * <tr>
- * <td>var</td>
- * <td>false</td>
- * <td>true</td>
- * <td>The string to use when binding the result to the page, request, session
- * or application scope. If not specified, the result gets outputted to the
- * writer (i.e. typically directly to the JSP).</td>
- * </tr>
- * </tbody>
- * </table>
  *
  * @author Alef Arendsen
  * @author Juergen Hoeller
@@ -86,15 +43,13 @@ import org.springframework.web.util.TagUtils;
 @SuppressWarnings("serial")
 public class TransformTag extends HtmlEscapingAwareTag {
 
-	/** the value to transform using the appropriate property editor. */
-	@Nullable
+	/** the value to transform using the appropriate property editor */
 	private Object value;
 
-	/** the variable to put the result in. */
-	@Nullable
+	/** the variable to put the result in */
 	private String var;
 
-	/** the scope of the variable the result will be put in. */
+	/** the scope of the variable the result will be put in */
 	private String scope = TagUtils.SCOPE_PAGE;
 
 
@@ -104,6 +59,11 @@ public class TransformTag extends HtmlEscapingAwareTag {
 	 * <p>The value can either be a plain value to transform (a hard-coded String
 	 * value in a JSP or a JSP expression), or a JSP EL expression to be evaluated
 	 * (transforming the result of the expression).
+	 * <p>Like all of Spring's JSP tags, this tag is capable of parsing EL expressions
+	 * itself, on any JSP version. Note, however, that EL expressions in a JSP 2.0 page
+	 * will be evaluated by the JSP container, with the result getting passed in here.
+	 * For this reason, the type of this property is Object (accepting any result
+	 * object from a pre-evaluated expression) rather than String.
 	 */
 	public void setValue(Object value) {
 		this.value = value;
@@ -133,7 +93,13 @@ public class TransformTag extends HtmlEscapingAwareTag {
 
 	@Override
 	protected final int doStartTagInternal() throws JspException {
-		if (this.value != null) {
+		Object resolvedValue = this.value;
+		if (this.value instanceof String) {
+			String strValue = (String) this.value;
+			resolvedValue = ExpressionEvaluationUtils.evaluate("value", strValue, pageContext);
+		}
+
+		if (resolvedValue != null) {
 			// Find the containing EditorAwareTag (e.g. BindTag), if applicable.
 			EditorAwareTag tag = (EditorAwareTag) TagSupport.findAncestorWithClass(this, EditorAwareTag.class);
 			if (tag == null) {
@@ -145,21 +111,23 @@ public class TransformTag extends HtmlEscapingAwareTag {
 			PropertyEditor editor = tag.getEditor();
 			if (editor != null) {
 				// If an editor was found, edit the value.
-				editor.setValue(this.value);
+				editor.setValue(resolvedValue);
 				result = editor.getAsText();
 			}
 			else {
 				// Else, just do a toString.
-				result = this.value.toString();
+				result = resolvedValue.toString();
 			}
-			result = htmlEscape(result);
-			if (this.var != null) {
-				this.pageContext.setAttribute(this.var, result, TagUtils.getScope(this.scope));
+			result = isHtmlEscape() ? HtmlUtils.htmlEscape(result) : result;
+			String resolvedVar = ExpressionEvaluationUtils.evaluateString("var", this.var, pageContext);
+			if (resolvedVar != null) {
+				String resolvedScope = ExpressionEvaluationUtils.evaluateString("scope", this.scope, pageContext);
+				pageContext.setAttribute(resolvedVar, result, TagUtils.getScope(resolvedScope));
 			}
 			else {
 				try {
 					// Else, just print it out.
-					this.pageContext.getOut().print(result);
+					pageContext.getOut().print(result);
 				}
 				catch (IOException ex) {
 					throw new JspException(ex);

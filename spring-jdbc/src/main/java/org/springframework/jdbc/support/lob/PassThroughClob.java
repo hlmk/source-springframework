@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.sql.Clob;
 import java.sql.SQLException;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.FileCopyUtils;
-import org.springframework.util.StreamUtils;
 
 /**
  * Simple JDBC {@link Clob} adapter that exposes a given String or character stream.
@@ -41,13 +39,10 @@ import org.springframework.util.StreamUtils;
  */
 class PassThroughClob implements Clob {
 
-	@Nullable
 	private String content;
 
-	@Nullable
 	private Reader characterStream;
 
-	@Nullable
 	private InputStream asciiStream;
 
 	private long contentLength;
@@ -69,39 +64,42 @@ class PassThroughClob implements Clob {
 	}
 
 
-	@Override
 	public long length() throws SQLException {
 		return this.contentLength;
 	}
 
-	@Override
 	public Reader getCharacterStream() throws SQLException {
-		if (this.content != null) {
-			return new StringReader(this.content);
+		try {
+			if (this.content != null) {
+				return new StringReader(this.content);
+			}
+			else if (this.characterStream != null) {
+				return this.characterStream;
+			}
+			else {
+				return new InputStreamReader(this.asciiStream, "US-ASCII");
+			}
 		}
-		else if (this.characterStream != null) {
-			return this.characterStream;
-		}
-		else {
-			return new InputStreamReader(
-					(this.asciiStream != null ? this.asciiStream : StreamUtils.emptyInput()),
-					StandardCharsets.US_ASCII);
+		catch (UnsupportedEncodingException ex) {
+			throw new SQLException("US-ASCII encoding not supported: " + ex);
 		}
 	}
 
-	@Override
 	public InputStream getAsciiStream() throws SQLException {
 		try {
 			if (this.content != null) {
-				return new ByteArrayInputStream(this.content.getBytes(StandardCharsets.US_ASCII));
+				return new ByteArrayInputStream(this.content.getBytes("US-ASCII"));
 			}
 			else if (this.characterStream != null) {
 				String tempContent = FileCopyUtils.copyToString(this.characterStream);
-				return new ByteArrayInputStream(tempContent.getBytes(StandardCharsets.US_ASCII));
+				return new ByteArrayInputStream(tempContent.getBytes("US-ASCII"));
 			}
 			else {
-				return (this.asciiStream != null ? this.asciiStream : StreamUtils.emptyInput());
+				return this.asciiStream;
 			}
+		}
+		catch (UnsupportedEncodingException ex) {
+			throw new SQLException("US-ASCII encoding not supported: " + ex);
 		}
 		catch (IOException ex) {
 			throw new SQLException("Failed to read stream content: " + ex);
@@ -109,52 +107,42 @@ class PassThroughClob implements Clob {
 	}
 
 
-	@Override
 	public Reader getCharacterStream(long pos, long length) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public Writer setCharacterStream(long pos) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public OutputStream setAsciiStream(long pos) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public String getSubString(long pos, int length) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public int setString(long pos, String str) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public int setString(long pos, String str, int offset, int len) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public long position(String searchstr, long start) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public long position(Clob searchstr, long start) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public void truncate(long len) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	public void free() throws SQLException {
 		// no-op
 	}

@@ -1,9 +1,8 @@
+
 /**
- * Support for class instrumentation on JBoss AS 6 and 7.
+ *
+ * Support for class instrumentation on JBoss AS 5.x / JBoss MC 2.0.x.
+ *
  */
-@NonNullApi
-@NonNullFields
 package org.springframework.instrument.classloading.jboss;
 
-import org.springframework.lang.NonNullApi;
-import org.springframework.lang.NonNullFields;

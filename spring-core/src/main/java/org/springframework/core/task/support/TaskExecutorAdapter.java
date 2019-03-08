@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 
-import org.springframework.core.task.AsyncListenableTaskExecutor;
-import org.springframework.core.task.TaskDecorator;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskRejectedException;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureTask;
 
 /**
  * Adapter that takes a JDK {@code java.util.concurrent.Executor} and
@@ -43,12 +39,9 @@ import org.springframework.util.concurrent.ListenableFutureTask;
  * @see java.util.concurrent.ExecutorService
  * @see java.util.concurrent.Executors
  */
-public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
+public class TaskExecutorAdapter implements AsyncTaskExecutor {
 
 	private final Executor concurrentExecutor;
-
-	@Nullable
-	private TaskDecorator taskDecorator;
 
 
 	/**
@@ -63,28 +56,12 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 
 
 	/**
-	 * Specify a custom {@link TaskDecorator} to be applied to any {@link Runnable}
-	 * about to be executed.
-	 * <p>Note that such a decorator is not necessarily being applied to the
-	 * user-supplied {@code Runnable}/{@code Callable} but rather to the actual
-	 * execution callback (which may be a wrapper around the user-supplied task).
-	 * <p>The primary use case is to set some execution context around the task's
-	 * invocation, or to provide some monitoring/statistics for task execution.
-	 * @since 4.3
-	 */
-	public final void setTaskDecorator(TaskDecorator taskDecorator) {
-		this.taskDecorator = taskDecorator;
-	}
-
-
-	/**
 	 * Delegates to the specified JDK concurrent executor.
 	 * @see java.util.concurrent.Executor#execute(Runnable)
 	 */
-	@Override
 	public void execute(Runnable task) {
 		try {
-			doExecute(this.concurrentExecutor, this.taskDecorator, task);
+			this.concurrentExecutor.execute(task);
 		}
 		catch (RejectedExecutionException ex) {
 			throw new TaskRejectedException(
@@ -92,20 +69,18 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 		}
 	}
 
-	@Override
 	public void execute(Runnable task, long startTimeout) {
 		execute(task);
 	}
 
-	@Override
 	public Future<?> submit(Runnable task) {
 		try {
-			if (this.taskDecorator == null && this.concurrentExecutor instanceof ExecutorService) {
+			if (this.concurrentExecutor instanceof ExecutorService) {
 				return ((ExecutorService) this.concurrentExecutor).submit(task);
 			}
 			else {
-				FutureTask<Object> future = new FutureTask<>(task, null);
-				doExecute(this.concurrentExecutor, this.taskDecorator, future);
+				FutureTask<Object> future = new FutureTask<Object>(task, null);
+				this.concurrentExecutor.execute(future);
 				return future;
 			}
 		}
@@ -115,15 +90,14 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 		}
 	}
 
-	@Override
 	public <T> Future<T> submit(Callable<T> task) {
 		try {
-			if (this.taskDecorator == null && this.concurrentExecutor instanceof ExecutorService) {
+			if (this.concurrentExecutor instanceof ExecutorService) {
 				return ((ExecutorService) this.concurrentExecutor).submit(task);
 			}
 			else {
-				FutureTask<T> future = new FutureTask<>(task);
-				doExecute(this.concurrentExecutor, this.taskDecorator, future);
+				FutureTask<T> future = new FutureTask<T>(task);
+				this.concurrentExecutor.execute(future);
 				return future;
 			}
 		}
@@ -131,48 +105,6 @@ public class TaskExecutorAdapter implements AsyncListenableTaskExecutor {
 			throw new TaskRejectedException(
 					"Executor [" + this.concurrentExecutor + "] did not accept task: " + task, ex);
 		}
-	}
-
-	@Override
-	public ListenableFuture<?> submitListenable(Runnable task) {
-		try {
-			ListenableFutureTask<Object> future = new ListenableFutureTask<>(task, null);
-			doExecute(this.concurrentExecutor, this.taskDecorator, future);
-			return future;
-		}
-		catch (RejectedExecutionException ex) {
-			throw new TaskRejectedException(
-					"Executor [" + this.concurrentExecutor + "] did not accept task: " + task, ex);
-		}
-	}
-
-	@Override
-	public <T> ListenableFuture<T> submitListenable(Callable<T> task) {
-		try {
-			ListenableFutureTask<T> future = new ListenableFutureTask<>(task);
-			doExecute(this.concurrentExecutor, this.taskDecorator, future);
-			return future;
-		}
-		catch (RejectedExecutionException ex) {
-			throw new TaskRejectedException(
-					"Executor [" + this.concurrentExecutor + "] did not accept task: " + task, ex);
-		}
-	}
-
-
-	/**
-	 * Actually execute the given {@code Runnable} (which may be a user-supplied task
-	 * or a wrapper around a user-supplied task) with the given executor.
-	 * @param concurrentExecutor the underlying JDK concurrent executor to delegate to
-	 * @param taskDecorator the specified decorator to be applied, if any
-	 * @param runnable the runnable to execute
-	 * @throws RejectedExecutionException if the given runnable cannot be accepted
-	 * @since 4.3
-	 */
-	protected void doExecute(Executor concurrentExecutor, @Nullable TaskDecorator taskDecorator, Runnable runnable)
-			throws RejectedExecutionException{
-
-		concurrentExecutor.execute(taskDecorator != null ? taskDecorator.decorate(runnable) : runnable);
 	}
 
 }

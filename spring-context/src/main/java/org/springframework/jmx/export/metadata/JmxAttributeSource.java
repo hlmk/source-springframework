@@ -18,8 +18,6 @@ package org.springframework.jmx.export.metadata;
 
 import java.lang.reflect.Method;
 
-import org.springframework.lang.Nullable;
-
 /**
  * Interface used by the {@code MetadataMBeanInfoAssembler} to
  * read source-level metadata from a managed resource's class.
@@ -40,7 +38,6 @@ public interface JmxAttributeSource {
 	 * @return the attribute, or {@code null} if not found
 	 * @throws InvalidMetadataException in case of invalid attributes
 	 */
-	@Nullable
 	ManagedResource getManagedResource(Class<?> clazz) throws InvalidMetadataException;
 
 	/**
@@ -51,7 +48,6 @@ public interface JmxAttributeSource {
 	 * @return the attribute, or {@code null} if not found
 	 * @throws InvalidMetadataException in case of invalid attributes
 	 */
-	@Nullable
 	ManagedAttribute getManagedAttribute(Method method) throws InvalidMetadataException;
 
 	/**
@@ -62,7 +58,6 @@ public interface JmxAttributeSource {
 	 * @return the metric, or {@code null} if not found
 	 * @throws InvalidMetadataException in case of invalid attributes
 	 */
-	@Nullable
 	ManagedMetric getManagedMetric(Method method) throws InvalidMetadataException;
 
 	/**
@@ -73,7 +68,6 @@ public interface JmxAttributeSource {
 	 * @return the attribute, or {@code null} if not found
 	 * @throws InvalidMetadataException in case of invalid attributes
 	 */
-	@Nullable
 	ManagedOperation getManagedOperation(Method method) throws InvalidMetadataException;
 
 	/**

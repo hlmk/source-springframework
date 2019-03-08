@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import org.springframework.beans.FatalBeanException;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.lang.Nullable;
 import org.springframework.tests.sample.beans.DerivedTestBean;
 import org.springframework.tests.sample.beans.ITestBean;
 import org.springframework.tests.sample.beans.TestBean;
@@ -44,6 +43,7 @@ import org.springframework.transaction.TransactionStatus;
 
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.*;
+
 
 /**
  * Test cases for AOP transaction management.
@@ -66,32 +66,29 @@ public class BeanFactoryTransactionTests {
 
 
 	@Test
-	public void testGetsAreNotTransactionalWithProxyFactory1() {
+	public void testGetsAreNotTransactionalWithProxyFactory1() throws NoSuchMethodException {
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory1");
 		assertTrue("testBean is a dynamic proxy", Proxy.isProxyClass(testBean.getClass()));
-		assertFalse(testBean instanceof TransactionalProxy);
 		doTestGetsAreNotTransactional(testBean);
 	}
 
 	@Test
-	public void testGetsAreNotTransactionalWithProxyFactory2DynamicProxy() {
+	public void testGetsAreNotTransactionalWithProxyFactory2DynamicProxy() throws NoSuchMethodException {
 		this.factory.preInstantiateSingletons();
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory2DynamicProxy");
 		assertTrue("testBean is a dynamic proxy", Proxy.isProxyClass(testBean.getClass()));
-		assertTrue(testBean instanceof TransactionalProxy);
 		doTestGetsAreNotTransactional(testBean);
 	}
 
 	@Test
-	public void testGetsAreNotTransactionalWithProxyFactory2Cglib() {
+	public void testGetsAreNotTransactionalWithProxyFactory2Cglib() throws NoSuchMethodException {
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory2Cglib");
 		assertTrue("testBean is CGLIB advised", AopUtils.isCglibProxy(testBean));
-		assertTrue(testBean instanceof TransactionalProxy);
 		doTestGetsAreNotTransactional(testBean);
 	}
 
 	@Test
-	public void testProxyFactory2Lazy() {
+	public void testProxyFactory2Lazy() throws NoSuchMethodException {
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory2Lazy");
 		assertFalse(factory.containsSingleton("target"));
 		assertEquals(666, testBean.getAge());
@@ -99,10 +96,9 @@ public class BeanFactoryTransactionTests {
 	}
 
 	@Test
-	public void testCglibTransactionProxyImplementsNoInterfaces() {
+	public void testCglibTransactionProxyImplementsNoInterfaces() throws NoSuchMethodException {
 		ImplementsNoInterfaces ini = (ImplementsNoInterfaces) factory.getBean("cglibNoInterfaces");
 		assertTrue("testBean is CGLIB advised", AopUtils.isCglibProxy(ini));
-		assertTrue(ini instanceof TransactionalProxy);
 		String newName = "Gordon";
 
 		// Install facade
@@ -115,10 +111,9 @@ public class BeanFactoryTransactionTests {
 	}
 
 	@Test
-	public void testGetsAreNotTransactionalWithProxyFactory3() {
+	public void testGetsAreNotTransactionalWithProxyFactory3() throws NoSuchMethodException {
 		ITestBean testBean = (ITestBean) factory.getBean("proxyFactory3");
 		assertTrue("testBean is a full proxy", testBean instanceof DerivedTestBean);
-		assertTrue(testBean instanceof TransactionalProxy);
 		InvocationCounterPointcut txnCounter = (InvocationCounterPointcut) factory.getBean("txnInvocationCounterPointcut");
 		InvocationCounterInterceptor preCounter = (InvocationCounterInterceptor) factory.getBean("preInvocationCounterInterceptor");
 		InvocationCounterInterceptor postCounter = (InvocationCounterInterceptor) factory.getBean("postInvocationCounterInterceptor");
@@ -147,7 +142,7 @@ public class BeanFactoryTransactionTests {
 		ptm = new PlatformTransactionManager() {
 			private boolean invoked;
 			@Override
-			public TransactionStatus getTransaction(@Nullable TransactionDefinition def) throws TransactionException {
+			public TransactionStatus getTransaction(TransactionDefinition def) throws TransactionException {
 				if (invoked) {
 					throw new IllegalStateException("getTransaction should not get invoked more than once");
 				}
@@ -201,7 +196,7 @@ public class BeanFactoryTransactionTests {
 	 * Test that we can set the target to a dynamic TargetSource.
 	 */
 	@Test
-	public void testDynamicTargetSource() {
+	public void testDynamicTargetSource() throws NoSuchMethodException {
 		// Install facade
 		CallCountingTransactionManager txMan = new CallCountingTransactionManager();
 		PlatformTransactionManagerFacade.delegate = txMan;
@@ -231,7 +226,7 @@ public class BeanFactoryTransactionTests {
 		int counter = 0;
 
 		@Override
-		public boolean matches(Method method, @Nullable Class<?> clazz) {
+		public boolean matches(Method method, Class<?> clazz) {
 			counter++;
 			return true;
 		}

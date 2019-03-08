@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,28 +22,29 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.context.support.EmbeddedValueResolutionSupport;
+import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.format.AnnotationFormatterFactory;
 import org.springframework.format.Formatter;
 import org.springframework.format.Parser;
 import org.springframework.format.Printer;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.util.StringUtils;
+import org.springframework.util.StringValueResolver;
 
 /**
- * Formats fields annotated with the {@link DateTimeFormat} annotation using a {@link DateFormatter}.
+ * Formats fields annotated with the {@link DateTimeFormat} annotation using
+ * a {@link DateFormatter}.
  *
  * @author Phillip Webb
  * @since 3.2
  * @see org.springframework.format.datetime.joda.JodaDateTimeFormatAnnotationFormatterFactory
  */
-public class DateTimeFormatAnnotationFormatterFactory  extends EmbeddedValueResolutionSupport
-		implements AnnotationFormatterFactory<DateTimeFormat> {
+public class DateTimeFormatAnnotationFormatterFactory implements
+		AnnotationFormatterFactory<DateTimeFormat>, EmbeddedValueResolverAware {
+
 
 	private static final Set<Class<?>> FIELD_TYPES;
-
 	static {
-		Set<Class<?>> fieldTypes = new HashSet<>(4);
+		Set<Class<?>> fieldTypes = new HashSet<Class<?>>(4);
 		fieldTypes.add(Date.class);
 		fieldTypes.add(Calendar.class);
 		fieldTypes.add(Long.class);
@@ -51,33 +52,35 @@ public class DateTimeFormatAnnotationFormatterFactory  extends EmbeddedValueReso
 	}
 
 
-	@Override
+	private StringValueResolver embeddedValueResolver;
+
+
+	public void setEmbeddedValueResolver(StringValueResolver resolver) {
+		this.embeddedValueResolver = resolver;
+	}
+
 	public Set<Class<?>> getFieldTypes() {
 		return FIELD_TYPES;
 	}
 
-	@Override
 	public Printer<?> getPrinter(DateTimeFormat annotation, Class<?> fieldType) {
 		return getFormatter(annotation, fieldType);
 	}
 
-	@Override
 	public Parser<?> getParser(DateTimeFormat annotation, Class<?> fieldType) {
 		return getFormatter(annotation, fieldType);
 	}
 
 	protected Formatter<Date> getFormatter(DateTimeFormat annotation, Class<?> fieldType) {
 		DateFormatter formatter = new DateFormatter();
-		String style = resolveEmbeddedValue(annotation.style());
-		if (StringUtils.hasLength(style)) {
-			formatter.setStylePattern(style);
-		}
+		formatter.setStylePattern(resolveEmbeddedValue(annotation.style()));
 		formatter.setIso(annotation.iso());
-		String pattern = resolveEmbeddedValue(annotation.pattern());
-		if (StringUtils.hasLength(pattern)) {
-			formatter.setPattern(pattern);
-		}
+		formatter.setPattern(resolveEmbeddedValue(annotation.pattern()));
 		return formatter;
+	}
+
+	protected String resolveEmbeddedValue(String value) {
+		return (this.embeddedValueResolver != null ? this.embeddedValueResolver.resolveStringValue(value) : value);
 	}
 
 }

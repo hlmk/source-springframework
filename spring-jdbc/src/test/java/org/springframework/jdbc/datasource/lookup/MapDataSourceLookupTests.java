@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2006 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,41 +16,35 @@
 
 package org.springframework.jdbc.datasource.lookup;
 
+import static org.junit.Assert.*;
+
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.sql.DataSource;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Rick Evans
  * @author Chris Beams
  */
-public class MapDataSourceLookupTests {
+public final class MapDataSourceLookupTests {
 
 	private static final String DATA_SOURCE_NAME = "dataSource";
 
-	@Rule
-	public final ExpectedException exception = ExpectedException.none();
 
-
-	@Test
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void getDataSourcesReturnsUnmodifiableMap() throws Exception {
-		MapDataSourceLookup lookup = new MapDataSourceLookup();
+	@SuppressWarnings("unchecked")
+	@Test(expected=UnsupportedOperationException.class)
+	public void testGetDataSourcesReturnsUnmodifiableMap() throws Exception {
+		MapDataSourceLookup lookup = new MapDataSourceLookup(new HashMap());
 		Map dataSources = lookup.getDataSources();
-
-		exception.expect(UnsupportedOperationException.class);
 		dataSources.put("", "");
 	}
 
 	@Test
-	public void lookupSunnyDay() throws Exception {
-		Map<String, DataSource> dataSources = new HashMap<>();
+	public void testLookupSunnyDay() throws Exception {
+		Map<String, DataSource> dataSources = new HashMap<String, DataSource>();
 		StubDataSource expectedDataSource = new StubDataSource();
 		dataSources.put(DATA_SOURCE_NAME, expectedDataSource);
 		MapDataSourceLookup lookup = new MapDataSourceLookup();
@@ -61,8 +55,8 @@ public class MapDataSourceLookupTests {
 	}
 
 	@Test
-	public void setDataSourcesIsAnIdempotentOperation() throws Exception {
-		Map<String, DataSource> dataSources = new HashMap<>();
+	public void testSettingDataSourceMapToNullIsAnIdempotentOperation() throws Exception {
+		Map<String, DataSource> dataSources = new HashMap<String, DataSource>();
 		StubDataSource expectedDataSource = new StubDataSource();
 		dataSources.put(DATA_SOURCE_NAME, expectedDataSource);
 		MapDataSourceLookup lookup = new MapDataSourceLookup();
@@ -74,8 +68,8 @@ public class MapDataSourceLookupTests {
 	}
 
 	@Test
-	public void addingDataSourcePermitsOverride() throws Exception {
-		Map<String, DataSource> dataSources = new HashMap<>();
+	public void testAddingDataSourcePermitsOverride() throws Exception {
+		Map<String, DataSource> dataSources = new HashMap<String, DataSource>();
 		StubDataSource overridenDataSource = new StubDataSource();
 		StubDataSource expectedDataSource = new StubDataSource();
 		dataSources.put(DATA_SOURCE_NAME, overridenDataSource);
@@ -87,22 +81,19 @@ public class MapDataSourceLookupTests {
 		assertSame(expectedDataSource, dataSource);
 	}
 
-	@Test
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void getDataSourceWhereSuppliedMapHasNonDataSourceTypeUnderSpecifiedKey() throws Exception {
+	@SuppressWarnings("unchecked")
+	@Test(expected=ClassCastException.class)
+	public void testGetDataSourceWhereSuppliedMapHasNonDataSourceTypeUnderSpecifiedKey() throws Exception {
 		Map dataSources = new HashMap();
 		dataSources.put(DATA_SOURCE_NAME, new Object());
-		MapDataSourceLookup lookup = new MapDataSourceLookup(dataSources);
-
-		exception.expect(ClassCastException.class);
+		MapDataSourceLookup lookup = new MapDataSourceLookup();
+		lookup.setDataSources(dataSources);
 		lookup.getDataSource(DATA_SOURCE_NAME);
 	}
 
-	@Test
-	public void getDataSourceWhereSuppliedMapHasNoEntryForSpecifiedKey() throws Exception {
+	@Test(expected=DataSourceLookupFailureException.class)
+	public void testGetDataSourceWhereSuppliedMapHasNoEntryForSpecifiedKey() throws Exception {
 		MapDataSourceLookup lookup = new MapDataSourceLookup();
-
-		exception.expect(DataSourceLookupFailureException.class);
 		lookup.getDataSource(DATA_SOURCE_NAME);
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.expression.spel.support;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.core.MethodParameter;
@@ -29,7 +30,6 @@ import org.springframework.expression.ConstructorResolver;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.EvaluationException;
 import org.springframework.expression.TypeConverter;
-import org.springframework.lang.Nullable;
 
 /**
  * A constructor resolver that uses reflection to locate the constructor that should be invoked.
@@ -49,28 +49,29 @@ public class ReflectiveConstructorResolver implements ConstructorResolver {
 	 * registered type converter.
 	 * </ol>
 	 */
-	@Override
-	@Nullable
-	public ConstructorExecutor resolve(EvaluationContext context, String typeName, List<TypeDescriptor> argumentTypes)
+	public ConstructorExecutor resolve(EvaluationContext context, String typename, List<TypeDescriptor> argumentTypes)
 			throws AccessException {
 
 		try {
 			TypeConverter typeConverter = context.getTypeConverter();
-			Class<?> type = context.getTypeLocator().findType(typeName);
+			Class<?> type = context.getTypeLocator().findType(typename);
 			Constructor<?>[] ctors = type.getConstructors();
 
-			Arrays.sort(ctors, (c1, c2) -> {
-				int c1pl = c1.getParameterCount();
-				int c2pl = c2.getParameterCount();
-				return (c1pl < c2pl ? -1 : (c1pl > c2pl ? 1 : 0));
+			Arrays.sort(ctors, new Comparator<Constructor<?>>() {
+				public int compare(Constructor<?> c1, Constructor<?> c2) {
+					int c1pl = c1.getParameterTypes().length;
+					int c2pl = c2.getParameterTypes().length;
+					return (new Integer(c1pl)).compareTo(c2pl);
+				}
 			});
 
 			Constructor<?> closeMatch = null;
-			Constructor<?> matchRequiringConversion = null;
+			int[] argsToConvert = null;
+			Constructor matchRequiringConversion = null;
 
 			for (Constructor<?> ctor : ctors) {
 				Class<?>[] paramTypes = ctor.getParameterTypes();
-				List<TypeDescriptor> paramDescriptors = new ArrayList<>(paramTypes.length);
+				List<TypeDescriptor> paramDescriptors = new ArrayList<TypeDescriptor>(paramTypes.length);
 				for (int i = 0; i < paramTypes.length; i++) {
 					paramDescriptors.add(new TypeDescriptor(new MethodParameter(ctor, i)));
 				}
@@ -90,22 +91,23 @@ public class ReflectiveConstructorResolver implements ConstructorResolver {
 				}
 				if (matchInfo != null) {
 					if (matchInfo.isExactMatch()) {
-						return new ReflectiveConstructorExecutor(ctor);
+						return new ReflectiveConstructorExecutor(ctor, null);
 					}
 					else if (matchInfo.isCloseMatch()) {
 						closeMatch = ctor;
 					}
 					else if (matchInfo.isMatchRequiringConversion()) {
+						argsToConvert = matchInfo.argsRequiringConversion;
 						matchRequiringConversion = ctor;
 					}
 				}
 			}
 
 			if (closeMatch != null) {
-				return new ReflectiveConstructorExecutor(closeMatch);
+				return new ReflectiveConstructorExecutor(closeMatch, null);
 			}
 			else if (matchRequiringConversion != null) {
-				return new ReflectiveConstructorExecutor(matchRequiringConversion);
+				return new ReflectiveConstructorExecutor(matchRequiringConversion, argsToConvert);
 			}
 			else {
 				return null;

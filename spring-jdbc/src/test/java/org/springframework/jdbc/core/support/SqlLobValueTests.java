@@ -29,7 +29,6 @@ import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
-
 import org.springframework.jdbc.support.lob.LobCreator;
 import org.springframework.jdbc.support.lob.LobHandler;
 
@@ -112,7 +111,7 @@ public class SqlLobValueTests  {
 		lob.setTypeValue(preparedStatement, 1, Types.CLOB, "test");
 		verify(creator).setClobAsAsciiStream(eq(preparedStatement), eq(1), inputStreamCaptor.capture(), eq(3));
 		byte[] bytes = new byte[3];
-		inputStreamCaptor.getValue().read(bytes);
+		inputStreamCaptor.getValue().read(bytes );
 		assertThat(bytes, equalTo(testContent));
 	}
 

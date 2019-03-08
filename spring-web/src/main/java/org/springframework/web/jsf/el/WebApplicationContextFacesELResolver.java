@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.web.jsf.el;
 
 import java.beans.FeatureDescriptor;
 import java.util.Iterator;
+
 import javax.el.ELContext;
 import javax.el.ELException;
 import javax.el.ELResolver;
@@ -27,13 +28,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
-import org.springframework.lang.Nullable;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.jsf.FacesContextUtils;
 
 /**
- * Special JSF {@code ELResolver} that exposes the Spring {@code WebApplicationContext}
- * instance under a variable named "webApplicationContext".
+ * Special JSF 1.2 {@code ELResolver} that exposes the Spring
+ * {@code WebApplicationContext} instance under a variable named
+ * "webApplicationContext".
  *
  * <p>In contrast to {@link SpringBeanFacesELResolver}, this ELResolver variant
  * does <i>not</i> resolve JSF variable names as Spring bean names. It rather
@@ -43,7 +44,7 @@ import org.springframework.web.jsf.FacesContextUtils;
  *
  * <p>Configure this resolver in your {@code faces-config.xml} file as follows:
  *
- * <pre class="code">
+ * <pre>
  * &lt;application>
  *   ...
  *   &lt;el-resolver>org.springframework.web.jsf.el.WebApplicationContextFacesELResolver&lt;/el-resolver>
@@ -62,13 +63,12 @@ public class WebApplicationContextFacesELResolver extends ELResolver {
 	public static final String WEB_APPLICATION_CONTEXT_VARIABLE_NAME = "webApplicationContext";
 
 
-	/** Logger available to subclasses. */
+	/** Logger available to subclasses */
 	protected final Log logger = LogFactory.getLog(getClass());
 
 
 	@Override
-	@Nullable
-	public Object getValue(ELContext elContext, @Nullable Object base, Object property) throws ELException {
+	public Object getValue(ELContext elContext, Object base, Object property) throws ELException {
 		if (base != null) {
 			if (base instanceof WebApplicationContext) {
 				WebApplicationContext wac = (WebApplicationContext) base;
@@ -105,8 +105,7 @@ public class WebApplicationContextFacesELResolver extends ELResolver {
 	}
 
 	@Override
-	@Nullable
-	public Class<?> getType(ELContext elContext, @Nullable Object base, Object property) throws ELException {
+	public Class<?> getType(ELContext elContext, Object base, Object property) throws ELException {
 		if (base != null) {
 			if (base instanceof WebApplicationContext) {
 				WebApplicationContext wac = (WebApplicationContext) base;
@@ -150,13 +149,12 @@ public class WebApplicationContextFacesELResolver extends ELResolver {
 	public boolean isReadOnly(ELContext elContext, Object base, Object property) throws ELException {
 		if (base instanceof WebApplicationContext) {
 			elContext.setPropertyResolved(true);
-			return true;
+			return false;
 		}
 		return false;
 	}
 
 	@Override
-	@Nullable
 	public Iterator<FeatureDescriptor> getFeatureDescriptors(ELContext elContext, Object base) {
 		return null;
 	}
@@ -168,14 +166,13 @@ public class WebApplicationContextFacesELResolver extends ELResolver {
 
 
 	/**
-	 * Retrieve the {@link WebApplicationContext} reference to expose.
-	 * <p>The default implementation delegates to {@link FacesContextUtils},
-	 * returning {@code null} if no {@code WebApplicationContext} found.
+	 * Retrieve the WebApplicationContext reference to expose.
+	 * <p>The default implementation delegates to FacesContextUtils,
+	 * returning {@code null} if no WebApplicationContext found.
 	 * @param elContext the current JSF ELContext
 	 * @return the Spring web application context
 	 * @see org.springframework.web.jsf.FacesContextUtils#getWebApplicationContext
 	 */
-	@Nullable
 	protected WebApplicationContext getWebApplicationContext(ELContext elContext) {
 		FacesContext facesContext = FacesContext.getCurrentInstance();
 		return FacesContextUtils.getRequiredWebApplicationContext(facesContext);

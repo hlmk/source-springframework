@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.HashMap;
 public class MethodCounter implements Serializable {
 
 	/** Method name --> count, does not understand overloading */
-	private HashMap<String, Integer> map = new HashMap<>();
+	private HashMap<String, Integer> map = new HashMap<String, Integer>();
 
 	private int allCount;
 
@@ -59,12 +59,10 @@ public class MethodCounter implements Serializable {
 	 * Doesn't worry about counts.
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
-	@Override
 	public boolean equals(Object other) {
 		return (other != null && other.getClass() == this.getClass());
 	}
 
-	@Override
 	public int hashCode() {
 		return getClass().hashCode();
 	}

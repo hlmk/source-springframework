@@ -16,9 +16,11 @@
 
 package org.springframework.ejb.config;
 
+import static org.junit.Assert.*;
+
 import org.junit.Before;
 import org.junit.Test;
-
+import org.springframework.tests.sample.beans.ITestBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -28,9 +30,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.ejb.access.LocalStatelessSessionProxyFactoryBean;
 import org.springframework.ejb.access.SimpleRemoteStatelessSessionProxyFactoryBean;
 import org.springframework.jndi.JndiObjectFactoryBean;
-import org.springframework.tests.sample.beans.ITestBean;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Rob Harrop

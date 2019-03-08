@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.beans.propertyeditors;
+
+import static org.junit.Assert.*;
 
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorSupport;
@@ -37,7 +39,6 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import org.junit.Test;
-
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
@@ -49,7 +50,6 @@ import org.springframework.tests.sample.beans.IndexedTestBean;
 import org.springframework.tests.sample.beans.NumberTestBean;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
 
 /**
  * Unit tests for the various PropertyEditors in Spring.
@@ -430,6 +430,11 @@ public class CustomEditorTests {
 		assertTrue("Correct bigDecimal value", new BigDecimal("4.5").equals(tb.getBigDecimal()));
 	}
 
+	@Test(expected = IllegalArgumentException.class)
+	public void testCustomNumberEditorCtorWithNullNumberType() throws Exception {
+		new CustomNumberEditor(null, true);
+	}
+
 	@Test
 	public void testCustomNumberEditorWithAllowEmpty() {
 		NumberFormat nf = NumberFormat.getNumberInstance(Locale.GERMAN);
@@ -480,8 +485,7 @@ public class CustomEditorTests {
 			CustomNumberEditor editor = new CustomNumberEditor(Short.class, true);
 			editor.setAsText(String.valueOf(Short.MAX_VALUE + 1));
 			fail(Short.MAX_VALUE + 1 + " is greater than max value");
-		}
-		catch (NumberFormatException ex) {
+		} catch (NumberFormatException ex) {
 			// expected
 		}
 	}
@@ -1357,7 +1361,7 @@ public class CustomEditorTests {
 		bw.registerCustomEditor(List.class, "list", new PropertyEditorSupport() {
 			@Override
 			public void setAsText(String text) throws IllegalArgumentException {
-				List<TestBean> result = new ArrayList<>();
+				List<TestBean> result = new ArrayList<TestBean>();
 				result.add(new TestBean("list" + text, 99));
 				setValue(result);
 			}
@@ -1392,7 +1396,7 @@ public class CustomEditorTests {
 		PropertyEditor pe = new CustomNumberEditor(Integer.class, true);
 		bw.registerCustomEditor(null, "list.age", pe);
 		TestBean tb = new TestBean();
-		bw.setPropertyValue("list", new ArrayList<>());
+		bw.setPropertyValue("list", new ArrayList<Object>());
 		bw.setPropertyValue("list[0]", tb);
 		assertEquals(tb, bean.getList().get(0));
 		assertEquals(pe, bw.findCustomEditor(int.class, "list.age"));

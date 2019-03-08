@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import org.springframework.lang.Nullable;
-
 /**
  * Helper class that allows for specifying a method to invoke in a declarative
  * fashion, be it static or non-static.
@@ -38,23 +36,17 @@ import org.springframework.lang.Nullable;
  */
 public class MethodInvoker {
 
-	@Nullable
-	protected Class<?> targetClass;
+	private Class<?> targetClass;
 
-	@Nullable
 	private Object targetObject;
 
-	@Nullable
 	private String targetMethod;
 
-	@Nullable
 	private String staticMethod;
 
-	@Nullable
-	private Object[] arguments;
+	private Object[] arguments = new Object[0];
 
-	/** The method we will call. */
-	@Nullable
+	/** The method we will call */
 	private Method methodObject;
 
 
@@ -65,14 +57,13 @@ public class MethodInvoker {
 	 * @see #setTargetObject
 	 * @see #setTargetMethod
 	 */
-	public void setTargetClass(@Nullable Class<?> targetClass) {
+	public void setTargetClass(Class<?> targetClass) {
 		this.targetClass = targetClass;
 	}
 
 	/**
 	 * Return the target class on which to call the target method.
 	 */
-	@Nullable
 	public Class<?> getTargetClass() {
 		return this.targetClass;
 	}
@@ -84,7 +75,7 @@ public class MethodInvoker {
 	 * @see #setTargetClass
 	 * @see #setTargetMethod
 	 */
-	public void setTargetObject(@Nullable Object targetObject) {
+	public void setTargetObject(Object targetObject) {
 		this.targetObject = targetObject;
 		if (targetObject != null) {
 			this.targetClass = targetObject.getClass();
@@ -94,7 +85,6 @@ public class MethodInvoker {
 	/**
 	 * Return the target object on which to call the target method.
 	 */
-	@Nullable
 	public Object getTargetObject() {
 		return this.targetObject;
 	}
@@ -106,14 +96,13 @@ public class MethodInvoker {
 	 * @see #setTargetClass
 	 * @see #setTargetObject
 	 */
-	public void setTargetMethod(@Nullable String targetMethod) {
+	public void setTargetMethod(String targetMethod) {
 		this.targetMethod = targetMethod;
 	}
 
 	/**
 	 * Return the name of the method to be invoked.
 	 */
-	@Nullable
 	public String getTargetMethod() {
 		return this.targetMethod;
 	}
@@ -133,15 +122,15 @@ public class MethodInvoker {
 	 * Set arguments for the method invocation. If this property is not set,
 	 * or the Object array is of length 0, a method with no arguments is assumed.
 	 */
-	public void setArguments(Object... arguments) {
-		this.arguments = arguments;
+	public void setArguments(Object[] arguments) {
+		this.arguments = (arguments != null ? arguments : new Object[0]);
 	}
 
 	/**
 	 * Return the arguments for the method invocation.
 	 */
 	public Object[] getArguments() {
-		return (this.arguments != null ? this.arguments : new Object[0]);
+		return this.arguments;
 	}
 
 
@@ -167,8 +156,12 @@ public class MethodInvoker {
 
 		Class<?> targetClass = getTargetClass();
 		String targetMethod = getTargetMethod();
-		Assert.notNull(targetClass, "Either 'targetClass' or 'targetObject' is required");
-		Assert.notNull(targetMethod, "Property 'targetMethod' is required");
+		if (targetClass == null) {
+			throw new IllegalArgumentException("Either 'targetClass' or 'targetObject' is required");
+		}
+		if (targetMethod == null) {
+			throw new IllegalArgumentException("Property 'targetMethod' is required");
+		}
 
 		Object[] arguments = getArguments();
 		Class<?>[] argTypes = new Class<?>[arguments.length];
@@ -208,15 +201,12 @@ public class MethodInvoker {
 	 * @see #getTargetMethod()
 	 * @see #getArguments()
 	 */
-	@Nullable
 	protected Method findMatchingMethod() {
 		String targetMethod = getTargetMethod();
 		Object[] arguments = getArguments();
 		int argCount = arguments.length;
 
-		Class<?> targetClass = getTargetClass();
-		Assert.state(targetClass != null, "No target class set");
-		Method[] candidates = ReflectionUtils.getAllDeclaredMethods(targetClass);
+		Method[] candidates = ReflectionUtils.getAllDeclaredMethods(getTargetClass());
 		int minTypeDiffWeight = Integer.MAX_VALUE;
 		Method matchingMethod = null;
 
@@ -268,7 +258,6 @@ public class MethodInvoker {
 	 * @throws IllegalAccessException if the target method couldn't be accessed
 	 * @see #prepare
 	 */
-	@Nullable
 	public Object invoke() throws InvocationTargetException, IllegalAccessException {
 		// In the static case, target will simply be {@code null}.
 		Object targetObject = getTargetObject();

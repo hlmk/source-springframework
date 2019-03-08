@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.scripting.support;
 
-import org.springframework.lang.Nullable;
 import org.springframework.scripting.ScriptSource;
 import org.springframework.util.Assert;
 
@@ -32,11 +31,10 @@ import org.springframework.util.Assert;
  */
 public class StaticScriptSource implements ScriptSource {
 
-	private String script = "";
+	private String script;
 
 	private boolean modified;
 
-	@Nullable
 	private String className;
 
 
@@ -54,7 +52,7 @@ public class StaticScriptSource implements ScriptSource {
 	 * @param className the suggested class name for the script
 	 * (may be {@code null})
 	 */
-	public StaticScriptSource(String script, @Nullable String className) {
+	public StaticScriptSource(String script, String className) {
 		setScript(script);
 		this.className = className;
 	}
@@ -70,19 +68,15 @@ public class StaticScriptSource implements ScriptSource {
 	}
 
 
-	@Override
 	public synchronized String getScriptAsString() {
 		this.modified = false;
 		return this.script;
 	}
 
-	@Override
 	public synchronized boolean isModified() {
 		return this.modified;
 	}
 
-	@Override
-	@Nullable
 	public String suggestedClassName() {
 		return this.className;
 	}

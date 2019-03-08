@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package org.springframework.format.datetime.joda;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.*;
+
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.junit.Test;
-
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 
 /**
  * @author Phillip Webb
@@ -29,28 +31,27 @@ import static org.junit.Assert.*;
  */
 public class DateTimeFormatterFactoryBeanTests {
 
-	private final DateTimeFormatterFactoryBean factory = new DateTimeFormatterFactoryBean();
-
+	private DateTimeFormatterFactoryBean factory = new DateTimeFormatterFactoryBean();
 
 	@Test
-	public void isSingleton() {
+	public void isSingleton() throws Exception {
 		assertThat(factory.isSingleton(), is(true));
 	}
 
 	@Test
 	@SuppressWarnings("rawtypes")
-	public void getObjectType() {
+	public void getObjectType() throws Exception {
 		assertThat(factory.getObjectType(), is(equalTo((Class) DateTimeFormatter.class)));
 	}
 
 	@Test
-	public void getObject() {
+	public void getObject() throws Exception {
 		factory.afterPropertiesSet();
 		assertThat(factory.getObject(), is(equalTo(DateTimeFormat.mediumDateTime())));
 	}
 
 	@Test
-	public void getObjectIsAlwaysSingleton() {
+	public void getObjectIsAlwaysSingleton() throws Exception {
 		factory.afterPropertiesSet();
 		DateTimeFormatter formatter = factory.getObject();
 		assertThat(formatter, is(equalTo(DateTimeFormat.mediumDateTime())));

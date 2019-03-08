@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.springframework.expression.spel.support;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.core.MethodParameter;
@@ -26,10 +26,9 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.EvaluationException;
 import org.springframework.expression.TypeConverter;
 import org.springframework.expression.spel.SpelEvaluationException;
-import org.springframework.lang.Nullable;
+import org.springframework.expression.spel.SpelMessage;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.MethodInvoker;
 
 /**
@@ -40,7 +39,7 @@ import org.springframework.util.MethodInvoker;
  * @author Juergen Hoeller
  * @since 3.0
  */
-public abstract class ReflectionHelper {
+public class ReflectionHelper {
 
 	/**
 	 * Compare argument arrays and return information about whether they match.
@@ -52,38 +51,58 @@ public abstract class ReflectionHelper {
 	 * @return a MatchInfo object indicating what kind of match it was,
 	 * or {@code null} if it was not a match
 	 */
-	@Nullable
 	static ArgumentsMatchInfo compareArguments(
 			List<TypeDescriptor> expectedArgTypes, List<TypeDescriptor> suppliedArgTypes, TypeConverter typeConverter) {
 
 		Assert.isTrue(expectedArgTypes.size() == suppliedArgTypes.size(),
 				"Expected argument types and supplied argument types should be arrays of same length");
 
-		ArgumentsMatchKind match = ArgumentsMatchKind.EXACT;
+		ArgsMatchKind match = ArgsMatchKind.EXACT;
+		List<Integer> argsRequiringConversion = null;
 		for (int i = 0; i < expectedArgTypes.size() && match != null; i++) {
 			TypeDescriptor suppliedArg = suppliedArgTypes.get(i);
 			TypeDescriptor expectedArg = expectedArgTypes.get(i);
-			// The user may supply null - and that will be ok unless a primitive is expected
-			if (suppliedArg == null) {
-				if (expectedArg.isPrimitive()) {
-					match = null;
-				}
-			}
-			else if (!expectedArg.equals(suppliedArg))  {
-				if (suppliedArg.isAssignableTo(expectedArg)) {
-					if (match != ArgumentsMatchKind.REQUIRES_CONVERSION) {
-						match = ArgumentsMatchKind.CLOSE;
+			if (!expectedArg.equals(suppliedArg)) {
+				// The user may supply null - and that will be ok unless a primitive is expected
+				if (suppliedArg == null) {
+					if (expectedArg.isPrimitive()) {
+						match = null;
 					}
 				}
-				else if (typeConverter.canConvert(suppliedArg, expectedArg)) {
-					match = ArgumentsMatchKind.REQUIRES_CONVERSION;
-				}
 				else {
-					match = null;
+					if (suppliedArg.isAssignableTo(expectedArg)) {
+						if (match != ArgsMatchKind.REQUIRES_CONVERSION) {
+							match = ArgsMatchKind.CLOSE;
+						}
+					}
+					else if (typeConverter.canConvert(suppliedArg, expectedArg)) {
+						if (argsRequiringConversion == null) {
+							argsRequiringConversion = new ArrayList<Integer>();
+						}
+						argsRequiringConversion.add(i);
+						match = ArgsMatchKind.REQUIRES_CONVERSION;
+					}
+					else {
+						match = null;
+					}
 				}
 			}
 		}
-		return (match != null ? new ArgumentsMatchInfo(match) : null);
+		if (match == null) {
+			return null;
+		}
+		else {
+			if (match == ArgsMatchKind.REQUIRES_CONVERSION) {
+				int[] argsArray = new int[argsRequiringConversion.size()];
+				for (int i = 0; i < argsRequiringConversion.size(); i++) {
+					argsArray[i] = argsRequiringConversion.get(i);
+				}
+				return new ArgumentsMatchInfo(match, argsArray);
+			}
+			else {
+				return new ArgumentsMatchInfo(match);
+			}
+		}
 	}
 
 	/**
@@ -140,16 +159,16 @@ public abstract class ReflectionHelper {
 	 * @return a MatchInfo object indicating what kind of match it was,
 	 * or {@code null} if it was not a match
 	 */
-	@Nullable
 	static ArgumentsMatchInfo compareArgumentsVarargs(
 			List<TypeDescriptor> expectedArgTypes, List<TypeDescriptor> suppliedArgTypes, TypeConverter typeConverter) {
 
-		Assert.isTrue(!CollectionUtils.isEmpty(expectedArgTypes),
-				"Expected arguments must at least include one array (the varargs parameter)");
+		Assert.isTrue(expectedArgTypes != null && expectedArgTypes.size() > 0,
+				"Expected arguments must at least include one array (the vargargs parameter)");
 		Assert.isTrue(expectedArgTypes.get(expectedArgTypes.size() - 1).isArray(),
 				"Final expected argument should be array type (the varargs parameter)");
 
-		ArgumentsMatchKind match = ArgumentsMatchKind.EXACT;
+		ArgsMatchKind match = ArgsMatchKind.EXACT;
+		List<Integer> argsRequiringConversion = null;
 
 		// Check up until the varargs argument:
 
@@ -166,12 +185,16 @@ public abstract class ReflectionHelper {
 			else {
 				if (!expectedArg.equals(suppliedArg)) {
 					if (suppliedArg.isAssignableTo(expectedArg)) {
-						if (match != ArgumentsMatchKind.REQUIRES_CONVERSION) {
-							match = ArgumentsMatchKind.CLOSE;
+						if (match != ArgsMatchKind.REQUIRES_CONVERSION) {
+							match = ArgsMatchKind.CLOSE;
 						}
 					}
 					else if (typeConverter.canConvert(suppliedArg, expectedArg)) {
-						match = ArgumentsMatchKind.REQUIRES_CONVERSION;
+						if (argsRequiringConversion == null) {
+							argsRequiringConversion = new ArrayList<Integer>();
+						}
+						argsRequiringConversion.add(i);
+						match = ArgsMatchKind.REQUIRES_CONVERSION;
 					}
 					else {
 						match = null;
@@ -194,10 +217,7 @@ public abstract class ReflectionHelper {
 		else {
 			// Now... we have the final argument in the method we are checking as a match and we have 0
 			// or more other arguments left to pass to it.
-			TypeDescriptor varargsDesc = expectedArgTypes.get(expectedArgTypes.size() - 1);
-			TypeDescriptor elementDesc = varargsDesc.getElementTypeDescriptor();
-			Assert.state(elementDesc != null, "No element type");
-			Class<?> varargsParamType = elementDesc.getType();
+			Class<?> varargsParamType = expectedArgTypes.get(expectedArgTypes.size() - 1).getElementTypeDescriptor().getType();
 
 			// All remaining parameters must be of this type or convertible to this type
 			for (int i = expectedArgTypes.size() - 1; i < suppliedArgTypes.size(); i++) {
@@ -210,12 +230,16 @@ public abstract class ReflectionHelper {
 				else {
 					if (varargsParamType != suppliedArg.getType()) {
 						if (ClassUtils.isAssignable(varargsParamType, suppliedArg.getType())) {
-							if (match != ArgumentsMatchKind.REQUIRES_CONVERSION) {
-								match = ArgumentsMatchKind.CLOSE;
+							if (match != ArgsMatchKind.REQUIRES_CONVERSION) {
+								match = ArgsMatchKind.CLOSE;
 							}
 						}
 						else if (typeConverter.canConvert(suppliedArg, TypeDescriptor.valueOf(varargsParamType))) {
-							match = ArgumentsMatchKind.REQUIRES_CONVERSION;
+							if (argsRequiringConversion == null) {
+								argsRequiringConversion = new ArrayList<Integer>();
+							}
+							argsRequiringConversion.add(i);
+							match = ArgsMatchKind.REQUIRES_CONVERSION;
 						}
 						else {
 							match = null;
@@ -225,29 +249,21 @@ public abstract class ReflectionHelper {
 			}
 		}
 
-		return (match != null ? new ArgumentsMatchInfo(match) : null);
-	}
-
-
-	// TODO could do with more refactoring around argument handling and varargs
-	/**
-	 * Convert a supplied set of arguments into the requested types. If the parameterTypes are related to
-	 * a varargs method then the final entry in the parameterTypes array is going to be an array itself whose
-	 * component type should be used as the conversion target for extraneous arguments. (For example, if the
-	 * parameterTypes are {Integer, String[]} and the input arguments are {Integer, boolean, float} then both
-	 * the boolean and float must be converted to strings). This method does *not* repackage the arguments
-	 * into a form suitable for the varargs invocation - a subsequent call to setupArgumentsForVarargsInvocation handles that.
-	 * @param converter the converter to use for type conversions
-	 * @param arguments the arguments to convert to the requested parameter types
-	 * @param method the target Method
-	 * @return true if some kind of conversion occurred on the argument
-	 * @throws SpelEvaluationException if there is a problem with conversion
-	 */
-	public static boolean convertAllArguments(TypeConverter converter, Object[] arguments, Method method)
-			throws SpelEvaluationException {
-
-		Integer varargsPosition = (method.isVarArgs() ? method.getParameterCount() - 1 : null);
-		return convertArguments(converter, arguments, method, varargsPosition);
+		if (match == null) {
+			return null;
+		}
+		else {
+			if (match == ArgsMatchKind.REQUIRES_CONVERSION) {
+				int[] argsArray = new int[argsRequiringConversion.size()];
+				for (int i = 0; i < argsRequiringConversion.size(); i++) {
+					argsArray[i] = argsRequiringConversion.get(i);
+				}
+				return new ArgumentsMatchInfo(match, argsArray);
+			}
+			else {
+				return new ArgumentsMatchInfo(match);
+			}
+		}
 	}
 
 	/**
@@ -255,80 +271,100 @@ public abstract class ReflectionHelper {
 	 * required parameter types. The arguments are converted 'in-place' in the input array.
 	 * @param converter the type converter to use for attempting conversions
 	 * @param arguments the actual arguments that need conversion
-	 * @param executable the target Method or Constructor
+	 * @param methodOrCtor the target Method or Constructor
+	 * @param argumentsRequiringConversion details which of the input arguments need conversion
 	 * @param varargsPosition the known position of the varargs argument, if any
 	 * ({@code null} if not varargs)
 	 * @return {@code true} if some kind of conversion occurred on an argument
 	 * @throws EvaluationException if a problem occurs during conversion
 	 */
-	static boolean convertArguments(TypeConverter converter, Object[] arguments, Executable executable,
-			@Nullable Integer varargsPosition) throws EvaluationException {
+	static void convertArguments(TypeConverter converter, Object[] arguments, Object methodOrCtor,
+			int[] argumentsRequiringConversion, Integer varargsPosition) throws EvaluationException {
 
-		boolean conversionOccurred = false;
 		if (varargsPosition == null) {
 			for (int i = 0; i < arguments.length; i++) {
-				TypeDescriptor targetType = new TypeDescriptor(MethodParameter.forExecutable(executable, i));
+				TypeDescriptor targetType = new TypeDescriptor(MethodParameter.forMethodOrConstructor(methodOrCtor, i));
 				Object argument = arguments[i];
 				arguments[i] = converter.convertValue(argument, TypeDescriptor.forObject(argument), targetType);
-				conversionOccurred |= (argument != arguments[i]);
 			}
 		}
 		else {
 			// Convert everything up to the varargs position
 			for (int i = 0; i < varargsPosition; i++) {
-				TypeDescriptor targetType = new TypeDescriptor(MethodParameter.forExecutable(executable, i));
+				TypeDescriptor targetType = new TypeDescriptor(MethodParameter.forMethodOrConstructor(methodOrCtor, i));
 				Object argument = arguments[i];
 				arguments[i] = converter.convertValue(argument, TypeDescriptor.forObject(argument), targetType);
-				conversionOccurred |= (argument != arguments[i]);
 			}
-			MethodParameter methodParam = MethodParameter.forExecutable(executable, varargsPosition);
+			MethodParameter methodParam = MethodParameter.forMethodOrConstructor(methodOrCtor, varargsPosition);
 			if (varargsPosition == arguments.length - 1) {
-				// If the target is varargs and there is just one more argument
-				// then convert it here
+				// If the target is varargs and there is just one more argument then convert it here
 				TypeDescriptor targetType = new TypeDescriptor(methodParam);
 				Object argument = arguments[varargsPosition];
-				TypeDescriptor sourceType = TypeDescriptor.forObject(argument);
-				arguments[varargsPosition] = converter.convertValue(argument, sourceType, targetType);
-				// Three outcomes of that previous line:
-				// 1) the input argument was already compatible (ie. array of valid type) and nothing was done
-				// 2) the input argument was correct type but not in an array so it was made into an array
-				// 3) the input argument was the wrong type and got converted and put into an array
-				if (argument != arguments[varargsPosition] &&
-						!isFirstEntryInArray(argument, arguments[varargsPosition])) {
-					conversionOccurred = true; // case 3
-				}
+				arguments[varargsPosition] = converter.convertValue(argument, TypeDescriptor.forObject(argument), targetType);
 			}
 			else {
 				// Convert remaining arguments to the varargs element type
-				TypeDescriptor targetType = new TypeDescriptor(methodParam).getElementTypeDescriptor();
-				Assert.state(targetType != null, "No element type");
+				TypeDescriptor targetType = TypeDescriptor.nested(methodParam, 1);
 				for (int i = varargsPosition; i < arguments.length; i++) {
 					Object argument = arguments[i];
 					arguments[i] = converter.convertValue(argument, TypeDescriptor.forObject(argument), targetType);
-					conversionOccurred |= (argument != arguments[i]);
 				}
 			}
 		}
-		return conversionOccurred;
 	}
 
 	/**
-	 * Check if the supplied value is the first entry in the array represented by the possibleArray value.
-	 * @param value the value to check for in the array
-	 * @param possibleArray an array object that may have the supplied value as the first element
-	 * @return true if the supplied value is the first entry in the array
+	 * Convert a supplied set of arguments into the requested types.
+	 * If the parameterTypes are related to a varargs method, then the final entry
+	 * in the parameterTypes array is going to be an array itself whose component type
+	 * should be used as the conversion target for extraneous arguments. (For example,
+	 * if the parameterTypes are {@code {Integer, String[]}} and the input arguments
+	 * are {@code {Integer, boolean, float}} then both the boolean and float must be
+	 * converted to Strings). This method does not repackage the arguments into a
+	 * form suitable for the varargs invocation.
+	 * @param converter the converter to use for type conversions
+	 * @param arguments the arguments to convert to the requested parameter types
+	 * @param method the target Method
+	 * @throws SpelEvaluationException if there is a problem with conversion
 	 */
-	private static boolean isFirstEntryInArray(Object value, @Nullable Object possibleArray) {
-		if (possibleArray == null) {
-			return false;
+	public static void convertAllArguments(TypeConverter converter, Object[] arguments, Method method)
+			throws SpelEvaluationException {
+
+		Integer varargsPosition = null;
+		if (method.isVarArgs()) {
+			Class<?>[] paramTypes = method.getParameterTypes();
+			varargsPosition = paramTypes.length - 1;
 		}
-		Class<?> type = possibleArray.getClass();
-		if (!type.isArray() || Array.getLength(possibleArray) == 0 ||
-				!ClassUtils.isAssignableValue(type.getComponentType(), value)) {
-			return false;
+		for (int argPos = 0; argPos < arguments.length; argPos++) {
+			TypeDescriptor targetType;
+			if (varargsPosition != null && argPos >= varargsPosition) {
+				MethodParameter methodParam = new MethodParameter(method, varargsPosition);
+				targetType = TypeDescriptor.nested(methodParam, 1);
+			}
+			else {
+				targetType = new TypeDescriptor(new MethodParameter(method, argPos));
+			}
+			try {
+				Object argument = arguments[argPos];
+				if (argument != null && !targetType.getObjectType().isInstance(argument)) {
+					if (converter == null) {
+						throw new SpelEvaluationException(
+								SpelMessage.TYPE_CONVERSION_ERROR, argument.getClass().getName(), targetType);
+					}
+					arguments[argPos] = converter.convertValue(argument, TypeDescriptor.forObject(argument), targetType);
+				}
+			}
+			catch (EvaluationException ex) {
+				// allows for another type converter throwing a different kind of EvaluationException
+				if (ex instanceof SpelEvaluationException) {
+					throw (SpelEvaluationException)ex;
+				}
+				else {
+					throw new SpelEvaluationException(ex,
+							SpelMessage.TYPE_CONVERSION_ERROR,arguments[argPos].getClass().getName(), targetType);
+				}
+			}
 		}
-		Object arrayValue = Array.get(possibleArray, 0);
-		return (type.getComponentType().isPrimitive() ? arrayValue.equals(value) : arrayValue == value);
 	}
 
 	/**
@@ -374,17 +410,21 @@ public abstract class ReflectionHelper {
 
 
 	/**
-	 * Arguments match kinds.
+	 * @deprecated in its public form as of Spring 3.2.7, since there is no need to refer to this directly...
+	 * @see ReflectionHelper.ArgumentsMatchInfo#isExactMatch()
+	 * @see ReflectionHelper.ArgumentsMatchInfo#isCloseMatch()
+	 * @see ReflectionHelper.ArgumentsMatchInfo#isMatchRequiringConversion()
 	 */
-	enum ArgumentsMatchKind {
+	@Deprecated
+	public static enum ArgsMatchKind {
 
-		/** An exact match is where the parameter types exactly match what the method/constructor is expecting. */
+		/** An exact match is where the parameter types exactly match what the method/constructor is expecting */
 		EXACT,
 
-		/** A close match is where the parameter types either exactly match or are assignment-compatible. */
+		/** A close match is where the parameter types either exactly match or are assignment-compatible */
 		CLOSE,
 
-		/** A conversion match is where the type converter must be used to transform some of the parameter types. */
+		/** A conversion match is where the type converter must be used to transform some of the parameter types */
 		REQUIRES_CONVERSION
 	}
 
@@ -396,29 +436,48 @@ public abstract class ReflectionHelper {
 	 * indicates that conversion is required for some of the arguments then the arguments
 	 * that require conversion are listed in the argsRequiringConversion array.
 	 */
-	static class ArgumentsMatchInfo {
+	public static class ArgumentsMatchInfo {
 
-		private final ArgumentsMatchKind kind;
+		public final ArgsMatchKind kind;
 
-		ArgumentsMatchInfo(ArgumentsMatchKind kind) {
+		public int[] argsRequiringConversion;
+
+		ArgumentsMatchInfo(ArgsMatchKind kind, int[] integers) {
+			this.kind = kind;
+			this.argsRequiringConversion = integers;
+		}
+
+		ArgumentsMatchInfo(ArgsMatchKind kind) {
 			this.kind = kind;
 		}
 
 		public boolean isExactMatch() {
-			return (this.kind == ArgumentsMatchKind.EXACT);
+			return (this.kind == ArgsMatchKind.EXACT);
 		}
 
 		public boolean isCloseMatch() {
-			return (this.kind == ArgumentsMatchKind.CLOSE);
+			return (this.kind == ArgsMatchKind.CLOSE);
 		}
 
 		public boolean isMatchRequiringConversion() {
-			return (this.kind == ArgumentsMatchKind.REQUIRES_CONVERSION);
+			return (this.kind == ArgsMatchKind.REQUIRES_CONVERSION);
 		}
 
 		@Override
 		public String toString() {
-			return "ArgumentMatchInfo: " + this.kind;
+			StringBuilder sb = new StringBuilder();
+			sb.append("ArgumentsMatchInfo: ").append(this.kind);
+			if (this.argsRequiringConversion != null) {
+				sb.append(" (argsRequiringConversion:");
+				for (int i = 0; i < this.argsRequiringConversion.length;i++) {
+					if (i > 0) {
+						sb.append(",");
+					}
+					sb.append(this.argsRequiringConversion[i]);
+				}
+				sb.append(")");
+			}
+			return sb.toString();
 		}
 	}
 

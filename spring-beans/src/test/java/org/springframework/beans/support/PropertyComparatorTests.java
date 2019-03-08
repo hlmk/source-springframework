@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package org.springframework.beans.support;
 
-import java.util.Comparator;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.springframework.util.comparator.CompoundComparator;
 
 /**
- * Unit tests for {@link PropertyComparator}.
+ * Unit tests for {@link PropertyComparator}
+ *
+ * @see org.springframework.util.comparator.ComparatorTests
  *
  * @author Keith Donald
  * @author Chris Beams
@@ -38,7 +39,7 @@ public class PropertyComparatorTests {
 		Dog dog2 = new Dog();
 		dog2.setNickName("biscy");
 
-		PropertyComparator<Dog> c = new PropertyComparator<>("nickName", false, true);
+		PropertyComparator c = new PropertyComparator("nickName", false, true);
 		assertTrue(c.compare(dog, dog2) > 0);
 		assertTrue(c.compare(dog, dog) == 0);
 		assertTrue(c.compare(dog2, dog) < 0);
@@ -48,13 +49,15 @@ public class PropertyComparatorTests {
 	public void testPropertyComparatorNulls() {
 		Dog dog = new Dog();
 		Dog dog2 = new Dog();
-		PropertyComparator<Dog> c = new PropertyComparator<>("nickName", false, true);
+		PropertyComparator c = new PropertyComparator("nickName", false, true);
 		assertTrue(c.compare(dog, dog2) == 0);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
-	public void testChainedComparators() {
-		Comparator<Dog> c = new PropertyComparator<>("lastName", false, true);
+	public void testCompoundComparator() {
+		CompoundComparator<Dog> c = new CompoundComparator<Dog>();
+		c.addComparator(new PropertyComparator("lastName", false, true));
 
 		Dog dog1 = new Dog();
 		dog1.setFirstName("macy");
@@ -66,18 +69,19 @@ public class PropertyComparatorTests {
 
 		assertTrue(c.compare(dog1, dog2) == 0);
 
-		c = c.thenComparing(new PropertyComparator<>("firstName", false, true));
+		c.addComparator(new PropertyComparator("firstName", false, true));
 		assertTrue(c.compare(dog1, dog2) > 0);
 
 		dog2.setLastName("konikk dog");
 		assertTrue(c.compare(dog2, dog1) > 0);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
-	public void testChainedComparatorsReversed() {
-		Comparator<Dog> c = (new PropertyComparator<Dog>("lastName", false, true)).
-				thenComparing(new PropertyComparator<>("firstName", false, true));
-
+	public void testCompoundComparatorInvert() {
+		CompoundComparator<Dog> c = new CompoundComparator<Dog>();
+		c.addComparator(new PropertyComparator("lastName", false, true));
+		c.addComparator(new PropertyComparator("firstName", false, true));
 		Dog dog1 = new Dog();
 		dog1.setFirstName("macy");
 		dog1.setLastName("grayspots");
@@ -87,11 +91,12 @@ public class PropertyComparatorTests {
 		dog2.setLastName("grayspots");
 
 		assertTrue(c.compare(dog1, dog2) > 0);
-		c = c.reversed();
+		c.invertOrder();
 		assertTrue(c.compare(dog1, dog2) < 0);
 	}
 
 
+	@SuppressWarnings("unused")
 	private static class Dog implements Comparable<Object> {
 
 		private String nickName;
@@ -99,6 +104,11 @@ public class PropertyComparatorTests {
 		private String firstName;
 
 		private String lastName;
+
+		@Override
+		public int compareTo(Object o) {
+			return nickName.compareTo(((Dog)o).nickName);
+		}
 
 		public String getNickName() {
 			return nickName;
@@ -122,11 +132,6 @@ public class PropertyComparatorTests {
 
 		public void setLastName(String lastName) {
 			this.lastName = lastName;
-		}
-
-		@Override
-		public int compareTo(Object o) {
-			return this.nickName.compareTo(((Dog) o).nickName);
 		}
 	}
 

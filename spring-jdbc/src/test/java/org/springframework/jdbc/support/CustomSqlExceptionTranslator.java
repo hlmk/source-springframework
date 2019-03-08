@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package org.springframework.jdbc.support;
 
-import java.sql.SQLException;
-
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.TransientDataAccessResourceException;
-import org.springframework.lang.Nullable;
+
+import java.sql.SQLException;
 
 /**
  * Custom SQLException translation for testing.
@@ -28,13 +27,11 @@ import org.springframework.lang.Nullable;
  * @author Thomas Risberg
  */
 public class CustomSqlExceptionTranslator implements SQLExceptionTranslator {
-
 	@Override
-	public DataAccessException translate(String task, @Nullable String sql, SQLException ex) {
+	public DataAccessException translate(String task, String sql, SQLException ex) {
 		if (ex.getErrorCode() == 2) {
 			return new TransientDataAccessResourceException("Custom", ex);
 		}
 		return null;
 	}
-
 }

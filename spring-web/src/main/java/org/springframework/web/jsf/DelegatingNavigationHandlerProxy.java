@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import javax.faces.application.NavigationHandler;
 import javax.faces.context.FacesContext;
 
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.lang.Nullable;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
@@ -30,7 +29,7 @@ import org.springframework.web.context.WebApplicationContext;
  * <p>Configure this handler proxy in your {@code faces-config.xml} file
  * as follows:
  *
- * <pre class="code">
+ * <pre>
  * &lt;application&gt;
  *   ...
  *   &lt;navigation-handler&gt;
@@ -44,7 +43,7 @@ import org.springframework.web.context.WebApplicationContext;
  * Spring bean definition like the following. However, all of Spring's bean configuration
  * power can be applied to such a bean, in particular all flavors of dependency injection.
  *
- * <pre class="code">
+ * <pre>
  * &lt;bean name="jsfNavigationHandler" class="mypackage.MyNavigationHandler"&gt;
  *   &lt;property name="myProperty" ref="myOtherBean"/&gt;
  * &lt;/bean&gt;</pre>
@@ -75,11 +74,10 @@ public class DelegatingNavigationHandlerProxy extends NavigationHandler {
 
 	/**
 	 * Default name of the target bean in the Spring application context:
-	 * "jsfNavigationHandler".
+	 * "jsfNavigationHandler"
 	 */
-	public static final String DEFAULT_TARGET_BEAN_NAME = "jsfNavigationHandler";
+	public final static String DEFAULT_TARGET_BEAN_NAME = "jsfNavigationHandler";
 
-	@Nullable
 	private NavigationHandler originalNavigationHandler;
 
 

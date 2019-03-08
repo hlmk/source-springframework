@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package org.springframework.beans.factory.support;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
-import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -33,33 +32,18 @@ import org.springframework.util.ObjectUtils;
  */
 public class LookupOverride extends MethodOverride {
 
-	@Nullable
 	private final String beanName;
-
-	@Nullable
-	private Method method;
 
 
 	/**
 	 * Construct a new LookupOverride.
 	 * @param methodName the name of the method to override
-	 * @param beanName the name of the bean in the current {@code BeanFactory}
-	 * that the overridden method should return (may be {@code null})
+	 * @param beanName the name of the bean in the current BeanFactory
+	 * that the overridden method should return
 	 */
-	public LookupOverride(String methodName, @Nullable String beanName) {
+	public LookupOverride(String methodName, String beanName) {
 		super(methodName);
-		this.beanName = beanName;
-	}
-
-	/**
-	 * Construct a new LookupOverride.
-	 * @param method the method to override
-	 * @param beanName the name of the bean in the current {@code BeanFactory}
-	 * that the overridden method should return (may be {@code null})
-	 */
-	public LookupOverride(Method method, @Nullable String beanName) {
-		super(method.getName());
-		this.method = method;
+		Assert.notNull(beanName, "Bean name must not be null");
 		this.beanName = beanName;
 	}
 
@@ -67,39 +51,23 @@ public class LookupOverride extends MethodOverride {
 	/**
 	 * Return the name of the bean that should be returned by this method.
 	 */
-	@Nullable
 	public String getBeanName() {
 		return this.beanName;
 	}
 
 	/**
-	 * Match the specified method by {@link Method} reference or method name.
-	 * <p>For backwards compatibility reasons, in a scenario with overloaded
-	 * non-abstract methods of the given name, only the no-arg variant of a
-	 * method will be turned into a container-driven lookup method.
-	 * <p>In case of a provided {@link Method}, only straight matches will
-	 * be considered, usually demarcated by the {@code @Lookup} annotation.
+	 * Match the method of the given name, with no parameters.
 	 */
 	@Override
 	public boolean matches(Method method) {
-		if (this.method != null) {
-			return method.equals(this.method);
-		}
-		else {
-			return (method.getName().equals(getMethodName()) && (!isOverloaded() ||
-					Modifier.isAbstract(method.getModifiers()) || method.getParameterCount() == 0));
-		}
+		return (method.getName().equals(getMethodName()) && method.getParameterTypes().length == 0);
 	}
 
 
 	@Override
 	public boolean equals(Object other) {
-		if (!(other instanceof LookupOverride) || !super.equals(other)) {
-			return false;
-		}
-		LookupOverride that = (LookupOverride) other;
-		return (ObjectUtils.nullSafeEquals(this.method, that.method) &&
-				ObjectUtils.nullSafeEquals(this.beanName, that.beanName));
+		return (other instanceof LookupOverride && super.equals(other) &&
+				ObjectUtils.nullSafeEquals(this.beanName, ((LookupOverride) other).beanName));
 	}
 
 	@Override
@@ -109,7 +77,7 @@ public class LookupOverride extends MethodOverride {
 
 	@Override
 	public String toString() {
-		return "LookupOverride for method '" + getMethodName() + "'";
+		return "LookupOverride for method '" + getMethodName() + "'; will return bean '" + this.beanName + "'";
 	}
 
 }

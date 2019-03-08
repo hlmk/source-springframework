@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,44 +16,43 @@
 
 package org.springframework.beans.factory.support;
 
-import org.junit.Test;
-
+import junit.framework.TestCase;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
 
 /**
  * @author Rob Harrop
  */
-public class PropertiesBeanDefinitionReaderTests {
+public class PropertiesBeanDefinitionReaderTests extends TestCase {
 
-	private final DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+	private DefaultListableBeanFactory beanFactory;
 
-	private final PropertiesBeanDefinitionReader reader = new PropertiesBeanDefinitionReader(this.beanFactory);
+	private PropertiesBeanDefinitionReader reader;
 
+	@Override
+	protected void setUp() throws Exception {
+		this.beanFactory = new DefaultListableBeanFactory();
+		this.reader = new PropertiesBeanDefinitionReader(beanFactory);
+	}
 
-	@Test
-	public void withSimpleConstructorArg() {
+	public void testWithSimpleConstructorArg() {
 		this.reader.loadBeanDefinitions(new ClassPathResource("simpleConstructorArg.properties", getClass()));
-		TestBean bean = (TestBean) this.beanFactory.getBean("testBean");
+		TestBean bean = (TestBean)this.beanFactory.getBean("testBean");
 		assertEquals("Rob Harrop", bean.getName());
 	}
 
-	@Test
-	public void withConstructorArgRef() {
+	public void testWithConstructorArgRef() throws Exception {
 		this.reader.loadBeanDefinitions(new ClassPathResource("refConstructorArg.properties", getClass()));
-		TestBean rob = (TestBean) this.beanFactory.getBean("rob");
-		TestBean sally = (TestBean) this.beanFactory.getBean("sally");
+		TestBean rob = (TestBean)this.beanFactory.getBean("rob");
+		TestBean sally = (TestBean)this.beanFactory.getBean("sally");
 		assertEquals(sally, rob.getSpouse());
 	}
 
-	@Test
-	public void withMultipleConstructorsArgs() {
+	public void testWithMultipleConstructorsArgs() throws Exception {
 		this.reader.loadBeanDefinitions(new ClassPathResource("multiConstructorArgs.properties", getClass()));
-		TestBean bean = (TestBean) this.beanFactory.getBean("testBean");
+		TestBean bean = (TestBean)this.beanFactory.getBean("testBean");
 		assertEquals("Rob Harrop", bean.getName());
 		assertEquals(23, bean.getAge());
 	}
-
 }

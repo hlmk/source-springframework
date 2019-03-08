@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,13 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class AbstractDataSource implements DataSource {
 
-	/** Logger available to subclasses. */
+	/** Logger available to subclasses */
 	protected final Log logger = LogFactory.getLog(getClass());
 
 
 	/**
 	 * Returns 0, indicating the default system timeout is to be used.
 	 */
-	@Override
 	public int getLoginTimeout() throws SQLException {
 		return 0;
 	}
@@ -53,7 +52,6 @@ public abstract class AbstractDataSource implements DataSource {
 	/**
 	 * Setting a login timeout is not supported.
 	 */
-	@Override
 	public void setLoginTimeout(int timeout) throws SQLException {
 		throw new UnsupportedOperationException("setLoginTimeout");
 	}
@@ -61,7 +59,6 @@ public abstract class AbstractDataSource implements DataSource {
 	/**
 	 * LogWriter methods are not supported.
 	 */
-	@Override
 	public PrintWriter getLogWriter() {
 		throw new UnsupportedOperationException("getLogWriter");
 	}
@@ -69,7 +66,6 @@ public abstract class AbstractDataSource implements DataSource {
 	/**
 	 * LogWriter methods are not supported.
 	 */
-	@Override
 	public void setLogWriter(PrintWriter pw) throws SQLException {
 		throw new UnsupportedOperationException("setLogWriter");
 	}
@@ -79,7 +75,6 @@ public abstract class AbstractDataSource implements DataSource {
 	// Implementation of JDBC 4.0's Wrapper interface
 	//---------------------------------------------------------------------
 
-	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T unwrap(Class<T> iface) throws SQLException {
 		if (iface.isInstance(this)) {
@@ -89,7 +84,6 @@ public abstract class AbstractDataSource implements DataSource {
 				"] cannot be unwrapped as [" + iface.getName() + "]");
 	}
 
-	@Override
 	public boolean isWrapperFor(Class<?> iface) throws SQLException {
 		return iface.isInstance(this);
 	}
@@ -99,7 +93,6 @@ public abstract class AbstractDataSource implements DataSource {
 	// Implementation of JDBC 4.1's getParentLogger method
 	//---------------------------------------------------------------------
 
-	@Override
 	public Logger getParentLogger() {
 		return Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,29 @@
 package org.springframework.web.servlet.tags;
 
 import java.io.IOException;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.Collections;
+import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
 
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.support.RequestDataValueProcessor;
+import org.springframework.web.util.ExpressionEvaluationUtils;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.JavaScriptUtils;
 import org.springframework.web.util.TagUtils;
 import org.springframework.web.util.UriUtils;
 
 /**
- * The {@code <url>} tag creates URLs. Modeled after the JSTL {@code c:url} tag with
- * backwards compatibility in mind.
+ * JSP tag for creating URLs. Modeled after the JSTL c:url tag with backwards
+ * compatibility in mind.
  *
  * <p>Enhancements to the JSTL functionality include:
  * <ul>
@@ -59,76 +59,17 @@ import org.springframework.web.util.UriUtils;
  * over direct EL substitution as the values are URL encoded.  Failure to properly
  * encode URL can leave an application vulnerable to XSS and other injection attacks.
  *
- * <p>URLs can be HTML/XML escaped by setting the {@link #setHtmlEscape(boolean)
+ * <p>URLs can be HTML/XML escaped by setting the {@link #setHtmlEscape(String)
  * 'htmlEscape'} attribute to 'true'.  Detects an HTML escaping setting, either on
  * this tag instance, the page level, or the {@code web.xml} level. The default
  * is 'false'.  When setting the URL value into a variable, escaping is not recommended.
  *
  * <p>Example usage:
- * <pre class="code">&lt;spring:url value="/url/path/{variableName}"&gt;
+ * <pre>&lt;spring:url value="/url/path/{variableName}"&gt;
  *   &lt;spring:param name="variableName" value="more than JSTL c:url" /&gt;
  * &lt;/spring:url&gt;</pre>
- *
- * <p>The above results in:
+ * Results in:
  * {@code /currentApplicationContext/url/path/more%20than%20JSTL%20c%3Aurl}
- *
- * <table>
- * <caption>Attribute Summary</caption>
- * <thead>
- * <tr>
- * <th>Attribute</th>
- * <th>Required?</th>
- * <th>Runtime Expression?</th>
- * <th>Description</th>
- * </tr>
- * </thead>
- * <tbody>
- * <tr>
- * <td>value</td>
- * <td>true</td>
- * <td>true</td>
- * <td>The URL to build. This value can include template {placeholders} that are
- * replaced with the URL encoded value of the named parameter. Parameters
- * must be defined using the param tag inside the body of this tag.</td>
- * </tr>
- * <tr>
- * <td>context</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Specifies a remote application context path.
- * The default is the current application context path.</td>
- * </tr>
- * <tr>
- * <td>var</td>
- * <td>false</td>
- * <td>true</td>
- * <td>The name of the variable to export the URL value to.
- * If not specified the URL is written as output.</td>
- * </tr>
- * <tr>
- * <td>scope</td>
- * <td>false</td>
- * <td>true</td>
- * <td>The scope for the var. 'application', 'session', 'request' and 'page'
- * scopes are supported. Defaults to page scope. This attribute has no
- * effect unless the var attribute is also defined.</td>
- * </tr>
- * <tr>
- * <td>htmlEscape</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Set HTML escaping for this tag, as a boolean value. Overrides the
- * default HTML escaping setting for the current page.</td>
- * </tr>
- * <tr>
- * <td>javaScriptEscape</td>
- * <td>false</td>
- * <td>true</td>
- * <td>Set JavaScript escaping for this tag, as a boolean value.
- * Default is false.</td>
- * </tr>
- * </tbody>
- * </table>
  *
  * @author Scott Andrews
  * @since 3.0
@@ -144,20 +85,16 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 	private static final String URL_TYPE_ABSOLUTE = "://";
 
 
-	private List<Param> params = Collections.emptyList();
+	private List<Param> params;
 
-	private Set<String> templateParams = Collections.emptySet();
+	private Set<String> templateParams;
 
-	@Nullable
 	private UrlType type;
 
-	@Nullable
 	private String value;
 
-	@Nullable
 	private String context;
 
-	@Nullable
 	private String var;
 
 	private int scope = PageContext.PAGE_SCOPE;
@@ -166,7 +103,7 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 
 
 	/**
-	 * Set the value of the URL.
+	 * Sets the value of the URL
 	 */
 	public void setValue(String value) {
 		if (value.contains(URL_TYPE_ABSOLUTE)) {
@@ -184,8 +121,7 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 	}
 
 	/**
-	 * Set the context path for the URL.
-	 * Defaults to the current context.
+	 * Set the context path for the URL. Defaults to the current context
 	 */
 	public void setContext(String context) {
 		if (context.startsWith("/")) {
@@ -216,11 +152,11 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 	 * Set JavaScript escaping for this tag, as boolean value.
 	 * Default is "false".
 	 */
-	public void setJavaScriptEscape(boolean javaScriptEscape) throws JspException {
-		this.javaScriptEscape = javaScriptEscape;
+	public void setJavaScriptEscape(String javaScriptEscape) throws JspException {
+		this.javaScriptEscape =
+				ExpressionEvaluationUtils.evaluateBoolean("javaScriptEscape", javaScriptEscape, pageContext);
 	}
 
-	@Override
 	public void addParam(Param param) {
 		this.params.add(param);
 	}
@@ -228,8 +164,8 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 
 	@Override
 	public int doStartTagInternal() throws JspException {
-		this.params = new LinkedList<>();
-		this.templateParams = new HashSet<>();
+		this.params = new LinkedList<Param>();
+		this.templateParams = new HashSet<String>();
 		return EVAL_BODY_INCLUDE;
 	}
 
@@ -246,15 +182,15 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 		if (this.var == null) {
 			// print the url to the writer
 			try {
-				this.pageContext.getOut().print(url);
+				pageContext.getOut().print(url);
 			}
-			catch (IOException ex) {
-				throw new JspException(ex);
+			catch (IOException e) {
+				throw new JspException(e);
 			}
 		}
 		else {
 			// store the url as a variable
-			this.pageContext.setAttribute(this.var, url, this.scope);
+			pageContext.setAttribute(var, url, scope);
 		}
 		return EVAL_PAGE;
 	}
@@ -263,12 +199,11 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 	/**
 	 * Build the URL for the tag from the tag attributes and parameters.
 	 * @return the URL value as a String
+	 * @throws JspException
 	 */
-	String createUrl() throws JspException {
-		Assert.state(this.value != null, "No value set");
-		HttpServletRequest request = (HttpServletRequest) this.pageContext.getRequest();
-		HttpServletResponse response = (HttpServletResponse) this.pageContext.getResponse();
-
+	private String createUrl() throws JspException {
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		HttpServletResponse response = (HttpServletResponse) pageContext.getResponse();
 		StringBuilder url = new StringBuilder();
 		if (this.type == UrlType.CONTEXT_RELATIVE) {
 			// add application context to url
@@ -276,12 +211,7 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 				url.append(request.getContextPath());
 			}
 			else {
-				if (this.context.endsWith("/")) {
-					url.append(this.context.substring(0, this.context.length() - 1));
-				}
-				else {
-					url.append(this.context);
-				}
+				url.append(this.context);
 			}
 		}
 		if (this.type != UrlType.RELATIVE && this.type != UrlType.ABSOLUTE && !this.value.startsWith("/")) {
@@ -298,8 +228,8 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 		}
 
 		// HTML and/or JavaScript escape, if demanded.
-		urlStr = htmlEscape(urlStr);
-		urlStr = (this.javaScriptEscape ? JavaScriptUtils.javaScriptEscape(urlStr) : urlStr);
+		urlStr = isHtmlEscape() ? HtmlUtils.htmlEscape(urlStr) : urlStr;
+		urlStr = this.javaScriptEscape ? JavaScriptUtils.javaScriptEscape(urlStr) : urlStr;
 
 		return urlStr;
 	}
@@ -318,7 +248,7 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 	protected String createQueryString(List<Param> params, Set<String> usedParams, boolean includeQueryStringDelimiter)
 			throws JspException {
 
-		String encoding = this.pageContext.getResponse().getCharacterEncoding();
+		String encoding = pageContext.getResponse().getCharacterEncoding();
 		StringBuilder qs = new StringBuilder();
 		for (Param param : params) {
 			if (!usedParams.contains(param.getName()) && StringUtils.hasLength(param.getName())) {
@@ -335,7 +265,7 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 						qs.append(UriUtils.encodeQueryParam(param.getValue(), encoding));
 					}
 				}
-				catch (UnsupportedCharsetException ex) {
+				catch (UnsupportedEncodingException ex) {
 					throw new JspException(ex);
 				}
 			}
@@ -355,44 +285,26 @@ public class UrlTag extends HtmlEscapingAwareTag implements ParamAware {
 	protected String replaceUriTemplateParams(String uri, List<Param> params, Set<String> usedParams)
 			throws JspException {
 
-		String encoding = this.pageContext.getResponse().getCharacterEncoding();
+		String encoding = pageContext.getResponse().getCharacterEncoding();
 		for (Param param : params) {
 			String template = URL_TEMPLATE_DELIMITER_PREFIX + param.getName() + URL_TEMPLATE_DELIMITER_SUFFIX;
 			if (uri.contains(template)) {
 				usedParams.add(param.getName());
-				String value = param.getValue();
 				try {
-					uri = StringUtils.replace(uri, template,
-							(value != null ? UriUtils.encodePath(value, encoding) : ""));
+					uri = uri.replace(template, UriUtils.encodePath(param.getValue(), encoding));
 				}
-				catch (UnsupportedCharsetException ex) {
+				catch (UnsupportedEncodingException ex) {
 					throw new JspException(ex);
-				}
-			}
-			else {
-				template = URL_TEMPLATE_DELIMITER_PREFIX + '/' + param.getName() + URL_TEMPLATE_DELIMITER_SUFFIX;
-				if (uri.contains(template)) {
-					usedParams.add(param.getName());
-					String value = param.getValue();
-					try {
-						uri = StringUtils.replace(uri, template,
-								(value != null ? UriUtils.encodePathSegment(value, encoding) : ""));
-					}
-					catch (UnsupportedCharsetException ex) {
-						throw new JspException(ex);
-					}
 				}
 			}
 		}
 		return uri;
 	}
 
-
 	/**
 	 * Internal enum that classifies URLs by type.
 	 */
 	private enum UrlType {
-
 		CONTEXT_RELATIVE, RELATIVE, ABSOLUTE
 	}
 

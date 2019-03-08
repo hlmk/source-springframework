@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,38 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.expression.spel;
 
+import org.junit.Assert;
 import org.junit.Test;
-
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-
-import static org.junit.Assert.*;
 
 /**
  * Test construction of arrays.
  *
  * @author Andy Clement
  */
-public class ArrayConstructorTests extends AbstractExpressionTests {
+public class ArrayConstructorTests extends ExpressionTestCase {
 
 	@Test
-	public void simpleArrayWithInitializer() {
+	public void testSimpleArrayWithInitializer() {
 		evaluateArrayBuildingExpression("new int[]{1,2,3}", "[1,2,3]");
 		evaluateArrayBuildingExpression("new int[]{}", "[]");
 		evaluate("new int[]{}.length", "0", Integer.class);
 	}
 
 	@Test
-	public void conversion() {
+	public void testConversion() {
 		evaluate("new String[]{1,2,3}[0]", "1", String.class);
 		evaluate("new int[]{'123'}[0]", 123, Integer.class);
 	}
 
 	@Test
-	public void multidimensionalArrays() {
+	public void testMultidimensionalArrays() {
 		evaluateAndCheckError("new int[][]{{1,2},{3,4}}", SpelMessage.MULTIDIM_ARRAY_INITIALIZER_NOT_SUPPORTED);
 		evaluateAndCheckError("new int[3][]", SpelMessage.MISSING_ARRAY_DIMENSION);
 		evaluateAndCheckError("new int[]", SpelMessage.MISSING_ARRAY_DIMENSION);
@@ -53,7 +50,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 	}
 
 	@Test
-	public void primitiveTypeArrayConstructors() {
+	public void testPrimitiveTypeArrayConstructors() {
 		evaluateArrayBuildingExpression("new int[]{1,2,3,4}", "[1,2,3,4]");
 		evaluateArrayBuildingExpression("new boolean[]{true,false,true}", "[true,false,true]");
 		evaluateArrayBuildingExpression("new char[]{'a','b','c'}", "[a,b,c]");
@@ -65,7 +62,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 	}
 
 	@Test
-	public void primitiveTypeArrayConstructorsElements() {
+	public void testPrimitiveTypeArrayConstructorsElements() {
 		evaluate("new int[]{1,2,3,4}[0]", 1, Integer.class);
 		evaluate("new boolean[]{true,false,true}[0]", true, Boolean.class);
 		evaluate("new char[]{'a','b','c'}[0]", 'a', Character.class);
@@ -78,7 +75,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 	}
 
 	@Test
-	public void errorCases() {
+	public void testErrorCases() {
 		evaluateAndCheckError("new char[7]{'a','c','d','e'}", SpelMessage.INITIALIZER_LENGTH_INCORRECT);
 		evaluateAndCheckError("new char[3]{'a','c','d','e'}", SpelMessage.INITIALIZER_LENGTH_INCORRECT);
 		evaluateAndCheckError("new char[2]{'hello','world'}", SpelMessage.TYPE_CONVERSION_ERROR);
@@ -86,32 +83,32 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 	}
 
 	@Test
-	public void typeArrayConstructors() {
+	public void testTypeArrayConstructors() {
 		evaluate("new String[]{'a','b','c','d'}[1]", "b", String.class);
 		evaluateAndCheckError("new String[]{'a','b','c','d'}.size()", SpelMessage.METHOD_NOT_FOUND, 30, "size()",
-			"java.lang.String[]");
+				"java.lang.String[]");
 		evaluate("new String[]{'a','b','c','d'}.length", 4, Integer.class);
 	}
 
 	@Test
-	public void basicArray() {
+	public void testBasicArray() {
 		evaluate("new String[3]", "java.lang.String[3]{null,null,null}", String[].class);
 	}
 
 	@Test
-	public void multiDimensionalArray() {
+	public void testMultiDimensionalArray() {
 		evaluate("new String[2][2]", "[Ljava.lang.String;[2]{[2]{null,null},[2]{null,null}}", String[][].class);
 		evaluate("new String[3][2][1]",
-			"[[Ljava.lang.String;[3]{[2]{[1]{null},[1]{null}},[2]{[1]{null},[1]{null}},[2]{[1]{null},[1]{null}}}",
-			String[][][].class);
+				"[[Ljava.lang.String;[3]{[2]{[1]{null},[1]{null}},[2]{[1]{null},[1]{null}},[2]{[1]{null},[1]{null}}}",
+				String[][][].class);
 	}
 
 	@Test
-	public void constructorInvocation03() {
+	public void testConstructorInvocation03() {
 		evaluateAndCheckError("new String[]", SpelMessage.MISSING_ARRAY_DIMENSION);
 	}
 
-	public void constructorInvocation04() {
+	public void testConstructorInvocation04() {
 		evaluateAndCheckError("new Integer[3]{'3','ghi','5'}", SpelMessage.INCORRECT_ELEMENT_TYPE_FOR_ARRAY, 4);
 	}
 
@@ -119,8 +116,8 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 		SpelExpressionParser parser = new SpelExpressionParser();
 		Expression e = parser.parseExpression(expression);
 		Object o = e.getValue();
-		assertNotNull(o);
-		assertTrue(o.getClass().isArray());
+		Assert.assertNotNull(o);
+		Assert.assertTrue(o.getClass().isArray());
 		StringBuilder s = new StringBuilder();
 		s.append('[');
 		if (o instanceof int[]) {
@@ -131,8 +128,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 				}
 				s.append(array[i]);
 			}
-		}
-		else if (o instanceof boolean[]) {
+		} else if (o instanceof boolean[]) {
 			boolean[] array = (boolean[]) o;
 			for (int i = 0; i < array.length; i++) {
 				if (i > 0) {
@@ -140,8 +136,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 				}
 				s.append(array[i]);
 			}
-		}
-		else if (o instanceof char[]) {
+		} else if (o instanceof char[]) {
 			char[] array = (char[]) o;
 			for (int i = 0; i < array.length; i++) {
 				if (i > 0) {
@@ -149,8 +144,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 				}
 				s.append(array[i]);
 			}
-		}
-		else if (o instanceof long[]) {
+		} else if (o instanceof long[]) {
 			long[] array = (long[]) o;
 			for (int i = 0; i < array.length; i++) {
 				if (i > 0) {
@@ -158,8 +152,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 				}
 				s.append(array[i]);
 			}
-		}
-		else if (o instanceof short[]) {
+		} else if (o instanceof short[]) {
 			short[] array = (short[]) o;
 			for (int i = 0; i < array.length; i++) {
 				if (i > 0) {
@@ -167,8 +160,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 				}
 				s.append(array[i]);
 			}
-		}
-		else if (o instanceof double[]) {
+		} else if (o instanceof double[]) {
 			double[] array = (double[]) o;
 			for (int i = 0; i < array.length; i++) {
 				if (i > 0) {
@@ -176,8 +168,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 				}
 				s.append(array[i]);
 			}
-		}
-		else if (o instanceof float[]) {
+		} else if (o instanceof float[]) {
 			float[] array = (float[]) o;
 			for (int i = 0; i < array.length; i++) {
 				if (i > 0) {
@@ -185,8 +176,7 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 				}
 				s.append(array[i]);
 			}
-		}
-		else if (o instanceof byte[]) {
+		} else if (o instanceof byte[]) {
 			byte[] array = (byte[]) o;
 			for (int i = 0; i < array.length; i++) {
 				if (i > 0) {
@@ -194,12 +184,11 @@ public class ArrayConstructorTests extends AbstractExpressionTests {
 				}
 				s.append(array[i]);
 			}
-		}
-		else {
-			fail("Not supported " + o.getClass());
+		} else {
+			Assert.fail("Not supported " + o.getClass());
 		}
 		s.append(']');
-		assertEquals(expectedToString, s.toString());
+		Assert.assertEquals(expectedToString, s.toString());
 		return s.toString();
 	}
 

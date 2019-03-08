@@ -16,7 +16,6 @@
 
 package org.springframework.transaction.interceptor;
 
-import org.springframework.lang.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -39,7 +38,7 @@ public class PlatformTransactionManagerFacade implements PlatformTransactionMana
 	public static PlatformTransactionManager delegate;
 
 	@Override
-	public TransactionStatus getTransaction(@Nullable TransactionDefinition definition) {
+	public TransactionStatus getTransaction(TransactionDefinition definition) {
 		return delegate.getTransaction(definition);
 	}
 

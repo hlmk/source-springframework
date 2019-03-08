@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,16 @@ package org.springframework.beans.factory.xml;
 import org.w3c.dom.Document;
 
 import org.springframework.beans.factory.BeanDefinitionStoreException;
+import org.springframework.core.env.Environment;
 
 /**
  * SPI for parsing an XML document that contains Spring bean definitions.
- * Used by {@link XmlBeanDefinitionReader} for actually parsing a DOM document.
+ * Used by XmlBeanDefinitionReader for actually parsing a DOM document.
  *
- * <p>Instantiated per document to parse: implementations can hold
+ * <p>Instantiated per document to parse: Implementations can hold
  * state in instance variables during the execution of the
- * {@code registerBeanDefinitions} method &mdash; for example, global
+ * {@code registerBeanDefinitions} method, for example global
  * settings that are defined for all bean definitions in the document.
- *
- *
- *
- * 定义读取 Document 并注册 BeanDefinition 功能
  *
  * @author Juergen Hoeller
  * @author Rob Harrop
@@ -41,17 +38,21 @@ import org.springframework.beans.factory.BeanDefinitionStoreException;
 public interface BeanDefinitionDocumentReader {
 
 	/**
+	 * Set the Environment to use when reading bean definitions.
+	 * <p>Used for evaluating profile information to determine whether a
+	 * {@code <beans/>} document/element should be included or ignored.
+	 * @deprecated in favor of Environment access via XmlReaderContext
+	 */
+	@Deprecated
+	void setEnvironment(Environment environment);
+
+	/**
 	 * Read bean definitions from the given DOM document and
 	 * register them with the registry in the given reader context.
 	 * @param doc the DOM document
 	 * @param readerContext the current context of the reader
 	 * (includes the target registry and the resource being parsed)
 	 * @throws BeanDefinitionStoreException in case of parsing errors
-	 *
-	 * 从给定的DOM文档中读取bean定义，并在给定的读者上下文中将其注册到注册表中。
-	 * @param doc DOM文档
-	 * @param readerContext 读者的当前上下文（包括目标注册表和正在解析的资源）
-	 * @throws BeanDefinitionStoreException 以解决错误
 	 */
 	void registerBeanDefinitions(Document doc, XmlReaderContext readerContext)
 			throws BeanDefinitionStoreException;

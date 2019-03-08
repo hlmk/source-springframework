@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.lang.Nullable;
 import org.springframework.util.FileCopyUtils;
 
 /**
@@ -51,24 +50,19 @@ public class TemporaryLobCreator implements LobCreator {
 
 	protected static final Log logger = LogFactory.getLog(TemporaryLobCreator.class);
 
-	private final Set<Blob> temporaryBlobs = new LinkedHashSet<>(1);
+	private final Set<Blob> temporaryBlobs = new LinkedHashSet<Blob>(1);
 
-	private final Set<Clob> temporaryClobs = new LinkedHashSet<>(1);
+	private final Set<Clob> temporaryClobs = new LinkedHashSet<Clob>(1);
 
 
-	@Override
-	public void setBlobAsBytes(PreparedStatement ps, int paramIndex, @Nullable byte[] content)
+	public void setBlobAsBytes(PreparedStatement ps, int paramIndex, byte[] content)
 			throws SQLException {
 
-		if (content != null) {
-			Blob blob = ps.getConnection().createBlob();
-			blob.setBytes(1, content);
-			this.temporaryBlobs.add(blob);
-			ps.setBlob(paramIndex, blob);
-		}
-		else {
-			ps.setBlob(paramIndex, (Blob) null);
-		}
+		Blob blob = ps.getConnection().createBlob();
+		blob.setBytes(1, content);
+
+		this.temporaryBlobs.add(blob);
+		ps.setBlob(paramIndex, blob);
 
 		if (logger.isDebugEnabled()) {
 			logger.debug(content != null ? "Copied bytes into temporary BLOB with length " + content.length :
@@ -76,25 +70,20 @@ public class TemporaryLobCreator implements LobCreator {
 		}
 	}
 
-	@Override
 	public void setBlobAsBinaryStream(
-			PreparedStatement ps, int paramIndex, @Nullable InputStream binaryStream, int contentLength)
+			PreparedStatement ps, int paramIndex, InputStream binaryStream, int contentLength)
 			throws SQLException {
 
-		if (binaryStream != null) {
-			Blob blob = ps.getConnection().createBlob();
-			try {
-				FileCopyUtils.copy(binaryStream, blob.setBinaryStream(1));
-			}
-			catch (IOException ex) {
-				throw new DataAccessResourceFailureException("Could not copy into LOB stream", ex);
-			}
-			this.temporaryBlobs.add(blob);
-			ps.setBlob(paramIndex, blob);
+		Blob blob = ps.getConnection().createBlob();
+		try {
+			FileCopyUtils.copy(binaryStream, blob.setBinaryStream(1));
 		}
-		else {
-			ps.setBlob(paramIndex, (Blob) null);
+		catch (IOException ex) {
+			throw new DataAccessResourceFailureException("Could not copy into LOB stream", ex);
 		}
+
+		this.temporaryBlobs.add(blob);
+		ps.setBlob(paramIndex, blob);
 
 		if (logger.isDebugEnabled()) {
 			logger.debug(binaryStream != null ?
@@ -103,19 +92,14 @@ public class TemporaryLobCreator implements LobCreator {
 		}
 	}
 
-	@Override
-	public void setClobAsString(PreparedStatement ps, int paramIndex, @Nullable String content)
+	public void setClobAsString(PreparedStatement ps, int paramIndex, String content)
 			throws SQLException {
 
-		if (content != null) {
-			Clob clob = ps.getConnection().createClob();
-			clob.setString(1, content);
-			this.temporaryClobs.add(clob);
-			ps.setClob(paramIndex, clob);
-		}
-		else {
-			ps.setClob(paramIndex, (Clob) null);
-		}
+		Clob clob = ps.getConnection().createClob();
+		clob.setString(1, content);
+
+		this.temporaryClobs.add(clob);
+		ps.setClob(paramIndex, clob);
 
 		if (logger.isDebugEnabled()) {
 			logger.debug(content != null ? "Copied string into temporary CLOB with length " + content.length() :
@@ -123,25 +107,20 @@ public class TemporaryLobCreator implements LobCreator {
 		}
 	}
 
-	@Override
 	public void setClobAsAsciiStream(
-			PreparedStatement ps, int paramIndex, @Nullable InputStream asciiStream, int contentLength)
+			PreparedStatement ps, int paramIndex, InputStream asciiStream, int contentLength)
 			throws SQLException {
 
-		if (asciiStream != null) {
-			Clob clob = ps.getConnection().createClob();
-			try {
-				FileCopyUtils.copy(asciiStream, clob.setAsciiStream(1));
-			}
-			catch (IOException ex) {
-				throw new DataAccessResourceFailureException("Could not copy into LOB stream", ex);
-			}
-			this.temporaryClobs.add(clob);
-			ps.setClob(paramIndex, clob);
+		Clob clob = ps.getConnection().createClob();
+		try {
+			FileCopyUtils.copy(asciiStream, clob.setAsciiStream(1));
 		}
-		else {
-			ps.setClob(paramIndex, (Clob) null);
+		catch (IOException ex) {
+			throw new DataAccessResourceFailureException("Could not copy into LOB stream", ex);
 		}
+
+		this.temporaryClobs.add(clob);
+		ps.setClob(paramIndex, clob);
 
 		if (logger.isDebugEnabled()) {
 			logger.debug(asciiStream != null ?
@@ -150,25 +129,20 @@ public class TemporaryLobCreator implements LobCreator {
 		}
 	}
 
-	@Override
 	public void setClobAsCharacterStream(
-			PreparedStatement ps, int paramIndex, @Nullable Reader characterStream, int contentLength)
+			PreparedStatement ps, int paramIndex, Reader characterStream, int contentLength)
 			throws SQLException {
 
-		if (characterStream != null) {
-			Clob clob = ps.getConnection().createClob();
-			try {
-				FileCopyUtils.copy(characterStream, clob.setCharacterStream(1));
-			}
-			catch (IOException ex) {
-				throw new DataAccessResourceFailureException("Could not copy into LOB stream", ex);
-			}
-			this.temporaryClobs.add(clob);
-			ps.setClob(paramIndex, clob);
+		Clob clob = ps.getConnection().createClob();
+		try {
+			FileCopyUtils.copy(characterStream, clob.setCharacterStream(1));
 		}
-		else {
-			ps.setClob(paramIndex, (Clob) null);
+		catch (IOException ex) {
+			throw new DataAccessResourceFailureException("Could not copy into LOB stream", ex);
 		}
+
+		this.temporaryClobs.add(clob);
+		ps.setClob(paramIndex, clob);
 
 		if (logger.isDebugEnabled()) {
 			logger.debug(characterStream != null ?
@@ -177,24 +151,17 @@ public class TemporaryLobCreator implements LobCreator {
 		}
 	}
 
-	@Override
 	public void close() {
-		for (Blob blob : this.temporaryBlobs) {
-			try {
+		try {
+			for (Blob blob : this.temporaryBlobs) {
 				blob.free();
 			}
-			catch (SQLException ex) {
-				logger.warn("Could not free BLOB", ex);
-			}
-		}
-		for (Clob clob : this.temporaryClobs) {
-			try {
+			for (Clob clob : this.temporaryClobs) {
 				clob.free();
 			}
-			catch (SQLException ex) {
-				logger.warn("Could not free CLOB", ex);
-			}
+		}
+		catch (SQLException ex) {
+			logger.error("Could not free LOB", ex);
 		}
 	}
-
 }

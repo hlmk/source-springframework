@@ -16,23 +16,24 @@
 
 package org.springframework.aop.aspectj.annotation;
 
+import static org.junit.Assert.*;
 import org.aspectj.lang.reflect.PerClauseKind;
 import org.junit.Test;
-import test.aop.PerTargetAspect;
 
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.aspectj.annotation.AbstractAspectJAdvisorFactoryTests.ExceptionAspect;
 
-import static org.junit.Assert.*;
+import test.aop.PerTargetAspect;
+
 
 /**
  * @since 2.0
  * @author Rod Johnson
  * @author Chris Beams
  */
-public class AspectMetadataTests {
+public final class AspectMetadataTests {
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected=IllegalArgumentException.class)
 	public void testNotAnAspect() {
 		new AspectMetadata(String.class,"someBean");
 	}

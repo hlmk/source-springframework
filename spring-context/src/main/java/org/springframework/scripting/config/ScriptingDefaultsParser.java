@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,19 +25,16 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.StringUtils;
 
 /**
- * A {@link BeanDefinitionParser} for use when loading scripting XML.
- *
  * @author Mark Fisher
  * @since 2.5
  */
-class ScriptingDefaultsParser implements BeanDefinitionParser {
+public class ScriptingDefaultsParser implements BeanDefinitionParser {
 
 	private static final String REFRESH_CHECK_DELAY_ATTRIBUTE = "refresh-check-delay";
 
 	private static final String PROXY_TARGET_CLASS_ATTRIBUTE = "proxy-target-class";
 
 
-	@Override
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
 		BeanDefinition bd =
 				LangNamespaceUtils.registerScriptFactoryPostProcessorIfNecessary(parserContext.getRegistry());

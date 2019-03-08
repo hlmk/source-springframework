@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package org.springframework.beans.factory;
 
 import org.springframework.beans.BeansException;
-import org.springframework.core.ResolvableType;
-import org.springframework.lang.Nullable;
 
 /**
  * The root interface for accessing a Spring bean container.
@@ -64,42 +62,31 @@ import org.springframework.lang.Nullable;
  * are supposed to override beans of the same name in any parent factory.
  *
  * <p>Bean factory implementations should support the standard bean lifecycle interfaces
- * as far as possible. The full set of initialization methods and their standard order is:
- * <ol>
- * <li>BeanNameAware's {@code setBeanName}
- * <li>BeanClassLoaderAware's {@code setBeanClassLoader}
- * <li>BeanFactoryAware's {@code setBeanFactory}
- * <li>EnvironmentAware's {@code setEnvironment}
- * <li>EmbeddedValueResolverAware's {@code setEmbeddedValueResolver}
- * <li>ResourceLoaderAware's {@code setResourceLoader}
- * (only applicable when running in an application context)
- * <li>ApplicationEventPublisherAware's {@code setApplicationEventPublisher}
- * (only applicable when running in an application context)
- * <li>MessageSourceAware's {@code setMessageSource}
- * (only applicable when running in an application context)
- * <li>ApplicationContextAware's {@code setApplicationContext}
- * (only applicable when running in an application context)
- * <li>ServletContextAware's {@code setServletContext}
- * (only applicable when running in a web application context)
- * <li>{@code postProcessBeforeInitialization} methods of BeanPostProcessors
- * <li>InitializingBean's {@code afterPropertiesSet}
- * <li>a custom init-method definition
- * <li>{@code postProcessAfterInitialization} methods of BeanPostProcessors
- * </ol>
+ * as far as possible. The full set of initialization methods and their standard order is:<br>
+ * 1. BeanNameAware's {@code setBeanName}<br>
+ * 2. BeanClassLoaderAware's {@code setBeanClassLoader}<br>
+ * 3. BeanFactoryAware's {@code setBeanFactory}<br>
+ * 4. EnvironmentAware's {@code setEnvironment}
+ * 5. EmbeddedValueResolverAware's {@code setEmbeddedValueResolver}
+ * 6. ResourceLoaderAware's {@code setResourceLoader}
+ * (only applicable when running in an application context)<br>
+ * 7. ApplicationEventPublisherAware's {@code setApplicationEventPublisher}
+ * (only applicable when running in an application context)<br>
+ * 8. MessageSourceAware's {@code setMessageSource}
+ * (only applicable when running in an application context)<br>
+ * 9. ApplicationContextAware's {@code setApplicationContext}
+ * (only applicable when running in an application context)<br>
+ * 10. ServletContextAware's {@code setServletContext}
+ * (only applicable when running in a web application context)<br>
+ * 11. {@code postProcessBeforeInitialization} methods of BeanPostProcessors<br>
+ * 12. InitializingBean's {@code afterPropertiesSet}<br>
+ * 13. a custom init-method definition<br>
+ * 14. {@code postProcessAfterInitialization} methods of BeanPostProcessors
  *
- * <p>On shutdown of a bean factory, the following lifecycle methods apply:
- * <ol>
- * <li>{@code postProcessBeforeDestruction} methods of DestructionAwareBeanPostProcessors
- * <li>DisposableBean's {@code destroy}
- * <li>a custom destroy-method definition
- * </ol>
- *
- *
- *
- *
- * 定义获取bean及bean的各种属性
- *
- *
+ * <p>On shutdown of a bean factory, the following lifecycle methods apply:<br>
+ * 1. {@code postProcessBeforeDestruction} methods of DestructionAwareBeanPostProcessors
+ * 2. DisposableBean's {@code destroy}<br>
+ * 3. a custom destroy-method definition
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -140,7 +127,8 @@ public interface BeanFactory {
 	 * Will ask the parent factory if the bean cannot be found in this factory instance.
 	 * @param name the name of the bean to retrieve
 	 * @return an instance of the bean
-	 * @throws NoSuchBeanDefinitionException if there is no bean with the specified name
+	 * @throws NoSuchBeanDefinitionException if there is no bean definition
+	 * with the specified name
 	 * @throws BeansException if the bean could not be obtained
 	 */
 	Object getBean(String name) throws BeansException;
@@ -154,7 +142,10 @@ public interface BeanFactory {
 	 * <p>Translates aliases back to the corresponding canonical bean name.
 	 * Will ask the parent factory if the bean cannot be found in this factory instance.
 	 * @param name the name of the bean to retrieve
-	 * @param requiredType type the bean must match; can be an interface or superclass
+	 * @param requiredType type the bean must match. Can be an interface or superclass
+	 * of the actual class, or {@code null} for any match. For example, if the value
+	 * is {@code Object.class}, this method will succeed whatever the class of the
+	 * returned instance.
 	 * @return an instance of the bean
 	 * @throws NoSuchBeanDefinitionException if there is no such bean definition
 	 * @throws BeanNotOfRequiredTypeException if the bean is not of the required type
@@ -163,28 +154,13 @@ public interface BeanFactory {
 	<T> T getBean(String name, Class<T> requiredType) throws BeansException;
 
 	/**
-	 * Return an instance, which may be shared or independent, of the specified bean.
-	 * <p>Allows for specifying explicit constructor arguments / factory method arguments,
-	 * overriding the specified default arguments (if any) in the bean definition.
-	 * @param name the name of the bean to retrieve
-	 * @param args arguments to use when creating a bean instance using explicit arguments
-	 * (only applied when creating a new instance as opposed to retrieving an existing one)
-	 * @return an instance of the bean
-	 * @throws NoSuchBeanDefinitionException if there is no such bean definition
-	 * @throws BeanDefinitionStoreException if arguments have been given but
-	 * the affected bean isn't a prototype
-	 * @throws BeansException if the bean could not be created
-	 * @since 2.5
-	 */
-	Object getBean(String name, Object... args) throws BeansException;
-
-	/**
 	 * Return the bean instance that uniquely matches the given object type, if any.
 	 * <p>This method goes into {@link ListableBeanFactory} by-type lookup territory
 	 * but may also be translated into a conventional by-name lookup based on the name
 	 * of the given type. For more extensive retrieval operations across sets of beans,
 	 * use {@link ListableBeanFactory} and/or {@link BeanFactoryUtils}.
-	 * @param requiredType type the bean must match; can be an interface or superclass
+	 * @param requiredType type the bean must match; can be an interface or superclass.
+	 * {@code null} is disallowed.
 	 * @return an instance of the single bean matching the required type
 	 * @throws NoSuchBeanDefinitionException if no bean of the given type was found
 	 * @throws NoUniqueBeanDefinitionException if more than one bean of the given type was found
@@ -198,47 +174,16 @@ public interface BeanFactory {
 	 * Return an instance, which may be shared or independent, of the specified bean.
 	 * <p>Allows for specifying explicit constructor arguments / factory method arguments,
 	 * overriding the specified default arguments (if any) in the bean definition.
-	 * <p>This method goes into {@link ListableBeanFactory} by-type lookup territory
-	 * but may also be translated into a conventional by-name lookup based on the name
-	 * of the given type. For more extensive retrieval operations across sets of beans,
-	 * use {@link ListableBeanFactory} and/or {@link BeanFactoryUtils}.
-	 * @param requiredType type the bean must match; can be an interface or superclass
-	 * @param args arguments to use when creating a bean instance using explicit arguments
-	 * (only applied when creating a new instance as opposed to retrieving an existing one)
+	 * @param name the name of the bean to retrieve
+	 * @param args arguments to use when creating a prototype using explicit arguments
 	 * @return an instance of the bean
 	 * @throws NoSuchBeanDefinitionException if there is no such bean definition
 	 * @throws BeanDefinitionStoreException if arguments have been given but
 	 * the affected bean isn't a prototype
 	 * @throws BeansException if the bean could not be created
-	 * @since 4.1
+	 * @since 2.5
 	 */
-	<T> T getBean(Class<T> requiredType, Object... args) throws BeansException;
-
-	/**
-	 * Return an provider for the specified bean, allowing for lazy on-demand retrieval
-	 * of instances, including availability and uniqueness options.
-	 * @param requiredType type the bean must match; can be an interface or superclass
-	 * @return a corresponding provider handle
-	 * @since 5.1
-	 * @see #getBeanProvider(ResolvableType)
-	 */
-	<T> ObjectProvider<T> getBeanProvider(Class<T> requiredType);
-
-	/**
-	 * Return an provider for the specified bean, allowing for lazy on-demand retrieval
-	 * of instances, including availability and uniqueness options.
-	 * @param requiredType type the bean must match; can be a generic type declaration.
-	 * Note that collection types are not supported here, in contrast to reflective
-	 * injection points. For programmatically retrieving a list of beans matching a
-	 * specific type, specify the actual bean type as an argument here and subsequently
-	 * use {@link ObjectProvider#orderedStream()} or its lazy streaming/iteration options.
-	 * @return a corresponding provider handle
-	 * @since 5.1
-	 * @see ObjectProvider#iterator()
-	 * @see ObjectProvider#stream()
-	 * @see ObjectProvider#orderedStream()
-	 */
-	<T> ObjectProvider<T> getBeanProvider(ResolvableType requiredType);
+	Object getBean(String name, Object... args) throws BeansException;
 
 	/**
 	 * Does this bean factory contain a bean definition or externally registered singleton
@@ -299,24 +244,7 @@ public interface BeanFactory {
 	 * <p>Translates aliases back to the corresponding canonical bean name.
 	 * Will ask the parent factory if the bean cannot be found in this factory instance.
 	 * @param name the name of the bean to query
-	 * @param typeToMatch the type to match against (as a {@code ResolvableType})
-	 * @return {@code true} if the bean type matches,
-	 * {@code false} if it doesn't match or cannot be determined yet
-	 * @throws NoSuchBeanDefinitionException if there is no bean with the given name
-	 * @since 4.2
-	 * @see #getBean
-	 * @see #getType
-	 */
-	boolean isTypeMatch(String name, ResolvableType typeToMatch) throws NoSuchBeanDefinitionException;
-
-	/**
-	 * Check whether the bean with the given name matches the specified type.
-	 * More specifically, check whether a {@link #getBean} call for the given name
-	 * would return an object that is assignable to the specified target type.
-	 * <p>Translates aliases back to the corresponding canonical bean name.
-	 * Will ask the parent factory if the bean cannot be found in this factory instance.
-	 * @param name the name of the bean to query
-	 * @param typeToMatch the type to match against (as a {@code Class})
+	 * @param targetType the type to match against
 	 * @return {@code true} if the bean type matches,
 	 * {@code false} if it doesn't match or cannot be determined yet
 	 * @throws NoSuchBeanDefinitionException if there is no bean with the given name
@@ -324,7 +252,7 @@ public interface BeanFactory {
 	 * @see #getBean
 	 * @see #getType
 	 */
-	boolean isTypeMatch(String name, Class<?> typeToMatch) throws NoSuchBeanDefinitionException;
+	boolean isTypeMatch(String name, Class<?> targetType) throws NoSuchBeanDefinitionException;
 
 	/**
 	 * Determine the type of the bean with the given name. More specifically,
@@ -340,7 +268,6 @@ public interface BeanFactory {
 	 * @see #getBean
 	 * @see #isTypeMatch
 	 */
-	@Nullable
 	Class<?> getType(String name) throws NoSuchBeanDefinitionException;
 
 	/**

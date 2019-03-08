@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,10 +50,7 @@ import org.springframework.beans.factory.InitializingBean;
  * @since 2.5.1
  * @see #setPort
  * @see #setContexts
- * @deprecated as of Spring Framework 5.1, in favor of embedded Tomcat/Jetty/Undertow
  */
-@Deprecated
-@org.springframework.lang.UsesSunHttpServer
 public class SimpleHttpServerFactoryBean implements FactoryBean<HttpServer>, InitializingBean, DisposableBean {
 
 	protected final Log logger = LogFactory.getLog(getClass());
@@ -123,6 +120,7 @@ public class SimpleHttpServerFactoryBean implements FactoryBean<HttpServer>, Ini
 	 * objects as values
 	 * @see org.springframework.remoting.httpinvoker.SimpleHttpInvokerServiceExporter
 	 * @see org.springframework.remoting.caucho.SimpleHessianServiceExporter
+	 * @see org.springframework.remoting.caucho.SimpleBurlapServiceExporter
 	 */
 	public void setContexts(Map<String, HttpHandler> contexts) {
 		this.contexts = contexts;
@@ -145,7 +143,6 @@ public class SimpleHttpServerFactoryBean implements FactoryBean<HttpServer>, Ini
 	}
 
 
-	@Override
 	public void afterPropertiesSet() throws IOException {
 		InetSocketAddress address = (this.hostname != null ?
 				new InetSocketAddress(this.hostname, this.port) : new InetSocketAddress(this.port));
@@ -154,38 +151,34 @@ public class SimpleHttpServerFactoryBean implements FactoryBean<HttpServer>, Ini
 			this.server.setExecutor(this.executor);
 		}
 		if (this.contexts != null) {
-			this.contexts.forEach((key, context) -> {
-				HttpContext httpContext = this.server.createContext(key, context);
+			for (String key : this.contexts.keySet()) {
+				HttpContext httpContext = this.server.createContext(key, this.contexts.get(key));
 				if (this.filters != null) {
 					httpContext.getFilters().addAll(this.filters);
 				}
 				if (this.authenticator != null) {
 					httpContext.setAuthenticator(this.authenticator);
 				}
-			});
+			}
 		}
-		if (logger.isInfoEnabled()) {
-			logger.info("Starting HttpServer at address " + address);
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("Starting HttpServer at address " + address);
 		}
 		this.server.start();
 	}
 
-	@Override
 	public HttpServer getObject() {
 		return this.server;
 	}
 
-	@Override
 	public Class<? extends HttpServer> getObjectType() {
 		return (this.server != null ? this.server.getClass() : HttpServer.class);
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}
 
-	@Override
 	public void destroy() {
 		logger.info("Stopping HttpServer");
 		this.server.stop(this.shutdownDelay);

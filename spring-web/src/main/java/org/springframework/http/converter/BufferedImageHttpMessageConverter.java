@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,6 @@ import javax.imageio.stream.MemoryCacheImageOutputStream;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
-import org.springframework.http.StreamingHttpOutputMessage;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -68,12 +66,10 @@ import org.springframework.util.StringUtils;
  */
 public class BufferedImageHttpMessageConverter implements HttpMessageConverter<BufferedImage> {
 
-	private final List<MediaType> readableMediaTypes = new ArrayList<>();
+	private final List<MediaType> readableMediaTypes = new ArrayList<MediaType>();
 
-	@Nullable
 	private MediaType defaultContentType;
 
-	@Nullable
 	private File cacheDir;
 
 
@@ -99,13 +95,12 @@ public class BufferedImageHttpMessageConverter implements HttpMessageConverter<B
 	 * Sets the default {@code Content-Type} to be used for writing.
 	 * @throws IllegalArgumentException if the given content type is not supported by the Java Image I/O API
 	 */
-	public void setDefaultContentType(@Nullable MediaType defaultContentType) {
-		if (defaultContentType != null) {
-			Iterator<ImageWriter> imageWriters = ImageIO.getImageWritersByMIMEType(defaultContentType.toString());
-			if (!imageWriters.hasNext()) {
-				throw new IllegalArgumentException(
-						"Content-Type [" + defaultContentType + "] is not supported by the Java Image I/O API");
-			}
+	public void setDefaultContentType(MediaType defaultContentType) {
+		Assert.notNull(defaultContentType, "'contentType' must not be null");
+		Iterator<ImageWriter> imageWriters = ImageIO.getImageWritersByMIMEType(defaultContentType.toString());
+		if (!imageWriters.hasNext()) {
+			throw new IllegalArgumentException(
+					"Content-Type [" + defaultContentType + "] is not supported by the Java Image I/O API");
 		}
 
 		this.defaultContentType = defaultContentType;
@@ -115,7 +110,6 @@ public class BufferedImageHttpMessageConverter implements HttpMessageConverter<B
 	 * Returns the default {@code Content-Type} to be used for writing.
 	 * Called when {@link #write} is invoked without a specified content type parameter.
 	 */
-	@Nullable
 	public MediaType getDefaultContentType() {
 		return this.defaultContentType;
 	}
@@ -131,12 +125,11 @@ public class BufferedImageHttpMessageConverter implements HttpMessageConverter<B
 	}
 
 
-	@Override
-	public boolean canRead(Class<?> clazz, @Nullable MediaType mediaType) {
-		return (BufferedImage.class == clazz && isReadable(mediaType));
+	public boolean canRead(Class<?> clazz, MediaType mediaType) {
+		return (BufferedImage.class.equals(clazz) && isReadable(mediaType));
 	}
 
-	private boolean isReadable(@Nullable MediaType mediaType) {
+	private boolean isReadable(MediaType mediaType) {
 		if (mediaType == null) {
 			return true;
 		}
@@ -144,26 +137,23 @@ public class BufferedImageHttpMessageConverter implements HttpMessageConverter<B
 		return imageReaders.hasNext();
 	}
 
-	@Override
-	public boolean canWrite(Class<?> clazz, @Nullable MediaType mediaType) {
-		return (BufferedImage.class == clazz && isWritable(mediaType));
+	public boolean canWrite(Class<?> clazz, MediaType mediaType) {
+		return (BufferedImage.class.equals(clazz) && isWritable(mediaType));
 	}
 
-	private boolean isWritable(@Nullable MediaType mediaType) {
-		if (mediaType == null || MediaType.ALL.equalsTypeAndSubtype(mediaType)) {
+	private boolean isWritable(MediaType mediaType) {
+		if (mediaType == null || MediaType.ALL.equals(mediaType)) {
 			return true;
 		}
 		Iterator<ImageWriter> imageWriters = ImageIO.getImageWritersByMIMEType(mediaType.toString());
 		return imageWriters.hasNext();
 	}
 
-	@Override
 	public List<MediaType> getSupportedMediaTypes() {
 		return Collections.unmodifiableList(this.readableMediaTypes);
 	}
 
-	@Override
-	public BufferedImage read(@Nullable Class<? extends BufferedImage> clazz, HttpInputMessage inputMessage)
+	public BufferedImage read(Class<? extends BufferedImage> clazz, HttpInputMessage inputMessage)
 			throws IOException, HttpMessageNotReadableException {
 
 		ImageInputStream imageInputStream = null;
@@ -171,9 +161,6 @@ public class BufferedImageHttpMessageConverter implements HttpMessageConverter<B
 		try {
 			imageInputStream = createImageInputStream(inputMessage.getBody());
 			MediaType contentType = inputMessage.getHeaders().getContentType();
-			if (contentType == null) {
-				throw new HttpMessageNotReadableException("No Content-Type header", inputMessage);
-			}
 			Iterator<ImageReader> imageReaders = ImageIO.getImageReadersByMIMEType(contentType.toString());
 			if (imageReaders.hasNext()) {
 				imageReader = imageReaders.next();
@@ -184,8 +171,7 @@ public class BufferedImageHttpMessageConverter implements HttpMessageConverter<B
 			}
 			else {
 				throw new HttpMessageNotReadableException(
-						"Could not find javax.imageio.ImageReader for Content-Type [" + contentType + "]",
-						inputMessage);
+						"Could not find javax.imageio.ImageReader for Content-Type [" + contentType + "]");
 			}
 		}
 		finally {
@@ -205,51 +191,31 @@ public class BufferedImageHttpMessageConverter implements HttpMessageConverter<B
 
 	private ImageInputStream createImageInputStream(InputStream is) throws IOException {
 		if (this.cacheDir != null) {
-			return new FileCacheImageInputStream(is, this.cacheDir);
+			return new FileCacheImageInputStream(is, cacheDir);
 		}
 		else {
 			return new MemoryCacheImageInputStream(is);
 		}
 	}
 
-	@Override
-	public void write(final BufferedImage image, @Nullable final MediaType contentType,
-			final HttpOutputMessage outputMessage)
+	public void write(BufferedImage image, MediaType contentType, HttpOutputMessage outputMessage)
 			throws IOException, HttpMessageNotWritableException {
 
-		final MediaType selectedContentType = getContentType(contentType);
-		outputMessage.getHeaders().setContentType(selectedContentType);
-
-		if (outputMessage instanceof StreamingHttpOutputMessage) {
-			StreamingHttpOutputMessage streamingOutputMessage = (StreamingHttpOutputMessage) outputMessage;
-			streamingOutputMessage.setBody(outputStream -> writeInternal(image, selectedContentType, outputStream));
-		}
-		else {
-			writeInternal(image, selectedContentType, outputMessage.getBody());
-		}
-	}
-
-	private MediaType getContentType(@Nullable MediaType contentType) {
 		if (contentType == null || contentType.isWildcardType() || contentType.isWildcardSubtype()) {
 			contentType = getDefaultContentType();
 		}
-		Assert.notNull(contentType, "Could not select Content-Type. " +
-				"Please specify one through the 'defaultContentType' property.");
-		return contentType;
-	}
-
-	private void writeInternal(BufferedImage image, MediaType contentType, OutputStream body)
-			throws IOException, HttpMessageNotWritableException {
-
+		Assert.notNull(contentType,
+				"Count not determine Content-Type, set one using the 'defaultContentType' property");
+		outputMessage.getHeaders().setContentType(contentType);
 		ImageOutputStream imageOutputStream = null;
 		ImageWriter imageWriter = null;
 		try {
+			imageOutputStream = createImageOutputStream(outputMessage.getBody());
 			Iterator<ImageWriter> imageWriters = ImageIO.getImageWritersByMIMEType(contentType.toString());
 			if (imageWriters.hasNext()) {
 				imageWriter = imageWriters.next();
 				ImageWriteParam iwp = imageWriter.getDefaultWriteParam();
 				process(iwp);
-				imageOutputStream = createImageOutputStream(body);
 				imageWriter.setOutput(imageOutputStream);
 				imageWriter.write(null, new IIOImage(image, null, null), iwp);
 			}

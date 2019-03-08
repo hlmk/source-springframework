@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.springframework.test.context.testng.web;
 
-import org.testng.annotations.Test;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -27,6 +25,7 @@ import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.testng.annotations.Test;
 
 import static org.junit.Assert.*;
 
@@ -57,7 +56,7 @@ public class ServletTestExecutionListenerTestNGIntegrationTests extends Abstract
 	 * @see #ensureMocksAreReinjectedBetweenTests_2
 	 */
 	@Test
-	void ensureMocksAreReinjectedBetweenTests_1() {
+	public void ensureMocksAreReinjectedBetweenTests_1() {
 		assertInjectedServletRequestEqualsRequestInRequestContextHolder();
 	}
 
@@ -67,7 +66,7 @@ public class ServletTestExecutionListenerTestNGIntegrationTests extends Abstract
 	 * @see #ensureMocksAreReinjectedBetweenTests_1
 	 */
 	@Test
-	void ensureMocksAreReinjectedBetweenTests_2() {
+	public void ensureMocksAreReinjectedBetweenTests_2() {
 		assertInjectedServletRequestEqualsRequestInRequestContextHolder();
 	}
 

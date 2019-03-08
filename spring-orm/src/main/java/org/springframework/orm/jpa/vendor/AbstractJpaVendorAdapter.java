@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,10 @@
 
 package org.springframework.orm.jpa.vendor;
 
-import java.util.Collections;
 import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.spi.PersistenceUnitInfo;
 
-import org.springframework.lang.Nullable;
 import org.springframework.orm.jpa.JpaDialect;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 
@@ -38,7 +35,6 @@ public abstract class AbstractJpaVendorAdapter implements JpaVendorAdapter {
 
 	private Database database = Database.DEFAULT;
 
-	@Nullable
 	private String databasePlatform;
 
 	private boolean generateDdl = false;
@@ -48,11 +44,7 @@ public abstract class AbstractJpaVendorAdapter implements JpaVendorAdapter {
 
 	/**
 	 * Specify the target database to operate on, as a value of the {@code Database} enum:
-	 * DB2, DERBY, H2, HANA, HSQL, INFORMIX, MYSQL, ORACLE, POSTGRESQL, SQL_SERVER, SYBASE
-	 * <p><b>NOTE:</b> This setting will override your JPA provider's default algorithm.
-	 * Custom vendor properties may still fine-tune the database dialect. However,
-	 * there may nevertheless be conflicts: For example, specify either this setting
-	 * or Hibernate's "hibernate.dialect_resolvers" property, not both.
+	 * DB2, DERBY, H2, HSQL, INFORMIX, MYSQL, ORACLE, POSTGRESQL, SQL_SERVER, SYBASE
 	 */
 	public void setDatabase(Database database) {
 		this.database = database;
@@ -69,14 +61,13 @@ public abstract class AbstractJpaVendorAdapter implements JpaVendorAdapter {
 	 * Specify the name of the target database to operate on.
 	 * The supported values are vendor-dependent platform identifiers.
 	 */
-	public void setDatabasePlatform(@Nullable String databasePlatform) {
+	public void setDatabasePlatform(String databasePlatform) {
 		this.databasePlatform = databasePlatform;
 	}
 
 	/**
 	 * Return the name of the target database to operate on.
 	 */
-	@Nullable
 	protected String getDatabasePlatform() {
 		return this.databasePlatform;
 	}
@@ -87,10 +78,6 @@ public abstract class AbstractJpaVendorAdapter implements JpaVendorAdapter {
 	 * <p>Note that the exact semantics of this flag depend on the underlying
 	 * persistence provider. For any more advanced needs, specify the appropriate
 	 * vendor-specific settings as "jpaProperties".
-	 * <p><b>NOTE: Do not set this flag to 'true' while also setting JPA 2.1's
-	 * {@code javax.persistence.schema-generation.database.action} property.</b>
-	 * These two schema generation mechanisms - standard JPA versus provider-native -
-	 * are mutually exclusive, e.g. with Hibernate 5.
 	 * @see org.springframework.orm.jpa.AbstractEntityManagerFactoryBean#setJpaProperties
 	 */
 	public void setGenerateDdl(boolean generateDdl) {
@@ -123,39 +110,30 @@ public abstract class AbstractJpaVendorAdapter implements JpaVendorAdapter {
 	}
 
 
-	@Override
-	@Nullable
 	public String getPersistenceProviderRootPackage() {
 		return null;
 	}
 
-	@Override
-	public Map<String, ?> getJpaPropertyMap(PersistenceUnitInfo pui) {
-		return getJpaPropertyMap();
-	}
-
-	@Override
 	public Map<String, ?> getJpaPropertyMap() {
-		return Collections.emptyMap();
+		return null;
 	}
 
-	@Override
-	@Nullable
 	public JpaDialect getJpaDialect() {
 		return null;
 	}
 
-	@Override
 	public Class<? extends EntityManagerFactory> getEntityManagerFactoryInterface() {
 		return EntityManagerFactory.class;
 	}
 
-	@Override
 	public Class<? extends EntityManager> getEntityManagerInterface() {
 		return EntityManager.class;
 	}
 
-	@Override
+	/**
+	 * Post-process the EntityManagerFactory after it has been initialized.
+	 * @param emf the EntityManagerFactory to process
+	 */
 	public void postProcessEntityManagerFactory(EntityManagerFactory emf) {
 	}
 

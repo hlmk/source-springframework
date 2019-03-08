@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package org.springframework.context.annotation;
 
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
 
+import org.junit.Test;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
 
 /**
  * Tests to verify that FactoryBean semantics are the same in Configuration
@@ -32,7 +32,6 @@ import static org.junit.Assert.*;
  * @author Chris Beams
  */
 public class Spr6602Tests {
-
 	@Test
 	public void testXmlBehavior() throws Exception {
 		doAssertions(new ClassPathXmlApplicationContext("Spr6602Tests-context.xml", Spr6602Tests.class));
@@ -60,10 +59,8 @@ public class Spr6602Tests {
 		assertThat(bar3, is(not(bar4)));
 	}
 
-
 	@Configuration
 	public static class FooConfig {
-
 		@Bean
 		public Foo foo() throws Exception {
 			return new Foo(barFactory().getObject());
@@ -75,9 +72,7 @@ public class Spr6602Tests {
 		}
 	}
 
-
 	public static class Foo {
-
 		final Bar bar;
 
 		public Foo(Bar bar) {
@@ -85,10 +80,8 @@ public class Spr6602Tests {
 		}
 	}
 
-
 	public static class Bar {
 	}
-
 
 	public static class BarFactory implements FactoryBean<Bar> {
 

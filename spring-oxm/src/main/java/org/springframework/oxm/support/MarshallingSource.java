@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.LexicalHandler;
 
-import org.springframework.lang.Nullable;
 import org.springframework.oxm.Marshaller;
 import org.springframework.util.Assert;
 
@@ -102,25 +101,20 @@ public class MarshallingSource extends SAXSource {
 	}
 
 
-	private static final class MarshallingXMLReader implements XMLReader {
+	private static class MarshallingXMLReader implements XMLReader {
 
 		private final Marshaller marshaller;
 
 		private final Object content;
 
-		@Nullable
 		private DTDHandler dtdHandler;
 
-		@Nullable
 		private ContentHandler contentHandler;
 
-		@Nullable
 		private EntityResolver entityResolver;
 
-		@Nullable
 		private ErrorHandler errorHandler;
 
-		@Nullable
 		private LexicalHandler lexicalHandler;
 
 		private MarshallingXMLReader(Marshaller marshaller, Object content) {
@@ -130,77 +124,59 @@ public class MarshallingSource extends SAXSource {
 			this.content = content;
 		}
 
-		@Override
-		public void setContentHandler(@Nullable ContentHandler contentHandler) {
+		public void setContentHandler(ContentHandler contentHandler) {
 			this.contentHandler = contentHandler;
 		}
 
-		@Override
-		@Nullable
 		public ContentHandler getContentHandler() {
 			return this.contentHandler;
 		}
 
-		@Override
-		public void setDTDHandler(@Nullable DTDHandler dtdHandler) {
+		public void setDTDHandler(DTDHandler dtdHandler) {
 			this.dtdHandler = dtdHandler;
 		}
 
-		@Override
-		@Nullable
 		public DTDHandler getDTDHandler() {
 			return this.dtdHandler;
 		}
 
-		@Override
-		public void setEntityResolver(@Nullable EntityResolver entityResolver) {
+		public void setEntityResolver(EntityResolver entityResolver) {
 			this.entityResolver = entityResolver;
 		}
 
-		@Override
-		@Nullable
 		public EntityResolver getEntityResolver() {
 			return this.entityResolver;
 		}
 
-		@Override
-		public void setErrorHandler(@Nullable ErrorHandler errorHandler) {
+		public void setErrorHandler(ErrorHandler errorHandler) {
 			this.errorHandler = errorHandler;
 		}
 
-		@Override
-		@Nullable
 		public ErrorHandler getErrorHandler() {
 			return this.errorHandler;
 		}
 
-		@Nullable
 		protected LexicalHandler getLexicalHandler() {
 			return this.lexicalHandler;
 		}
 
-		@Override
 		public boolean getFeature(String name) throws SAXNotRecognizedException {
 			throw new SAXNotRecognizedException(name);
 		}
 
-		@Override
 		public void setFeature(String name, boolean value) throws SAXNotRecognizedException {
 			throw new SAXNotRecognizedException(name);
 		}
 
-		@Override
-		@Nullable
 		public Object getProperty(String name) throws SAXNotRecognizedException {
 			if ("http://xml.org/sax/properties/lexical-handler".equals(name)) {
-				return this.lexicalHandler;
+				return lexicalHandler;
 			}
 			else {
 				throw new SAXNotRecognizedException(name);
 			}
 		}
 
-		@Override
 		public void setProperty(String name, Object value) throws SAXNotRecognizedException {
 			if ("http://xml.org/sax/properties/lexical-handler".equals(name)) {
 				this.lexicalHandler = (LexicalHandler) value;
@@ -210,12 +186,10 @@ public class MarshallingSource extends SAXSource {
 			}
 		}
 
-		@Override
 		public void parse(InputSource input) throws SAXException {
 			parse();
 		}
 
-		@Override
 		public void parse(String systemId) throws SAXException {
 			parse();
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,31 +19,21 @@ package org.springframework.validation;
 import java.beans.PropertyEditorSupport;
 import java.util.Map;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import junit.framework.TestCase;
 
+import org.springframework.tests.sample.beans.FieldAccessBean;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.NotWritablePropertyException;
-import org.springframework.beans.NullValueInNestedPathException;
 import org.springframework.beans.PropertyValue;
-import org.springframework.tests.sample.beans.FieldAccessBean;
 import org.springframework.tests.sample.beans.TestBean;
-
-import static org.junit.Assert.*;
 
 /**
  * @author Juergen Hoeller
- * @author Stephane Nicoll
  * @since 07.03.2006
  */
-public class DataBinderFieldAccessTests {
+public class DataBinderFieldAccessTests extends TestCase {
 
-	@Rule
-	public final ExpectedException thrown = ExpectedException.none();
-
-	@Test
-	public void bindingNoErrors() throws Exception {
+	public void testBindingNoErrors() throws Exception {
 		FieldAccessBean rod = new FieldAccessBean();
 		DataBinder binder = new DataBinder(rod, "person");
 		assertTrue(binder.isIgnoreUnknownFields());
@@ -65,8 +55,7 @@ public class DataBinderFieldAccessTests {
 		assertTrue("Same object", tb.equals(rod));
 	}
 
-	@Test
-	public void bindingNoErrorsNotIgnoreUnknown() throws Exception {
+	public void testBindingNoErrorsNotIgnoreUnknown() throws Exception {
 		FieldAccessBean rod = new FieldAccessBean();
 		DataBinder binder = new DataBinder(rod, "person");
 		binder.initDirectFieldAccess();
@@ -85,8 +74,7 @@ public class DataBinderFieldAccessTests {
 		}
 	}
 
-	@Test
-	public void bindingWithErrors() throws Exception {
+	public void testBindingWithErrors() throws Exception {
 		FieldAccessBean rod = new FieldAccessBean();
 		DataBinder binder = new DataBinder(rod, "person");
 		binder.initDirectFieldAccess();
@@ -121,38 +109,7 @@ public class DataBinderFieldAccessTests {
 		}
 	}
 
-	@Test
-	public void nestedBindingWithDefaultConversionNoErrors() throws Exception {
-		FieldAccessBean rod = new FieldAccessBean();
-		DataBinder binder = new DataBinder(rod, "person");
-		assertTrue(binder.isIgnoreUnknownFields());
-		binder.initDirectFieldAccess();
-		MutablePropertyValues pvs = new MutablePropertyValues();
-		pvs.addPropertyValue(new PropertyValue("spouse.name", "Kerry"));
-		pvs.addPropertyValue(new PropertyValue("spouse.jedi", "on"));
-
-		binder.bind(pvs);
-		binder.close();
-
-		assertEquals("Kerry", rod.getSpouse().getName());
-		assertTrue((rod.getSpouse()).isJedi());
-	}
-
-	@Test
-	public void nestedBindingWithDisabledAutoGrow() throws Exception {
-		FieldAccessBean rod = new FieldAccessBean();
-		DataBinder binder = new DataBinder(rod, "person");
-		binder.setAutoGrowNestedPaths(false);
-		binder.initDirectFieldAccess();
-		MutablePropertyValues pvs = new MutablePropertyValues();
-		pvs.addPropertyValue(new PropertyValue("spouse.name", "Kerry"));
-
-		thrown.expect(NullValueInNestedPathException.class);
-		binder.bind(pvs);
-	}
-
-	@Test
-	public void bindingWithErrorsAndCustomEditors() throws Exception {
+	public void testBindingWithErrorsAndCustomEditors() throws Exception {
 		FieldAccessBean rod = new FieldAccessBean();
 		DataBinder binder = new DataBinder(rod, "person");
 		binder.initDirectFieldAccess();

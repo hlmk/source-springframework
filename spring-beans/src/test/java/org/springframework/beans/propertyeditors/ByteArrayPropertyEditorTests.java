@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,21 @@
 
 package org.springframework.beans.propertyeditors;
 
+import junit.framework.TestCase;
+
 import java.beans.PropertyEditor;
-
-import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  * Unit tests for the {@link ByteArrayPropertyEditor} class.
  *
  * @author Rick Evans
  */
-public class ByteArrayPropertyEditorTests {
+public final class ByteArrayPropertyEditorTests extends TestCase {
 
-	private final PropertyEditor byteEditor = new ByteArrayPropertyEditor();
-
-	@Test
-	public void sunnyDaySetAsText() throws Exception {
+	public void testSunnyDaySetAsText() throws Exception {
 		final String text = "Hideous towns make me throw... up";
+
+		PropertyEditor byteEditor = new ByteArrayPropertyEditor();
 		byteEditor.setAsText(text);
 
 		Object value = byteEditor.getValue();
@@ -46,8 +43,8 @@ public class ByteArrayPropertyEditorTests {
 		assertEquals(text, byteEditor.getAsText());
 	}
 
-	@Test
-	public void getAsTextReturnsEmptyStringIfValueIsNull() throws Exception {
+	public void testGetAsTextReturnsEmptyStringIfValueIsNull() throws Exception {
+		PropertyEditor byteEditor = new ByteArrayPropertyEditor();
 		assertEquals("", byteEditor.getAsText());
 
 		byteEditor.setAsText(null);

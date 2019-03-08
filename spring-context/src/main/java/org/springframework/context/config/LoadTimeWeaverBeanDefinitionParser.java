@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.context.config;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.parsing.BeanComponentDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.RootBeanDefinition;
@@ -27,7 +26,6 @@ import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.weaving.AspectJWeavingEnabler;
-import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -38,22 +36,15 @@ import org.springframework.util.ClassUtils;
  */
 class LoadTimeWeaverBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
-	/**
-	 * The bean name of the internally managed AspectJ weaving enabler.
-	 * @since 4.3.1
-	 */
-	public static final String ASPECTJ_WEAVING_ENABLER_BEAN_NAME =
-			"org.springframework.context.config.internalAspectJWeavingEnabler";
+	private static final String WEAVER_CLASS_ATTRIBUTE = "weaver-class";
 
-	private static final String ASPECTJ_WEAVING_ENABLER_CLASS_NAME =
-			"org.springframework.context.weaving.AspectJWeavingEnabler";
+	private static final String ASPECTJ_WEAVING_ATTRIBUTE = "aspectj-weaving";
 
 	private static final String DEFAULT_LOAD_TIME_WEAVER_CLASS_NAME =
 			"org.springframework.context.weaving.DefaultContextLoadTimeWeaver";
 
-	private static final String WEAVER_CLASS_ATTRIBUTE = "weaver-class";
-
-	private static final String ASPECTJ_WEAVING_ATTRIBUTE = "aspectj-weaving";
+	private static final String ASPECTJ_WEAVING_ENABLER_CLASS_NAME =
+			"org.springframework.context.weaving.AspectJWeavingEnabler";
 
 
 	@Override
@@ -74,11 +65,9 @@ class LoadTimeWeaverBeanDefinitionParser extends AbstractSingleBeanDefinitionPar
 		builder.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
 
 		if (isAspectJWeavingEnabled(element.getAttribute(ASPECTJ_WEAVING_ATTRIBUTE), parserContext)) {
-			if (!parserContext.getRegistry().containsBeanDefinition(ASPECTJ_WEAVING_ENABLER_BEAN_NAME)) {
-				RootBeanDefinition def = new RootBeanDefinition(ASPECTJ_WEAVING_ENABLER_CLASS_NAME);
-				parserContext.registerBeanComponent(
-						new BeanComponentDefinition(def, ASPECTJ_WEAVING_ENABLER_BEAN_NAME));
-			}
+			RootBeanDefinition weavingEnablerDef = new RootBeanDefinition();
+			weavingEnablerDef.setBeanClassName(ASPECTJ_WEAVING_ENABLER_CLASS_NAME);
+			parserContext.getReaderContext().registerWithGeneratedName(weavingEnablerDef);
 
 			if (isBeanConfigurerAspectEnabled(parserContext.getReaderContext().getBeanClassLoader())) {
 				new SpringConfiguredBeanDefinitionParser().parse(element, parserContext);
@@ -95,12 +84,12 @@ class LoadTimeWeaverBeanDefinitionParser extends AbstractSingleBeanDefinitionPar
 		}
 		else {
 			// Determine default...
-			ClassLoader cl = parserContext.getReaderContext().getBeanClassLoader();
-			return (cl != null && cl.getResource(AspectJWeavingEnabler.ASPECTJ_AOP_XML_RESOURCE) != null);
+			ClassLoader cl = parserContext.getReaderContext().getResourceLoader().getClassLoader();
+			return (cl.getResource(AspectJWeavingEnabler.ASPECTJ_AOP_XML_RESOURCE) != null);
 		}
 	}
 
-	protected boolean isBeanConfigurerAspectEnabled(@Nullable ClassLoader beanClassLoader) {
+	protected boolean isBeanConfigurerAspectEnabled(ClassLoader beanClassLoader) {
 		return ClassUtils.isPresent(SpringConfiguredBeanDefinitionParser.BEAN_CONFIGURER_ASPECT_CLASS_NAME,
 				beanClassLoader);
 	}

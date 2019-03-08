@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,12 @@ import org.springframework.ui.ExtendedModelMap;
 import org.springframework.validation.BindingResult;
 
 /**
- * Subclass of {@link org.springframework.ui.ExtendedModelMap} that automatically removes
- * a {@link org.springframework.validation.BindingResult} object if the corresponding
- * target attribute gets replaced through regular {@link Map} operations.
+ * Subclass of {@link org.springframework.ui.ExtendedModelMap} that
+ * automatically removes a {@link org.springframework.validation.BindingResult}
+ * object if the corresponding target attribute gets replaced.
  *
- * <p>This is the class exposed to handler methods by Spring MVC, typically consumed through
- * a declaration of the {@link org.springframework.ui.Model} interface. There is no need to
- * build it within user code; a plain {@link org.springframework.ui.ModelMap} or even a just
- * a regular {@link Map} with String keys will be good enough to return a user model.
+ * <p>Used by {@link org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter}
+ * and {@link org.springframework.web.portlet.mvc.annotation.AnnotationMethodHandlerAdapter}.
  *
  * @author Juergen Hoeller
  * @since 2.5.6
@@ -46,7 +44,9 @@ public class BindingAwareModelMap extends ExtendedModelMap {
 
 	@Override
 	public void putAll(Map<? extends String, ?> map) {
-		map.forEach(this::removeBindingResultIfNecessary);
+		for (Map.Entry entry : map.entrySet()) {
+			removeBindingResultIfNecessary(entry.getKey(), entry.getValue());
+		}
 		super.putAll(map);
 	}
 

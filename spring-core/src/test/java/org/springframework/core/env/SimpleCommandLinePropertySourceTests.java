@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2011 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package org.springframework.core.env;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+
 import java.util.List;
 
 import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
 
 /**
  * Unit tests for {@link SimpleCommandLinePropertySource}.
@@ -65,7 +67,7 @@ public class SimpleCommandLinePropertySourceTests {
 
 	@Test
 	public void withDefaultNonOptionArgsNameAndNoNonOptionArgsPresent() {
-		EnumerablePropertySource<?> ps = new SimpleCommandLinePropertySource("--o1=v1", "--o2");
+		PropertySource<?> ps = new SimpleCommandLinePropertySource("--o1=v1", "--o2");
 
 		assertThat(ps.containsProperty("nonOptionArgs"), is(false));
 		assertThat(ps.containsProperty("o1"), is(true));
@@ -73,7 +75,6 @@ public class SimpleCommandLinePropertySourceTests {
 
 		assertThat(ps.containsProperty("nonOptionArgs"), is(false));
 		assertThat(ps.getProperty("nonOptionArgs"), nullValue());
-		assertThat(ps.getPropertyNames().length, is(2));
 	}
 
 	@Test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package org.springframework.aop.aspectj;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -40,9 +37,9 @@ import org.springframework.aop.interceptor.ExposeInvocationInterceptor;
 import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.MethodMatchers;
 import org.springframework.aop.support.StaticMethodMatcher;
-import org.springframework.core.DefaultParameterNameDiscoverer;
+import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.lang.Nullable;
+import org.springframework.core.PrioritizedParameterNameDiscoverer;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
@@ -59,11 +56,10 @@ import org.springframework.util.StringUtils;
  * @author Ramnivas Laddad
  * @since 2.0
  */
-@SuppressWarnings("serial")
-public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedenceInformation, Serializable {
+public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedenceInformation {
 
 	/**
-	 * Key used in ReflectiveMethodInvocation userAttributes map for the current joinpoint.
+	 * Key used in ReflectiveMethodInvocation userAtributes map for the current joinpoint.
 	 */
 	protected static final String JOIN_POINT_KEY = JoinPoint.class.getName();
 
@@ -91,24 +87,21 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	}
 
 
-	private final Class<?> declaringClass;
+	protected final Method aspectJAdviceMethod;
 
-	private final String methodName;
-
-	private final Class<?>[] parameterTypes;
-
-	protected transient Method aspectJAdviceMethod;
+	/** The total number of arguments we have to populate on advice dispatch */
+	private final int adviceInvocationArgumentCount;
 
 	private final AspectJExpressionPointcut pointcut;
 
 	private final AspectInstanceFactory aspectInstanceFactory;
 
 	/**
-	 * The name of the aspect (ref bean) in which this advice was defined
-	 * (used when determining advice precedence so that we can determine
+	 * The name of the aspect (ref bean) in which this advice was defined (used
+	 * when determining advice precedence so that we can determine
 	 * whether two pieces of advice come from the same aspect).
 	 */
-	private String aspectName = "";
+	private String aspectName;
 
 	/**
 	 * The order of declaration of this advice within the aspect.
@@ -117,18 +110,15 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 	/**
 	 * This will be non-null if the creator of this advice object knows the argument names
-	 * and sets them explicitly.
+	 * and sets them explicitly
 	 */
-	@Nullable
-	private String[] argumentNames;
+	private String[] argumentNames = null;
 
-	/** Non-null if after throwing advice binds the thrown value. */
-	@Nullable
-	private String throwingName;
+	/** Non-null if after throwing advice binds the thrown value */
+	private String throwingName = null;
 
-	/** Non-null if after returning advice binds the return value. */
-	@Nullable
-	private String returningName;
+	/** Non-null if after returning advice binds the return value */
+	private String returningName = null;
 
 	private Class<?> discoveredReturningType = Object.class;
 
@@ -136,22 +126,20 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 	/**
 	 * Index for thisJoinPoint argument (currently only
-	 * supported at index 0 if present at all).
+	 * supported at index 0 if present at all)
 	 */
 	private int joinPointArgumentIndex = -1;
 
 	/**
 	 * Index for thisJoinPointStaticPart argument (currently only
-	 * supported at index 0 if present at all).
+	 * supported at index 0 if present at all)
 	 */
 	private int joinPointStaticPartArgumentIndex = -1;
 
-	@Nullable
-	private Map<String, Integer> argumentBindings;
+	private Map<String, Integer> argumentBindings = null;
 
 	private boolean argumentsIntrospected = false;
 
-	@Nullable
 	private Type discoveredReturningGenericType;
 	// Note: Unlike return type, no such generic information is needed for the throwing type,
 	// since Java doesn't allow exception types to be parameterized.
@@ -167,10 +155,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 			Method aspectJAdviceMethod, AspectJExpressionPointcut pointcut, AspectInstanceFactory aspectInstanceFactory) {
 
 		Assert.notNull(aspectJAdviceMethod, "Advice method must not be null");
-		this.declaringClass = aspectJAdviceMethod.getDeclaringClass();
-		this.methodName = aspectJAdviceMethod.getName();
-		this.parameterTypes = aspectJAdviceMethod.getParameterTypes();
 		this.aspectJAdviceMethod = aspectJAdviceMethod;
+		this.adviceInvocationArgumentCount = this.aspectJAdviceMethod.getParameterTypes().length;
 		this.pointcut = pointcut;
 		this.aspectInstanceFactory = aspectInstanceFactory;
 	}
@@ -213,37 +199,30 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	/**
 	 * Return the ClassLoader for aspect instances.
 	 */
-	@Nullable
 	public final ClassLoader getAspectClassLoader() {
 		return this.aspectInstanceFactory.getAspectClassLoader();
 	}
 
-	@Override
 	public int getOrder() {
 		return this.aspectInstanceFactory.getOrder();
 	}
 
 
-	/**
-	 * Set the name of the aspect (bean) in which the advice was declared.
-	 */
 	public void setAspectName(String name) {
 		this.aspectName = name;
 	}
 
-	@Override
 	public String getAspectName() {
 		return this.aspectName;
 	}
 
 	/**
-	 * Set the declaration order of this advice within the aspect.
+	 * Sets the <b>declaration order</b> of this advice within the aspect
 	 */
 	public void setDeclarationOrder(int order) {
 		this.declarationOrder = order;
 	}
 
-	@Override
 	public int getDeclarationOrder() {
 		return this.declarationOrder;
 	}
@@ -269,17 +248,17 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 						this.argumentNames[i] + "' that is not a valid Java identifier");
 			}
 		}
-		if (this.argumentNames != null) {
-			if (this.aspectJAdviceMethod.getParameterCount() == this.argumentNames.length + 1) {
+		if (argumentNames != null) {
+			if (aspectJAdviceMethod.getParameterTypes().length == argumentNames.length + 1) {
 				// May need to add implicit join point arg name...
-				Class<?> firstArgType = this.aspectJAdviceMethod.getParameterTypes()[0];
+				Class<?> firstArgType = aspectJAdviceMethod.getParameterTypes()[0];
 				if (firstArgType == JoinPoint.class ||
 						firstArgType == ProceedingJoinPoint.class ||
 						firstArgType == JoinPoint.StaticPart.class) {
-					String[] oldNames = this.argumentNames;
-					this.argumentNames = new String[oldNames.length + 1];
-					this.argumentNames[0] = "THIS_JOIN_POINT";
-					System.arraycopy(oldNames, 0, this.argumentNames, 1, oldNames.length);
+					String[] oldNames = argumentNames;
+					argumentNames = new String[oldNames.length + 1];
+					argumentNames[0] = "THIS_JOIN_POINT";
+					System.arraycopy(oldNames, 0, argumentNames, 1, oldNames.length);
 				}
 			}
 		}
@@ -305,8 +284,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 			}
 			catch (Throwable ex) {
 				throw new IllegalArgumentException("Returning name '" + name  +
-						"' is neither a valid argument name nor the fully-qualified " +
-						"name of a Java type on the classpath. Root cause: " + ex);
+						"' is neither a valid argument name nor the fully-qualified name of a Java type on the classpath. " +
+						"Root cause: " + ex);
 			}
 		}
 	}
@@ -315,7 +294,6 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		return this.discoveredReturningType;
 	}
 
-	@Nullable
 	protected Type getDiscoveredReturningGenericType() {
 		return this.discoveredReturningGenericType;
 	}
@@ -340,8 +318,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 			}
 			catch (Throwable ex) {
 				throw new IllegalArgumentException("Throwing name '" + name  +
-						"' is neither a valid argument name nor the fully-qualified " +
-						"name of a Java type on the classpath. Root cause: " + ex);
+						"' is neither a valid argument name nor the fully-qualified name of a Java type on the classpath. " +
+						"Root cause: " + ex);
 			}
 		}
 	}
@@ -377,16 +355,18 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	 * to which argument name. There are multiple strategies for determining
 	 * this binding, which are arranged in a ChainOfResponsibility.
 	 */
-	public final synchronized void calculateArgumentBindings() {
+	public synchronized final void calculateArgumentBindings() {
 		// The simple case... nothing to bind.
-		if (this.argumentsIntrospected || this.parameterTypes.length == 0) {
+		if (this.argumentsIntrospected || this.adviceInvocationArgumentCount == 0) {
 			return;
 		}
 
-		int numUnboundArgs = this.parameterTypes.length;
+		int numUnboundArgs = this.adviceInvocationArgumentCount;
 		Class<?>[] parameterTypes = this.aspectJAdviceMethod.getParameterTypes();
-		if (maybeBindJoinPoint(parameterTypes[0]) || maybeBindProceedingJoinPoint(parameterTypes[0]) ||
-				maybeBindJoinPointStaticPart(parameterTypes[0])) {
+		if (maybeBindJoinPoint(parameterTypes[0]) || maybeBindProceedingJoinPoint(parameterTypes[0])) {
+			numUnboundArgs--;
+		}
+		else if (maybeBindJoinPointStaticPart(parameterTypes[0])) {
 			numUnboundArgs--;
 		}
 
@@ -399,7 +379,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	}
 
 	private boolean maybeBindJoinPoint(Class<?> candidateParameterType) {
-		if (JoinPoint.class == candidateParameterType) {
+		if (candidateParameterType.equals(JoinPoint.class)) {
 			this.joinPointArgumentIndex = 0;
 			return true;
 		}
@@ -409,7 +389,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	}
 
 	private boolean maybeBindProceedingJoinPoint(Class<?> candidateParameterType) {
-		if (ProceedingJoinPoint.class == candidateParameterType) {
+		if (candidateParameterType.equals(ProceedingJoinPoint.class)) {
 			if (!supportsProceedingJoinPoint()) {
 				throw new IllegalArgumentException("ProceedingJoinPoint is only supported for around advice");
 			}
@@ -426,7 +406,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	}
 
 	private boolean maybeBindJoinPointStaticPart(Class<?> candidateParameterType) {
-		if (JoinPoint.StaticPart.class == candidateParameterType) {
+		if (candidateParameterType.equals(JoinPoint.StaticPart.class)) {
 			this.joinPointStaticPartArgumentIndex = 0;
 			return true;
 		}
@@ -452,13 +432,15 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 	/**
 	 * Create a ParameterNameDiscoverer to be used for argument binding.
-	 * <p>The default implementation creates a {@link DefaultParameterNameDiscoverer}
-	 * and adds a specifically configured {@link AspectJAdviceParameterNameDiscoverer}.
+	 * <p>The default implementation creates a {@link PrioritizedParameterNameDiscoverer}
+	 * containing a {@link LocalVariableTableParameterNameDiscoverer} and an
+	 * {@link AspectJAdviceParameterNameDiscoverer}.
 	 */
 	protected ParameterNameDiscoverer createParameterNameDiscoverer() {
 		// We need to discover them, or if that fails, guess,
 		// and if we can't guess with 100% accuracy, fail.
-		DefaultParameterNameDiscoverer discoverer = new DefaultParameterNameDiscoverer();
+		PrioritizedParameterNameDiscoverer discoverer = new PrioritizedParameterNameDiscoverer();
+		discoverer.addDiscoverer(new LocalVariableTableParameterNameDiscoverer());
 		AspectJAdviceParameterNameDiscoverer adviceParameterNameDiscoverer =
 				new AspectJAdviceParameterNameDiscoverer(this.pointcut.getExpression());
 		adviceParameterNameDiscoverer.setReturningName(this.returningName);
@@ -470,18 +452,17 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	}
 
 	private void bindExplicitArguments(int numArgumentsLeftToBind) {
-		Assert.state(this.argumentNames != null, "No argument names available");
-		this.argumentBindings = new HashMap<>();
+		this.argumentBindings = new HashMap<String, Integer>();
 
-		int numExpectedArgumentNames = this.aspectJAdviceMethod.getParameterCount();
+		int numExpectedArgumentNames = this.aspectJAdviceMethod.getParameterTypes().length;
 		if (this.argumentNames.length != numExpectedArgumentNames) {
-			throw new IllegalStateException("Expecting to find " + numExpectedArgumentNames +
-					" arguments to bind by name in advice, but actually found " +
+			throw new IllegalStateException("Expecting to find " + numExpectedArgumentNames
+					+ " arguments to bind by name in advice, but actually found " +
 					this.argumentNames.length + " arguments.");
 		}
 
 		// So we match in number...
-		int argumentIndexOffset = this.parameterTypes.length - numArgumentsLeftToBind;
+		int argumentIndexOffset = this.adviceInvocationArgumentCount - numArgumentsLeftToBind;
 		for (int i = argumentIndexOffset; i < this.argumentNames.length; i++) {
 			this.argumentBindings.put(this.argumentNames[i], i);
 		}
@@ -490,8 +471,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		// specified, and find the discovered argument types.
 		if (this.returningName != null) {
 			if (!this.argumentBindings.containsKey(this.returningName)) {
-				throw new IllegalStateException("Returning argument name '" + this.returningName +
-						"' was not bound in advice arguments");
+				throw new IllegalStateException("Returning argument name '"
+						+ this.returningName + "' was not bound in advice arguments");
 			}
 			else {
 				Integer index = this.argumentBindings.get(this.returningName);
@@ -501,8 +482,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		}
 		if (this.throwingName != null) {
 			if (!this.argumentBindings.containsKey(this.throwingName)) {
-				throw new IllegalStateException("Throwing argument name '" + this.throwingName +
-						"' was not bound in advice arguments");
+				throw new IllegalStateException("Throwing argument name '"
+						+ this.throwingName + "' was not bound in advice arguments");
 			}
 			else {
 				Integer index = this.argumentBindings.get(this.throwingName);
@@ -511,7 +492,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		}
 
 		// configure the pointcut expression accordingly.
-		configurePointcutParameters(this.argumentNames, argumentIndexOffset);
+		configurePointcutParameters(argumentIndexOffset);
 	}
 
 	/**
@@ -519,7 +500,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	 * pointcut parameters - but returning and throwing vars are handled differently
 	 * and must be removed from the list if present.
 	 */
-	private void configurePointcutParameters(String[] argumentNames, int argumentIndexOffset) {
+	private void configurePointcutParameters(int argumentIndexOffset) {
 		int numParametersToRemove = argumentIndexOffset;
 		if (this.returningName != null) {
 			numParametersToRemove++;
@@ -527,20 +508,20 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		if (this.throwingName != null) {
 			numParametersToRemove++;
 		}
-		String[] pointcutParameterNames = new String[argumentNames.length - numParametersToRemove];
+		String[] pointcutParameterNames = new String[this.argumentNames.length - numParametersToRemove];
 		Class<?>[] pointcutParameterTypes = new Class<?>[pointcutParameterNames.length];
 		Class<?>[] methodParameterTypes = this.aspectJAdviceMethod.getParameterTypes();
 
 		int index = 0;
-		for (int i = 0; i < argumentNames.length; i++) {
+		for (int i = 0; i < this.argumentNames.length; i++) {
 			if (i < argumentIndexOffset) {
 				continue;
 			}
-			if (argumentNames[i].equals(this.returningName) ||
-				argumentNames[i].equals(this.throwingName)) {
+			if (this.argumentNames[i].equals(this.returningName) ||
+				this.argumentNames[i].equals(this.throwingName)) {
 				continue;
 			}
-			pointcutParameterNames[index] = argumentNames[i];
+			pointcutParameterNames[index] = this.argumentNames[i];
 			pointcutParameterTypes[index] = methodParameterTypes[i];
 			index++;
 		}
@@ -551,20 +532,18 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 	/**
 	 * Take the arguments at the method execution join point and output a set of arguments
-	 * to the advice method.
+	 * to the advice method
 	 * @param jp the current JoinPoint
 	 * @param jpMatch the join point match that matched this execution join point
 	 * @param returnValue the return value from the method execution (may be null)
 	 * @param ex the exception thrown by the method execution (may be null)
 	 * @return the empty array if there are no arguments
 	 */
-	protected Object[] argBinding(JoinPoint jp, @Nullable JoinPointMatch jpMatch,
-			@Nullable Object returnValue, @Nullable Throwable ex) {
-
+	protected Object[] argBinding(JoinPoint jp, JoinPointMatch jpMatch, Object returnValue, Throwable ex) {
 		calculateArgumentBindings();
 
 		// AMC start
-		Object[] adviceInvocationArgs = new Object[this.parameterTypes.length];
+		Object[] adviceInvocationArgs = new Object[this.adviceInvocationArgumentCount];
 		int numBound = 0;
 
 		if (this.joinPointArgumentIndex != -1) {
@@ -601,10 +580,11 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 			}
 		}
 
-		if (numBound != this.parameterTypes.length) {
-			throw new IllegalStateException("Required to bind " + this.parameterTypes.length +
-					" arguments, but only bound " + numBound + " (JoinPointMatch " +
-					(jpMatch == null ? "was NOT" : "WAS") + " bound in invocation)");
+		if (numBound != this.adviceInvocationArgumentCount) {
+			throw new IllegalStateException("Required to bind " + this.adviceInvocationArgumentCount
+					+ " arguments, but only bound " + numBound + " (JoinPointMatch " +
+					(jpMatch == null ? "was NOT" : "WAS") +
+					" bound in invocation)");
 		}
 
 		return adviceInvocationArgs;
@@ -619,23 +599,20 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	 * @return the invocation result
 	 * @throws Throwable in case of invocation failure
 	 */
-	protected Object invokeAdviceMethod(
-			@Nullable JoinPointMatch jpMatch, @Nullable Object returnValue, @Nullable Throwable ex)
-			throws Throwable {
-
+	protected Object invokeAdviceMethod(JoinPointMatch jpMatch, Object returnValue, Throwable ex) throws Throwable {
 		return invokeAdviceMethodWithGivenArgs(argBinding(getJoinPoint(), jpMatch, returnValue, ex));
 	}
 
 	// As above, but in this case we are given the join point.
-	protected Object invokeAdviceMethod(JoinPoint jp, @Nullable JoinPointMatch jpMatch,
-			@Nullable Object returnValue, @Nullable Throwable t) throws Throwable {
+	protected Object invokeAdviceMethod(JoinPoint jp, JoinPointMatch jpMatch, Object returnValue, Throwable t)
+			throws Throwable {
 
 		return invokeAdviceMethodWithGivenArgs(argBinding(jp, jpMatch, returnValue, t));
 	}
 
 	protected Object invokeAdviceMethodWithGivenArgs(Object[] args) throws Throwable {
 		Object[] actualArgs = args;
-		if (this.aspectJAdviceMethod.getParameterCount() == 0) {
+		if (this.aspectJAdviceMethod.getParameterTypes().length == 0) {
 			actualArgs = null;
 		}
 		try {
@@ -663,7 +640,6 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	/**
 	 * Get the current join point match at the join point we are being dispatched on.
 	 */
-	@Nullable
 	protected JoinPointMatch getJoinPointMatch() {
 		MethodInvocation mi = ExposeInvocationInterceptor.currentInvocation();
 		if (!(mi instanceof ProxyMethodInvocation)) {
@@ -678,10 +654,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	// 'last man wins' which is not what we want at all.
 	// Using the expression is guaranteed to be safe, since 2 identical expressions
 	// are guaranteed to bind in exactly the same way.
-	@Nullable
 	protected JoinPointMatch getJoinPointMatch(ProxyMethodInvocation pmi) {
-		String expression = this.pointcut.getExpression();
-		return (expression != null ? (JoinPointMatch) pmi.getUserAttribute(expression) : null);
+		return (JoinPointMatch) pmi.getUserAttribute(this.pointcut.getExpression());
 	}
 
 
@@ -689,16 +663,6 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	public String toString() {
 		return getClass().getName() + ": advice method [" + this.aspectJAdviceMethod + "]; " +
 				"aspect name '" + this.aspectName + "'";
-	}
-
-	private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
-		inputStream.defaultReadObject();
-		try {
-			this.aspectJAdviceMethod = this.declaringClass.getMethod(this.methodName, this.parameterTypes);
-		}
-		catch (NoSuchMethodException ex) {
-			throw new IllegalStateException("Failed to find advice method on deserialization", ex);
-		}
 	}
 
 
@@ -714,7 +678,6 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 			this.adviceMethod = adviceMethod;
 		}
 
-		@Override
 		public boolean matches(Method method, Class<?> targetClass) {
 			return !this.adviceMethod.equals(method);
 		}

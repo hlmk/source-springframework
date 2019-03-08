@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,13 @@ package org.springframework.jmx.export.annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Type-level annotation that indicates a JMX notification emitted by a bean.
- *
- * <p>As of Spring Framework 4.2.4, this annotation is declared as repeatable.
+ * JDK 1.5+ method-level annotation that indicates a JMX notification
+ * emitted by a bean.
  *
  * @author Rob Harrop
  * @since 2.0
@@ -37,7 +35,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-@Repeatable(ManagedNotifications.class)
 public @interface ManagedNotification {
 
 	String name();

@@ -20,7 +20,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.lang.Nullable;
 
 /**
  * Provides additional methods for dealing with multipart content within a
@@ -51,7 +50,6 @@ public interface MultipartHttpServletRequest extends HttpServletRequest, Multipa
 	/**
 	 * Return this request's method as a convenient HttpMethod instance.
 	 */
-	@Nullable
 	HttpMethod getRequestMethod();
 
 	/**
@@ -64,7 +62,6 @@ public interface MultipartHttpServletRequest extends HttpServletRequest, Multipa
 	 * <p>If the underlying implementation supports access to headers, then all headers are returned.
 	 * Otherwise, the returned headers will include a 'Content-Type' header at the very least.
 	 */
-	@Nullable
 	HttpHeaders getMultipartHeaders(String paramOrFileName);
 
 }

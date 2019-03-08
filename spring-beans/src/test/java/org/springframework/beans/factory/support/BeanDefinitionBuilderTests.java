@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,19 @@ package org.springframework.beans.factory.support;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import junit.framework.TestCase;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
 
 /**
  * @author Rod Johnson
  * @author Juergen Hoeller
  */
-public class BeanDefinitionBuilderTests {
+public class BeanDefinitionBuilderTests extends TestCase {
 
-	@Test
-	public void beanClassWithSimpleProperty() {
+	public void testBeanClassWithSimpleProperty() {
 		String[] dependsOn = new String[] { "A", "B", "C" };
 		BeanDefinitionBuilder bdb = BeanDefinitionBuilder.rootBeanDefinition(TestBean.class);
 		bdb.setScope(BeanDefinition.SCOPE_PROTOTYPE);
@@ -48,8 +46,7 @@ public class BeanDefinitionBuilderTests {
 		assertTrue(rbd.getPropertyValues().contains("age"));
 	}
 
-	@Test
-	public void beanClassWithFactoryMethod() {
+	public void testBeanClassWithFactoryMethod() {
 		BeanDefinitionBuilder bdb = BeanDefinitionBuilder.rootBeanDefinition(TestBean.class, "create");
 		RootBeanDefinition rbd = (RootBeanDefinition) bdb.getBeanDefinition();
 		assertTrue(rbd.hasBeanClass());
@@ -57,16 +54,14 @@ public class BeanDefinitionBuilderTests {
 		assertEquals("create", rbd.getFactoryMethodName());
 	}
 
-	@Test
-	public void beanClassName() {
+	public void testBeanClassName() {
 		BeanDefinitionBuilder bdb = BeanDefinitionBuilder.rootBeanDefinition(TestBean.class.getName());
 		RootBeanDefinition rbd = (RootBeanDefinition) bdb.getBeanDefinition();
 		assertFalse(rbd.hasBeanClass());
 		assertEquals(TestBean.class.getName(), rbd.getBeanClassName());
 	}
 
-	@Test
-	public void beanClassNameWithFactoryMethod() {
+	public void testBeanClassNameWithFactoryMethod() {
 		BeanDefinitionBuilder bdb = BeanDefinitionBuilder.rootBeanDefinition(TestBean.class.getName(), "create");
 		RootBeanDefinition rbd = (RootBeanDefinition) bdb.getBeanDefinition();
 		assertFalse(rbd.hasBeanClass());

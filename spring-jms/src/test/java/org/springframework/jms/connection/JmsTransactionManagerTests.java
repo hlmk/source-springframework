@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,20 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.QueueSession;
 import javax.jms.Session;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+import javax.jms.TopicSession;
 
 import org.junit.After;
 import org.junit.Test;
-
 import org.springframework.jms.StubQueue;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.JmsTemplate102;
+import org.springframework.jms.core.MessageCreator;
 import org.springframework.jms.core.SessionCallback;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -48,7 +55,7 @@ import static org.mockito.BDDMockito.*;
 public class JmsTransactionManagerTests {
 
 	@After
-	public void verifyTransactionSynchronizationManagerState() {
+	public void verifyTransactionSynchronizationManager() {
 		assertTrue(TransactionSynchronizationManager.getResourceMap().isEmpty());
 		assertFalse(TransactionSynchronizationManager.isSynchronizationActive());
 	}
@@ -66,9 +73,12 @@ public class JmsTransactionManagerTests {
 		JmsTransactionManager tm = new JmsTransactionManager(cf);
 		TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition());
 		JmsTemplate jt = new JmsTemplate(cf);
-		jt.execute((SessionCallback<Void>) sess -> {
-			assertSame(sess, session);
-			return null;
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
 		});
 		tm.commit(ts);
 
@@ -89,9 +99,12 @@ public class JmsTransactionManagerTests {
 		JmsTransactionManager tm = new JmsTransactionManager(cf);
 		TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition());
 		JmsTemplate jt = new JmsTemplate(cf);
-		jt.execute((SessionCallback<Void>) sess -> {
-			assertSame(sess, session);
-			return null;
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
 		});
 		tm.rollback(ts);
 
@@ -112,17 +125,23 @@ public class JmsTransactionManagerTests {
 		JmsTransactionManager tm = new JmsTransactionManager(cf);
 		TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition());
 		final JmsTemplate jt = new JmsTemplate(cf);
-		jt.execute((SessionCallback<Void>) sess -> {
-			assertSame(sess, session);
-			return null;
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
 		});
 		TransactionTemplate tt = new TransactionTemplate(tm);
 		tt.execute(new TransactionCallbackWithoutResult() {
 			@Override
 			protected void doInTransactionWithoutResult(TransactionStatus status) {
-				jt.execute((SessionCallback<Void>) sess -> {
-					assertSame(sess, session);
-					return null;
+				jt.execute(new SessionCallback() {
+					@Override
+					public Object doInJms(Session sess) {
+						assertTrue(sess == session);
+						return null;
+					}
 				});
 			}
 		});
@@ -145,17 +164,23 @@ public class JmsTransactionManagerTests {
 		JmsTransactionManager tm = new JmsTransactionManager(cf);
 		TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition());
 		final JmsTemplate jt = new JmsTemplate(cf);
-		jt.execute((SessionCallback<Void>) sess -> {
-			assertSame(sess, session);
-			return null;
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
 		});
 		TransactionTemplate tt = new TransactionTemplate(tm);
 		tt.execute(new TransactionCallbackWithoutResult() {
 			@Override
 			protected void doInTransactionWithoutResult(TransactionStatus status) {
-				jt.execute((SessionCallback<Void>) sess -> {
-					assertSame(sess, session);
-					return null;
+				jt.execute(new SessionCallback() {
+					@Override
+					public Object doInJms(Session sess) {
+						assertTrue(sess == session);
+						return null;
+					}
 				});
 				status.setRollbackOnly();
 			}
@@ -187,24 +212,33 @@ public class JmsTransactionManagerTests {
 		JmsTransactionManager tm = new JmsTransactionManager(cf);
 		TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition());
 		final JmsTemplate jt = new JmsTemplate(cf);
-		jt.execute((SessionCallback<Void>) sess -> {
-			assertSame(sess, session);
-			return null;
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
 		});
 		TransactionTemplate tt = new TransactionTemplate(tm);
 		tt.setPropagationBehavior(TransactionDefinition.PROPAGATION_NOT_SUPPORTED);
 		tt.execute(new TransactionCallbackWithoutResult() {
 			@Override
 			protected void doInTransactionWithoutResult(TransactionStatus status) {
-				jt.execute((SessionCallback<Void>) sess -> {
-					assertNotSame(sess, session);
-					return null;
+				jt.execute(new SessionCallback() {
+					@Override
+					public Object doInJms(Session sess) {
+						assertTrue(sess != session);
+						return null;
+					}
 				});
 			}
 		});
-		jt.execute((SessionCallback<Void>) sess -> {
-			assertSame(sess, session);
-			return null;
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
 		});
 		tm.commit(ts);
 
@@ -227,24 +261,33 @@ public class JmsTransactionManagerTests {
 		JmsTransactionManager tm = new JmsTransactionManager(cf);
 		TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition());
 		final JmsTemplate jt = new JmsTemplate(cf);
-		jt.execute((SessionCallback<Void>) sess -> {
-			assertSame(sess, session);
-			return null;
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
 		});
 		TransactionTemplate tt = new TransactionTemplate(tm);
 		tt.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 		tt.execute(new TransactionCallbackWithoutResult() {
 			@Override
 			protected void doInTransactionWithoutResult(TransactionStatus status) {
-				jt.execute((SessionCallback<Void>) sess -> {
-					assertNotSame(sess, session);
-					return null;
+				jt.execute(new SessionCallback() {
+					@Override
+					public Object doInJms(Session sess) {
+						assertTrue(sess != session);
+						return null;
+					}
 				});
 			}
 		});
-		jt.execute((SessionCallback<Void>) sess -> {
-			assertSame(sess, session);
-			return null;
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
 		});
 		tm.commit(ts);
 
@@ -273,7 +316,12 @@ public class JmsTransactionManagerTests {
 		JmsTransactionManager tm = new JmsTransactionManager(cf);
 		TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition());
 		JmsTemplate jt = new JmsTemplate(cf);
-		jt.send(dest, sess -> message);
+		jt.send(dest, new MessageCreator() {
+			@Override
+			public Message createMessage(Session session) throws JMSException {
+				return message;
+			}
+		});
 		tm.commit(ts);
 
 		verify(producer).send(message);
@@ -284,22 +332,24 @@ public class JmsTransactionManagerTests {
 	}
 
 	@Test
-	public void testLazyTransactionalSession() throws JMSException {
-		ConnectionFactory cf = mock(ConnectionFactory.class);
-		Connection con = mock(Connection.class);
-		final Session session = mock(Session.class);
+	@Deprecated
+	public void testTransactionCommit102WithQueue() throws JMSException {
+		QueueConnectionFactory cf = mock(QueueConnectionFactory.class);
+		QueueConnection con = mock(QueueConnection.class);
+		final QueueSession session = mock(QueueSession.class);
 
-		JmsTransactionManager tm = new JmsTransactionManager(cf);
-		tm.setLazyResourceRetrieval(true);
+		given(cf.createQueueConnection()).willReturn(con);
+		given(con.createQueueSession(true, Session.AUTO_ACKNOWLEDGE)).willReturn(session);
+
+		JmsTransactionManager tm = new JmsTransactionManager102(cf, false);
 		TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition());
-
-		given(cf.createConnection()).willReturn(con);
-		given(con.createSession(true, Session.AUTO_ACKNOWLEDGE)).willReturn(session);
-
-		JmsTemplate jt = new JmsTemplate(cf);
-		jt.execute((SessionCallback<Void>) sess -> {
-			assertSame(sess, session);
-			return null;
+		JmsTemplate jt = new JmsTemplate102(cf, false);
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
 		});
 		tm.commit(ts);
 
@@ -309,13 +359,29 @@ public class JmsTransactionManagerTests {
 	}
 
 	@Test
-	public void testLazyWithoutSessionAccess() {
-		ConnectionFactory cf = mock(ConnectionFactory.class);
+	@Deprecated
+	public void testTransactionCommit102WithTopic() throws JMSException {
+		TopicConnectionFactory cf = mock(TopicConnectionFactory.class);
+		TopicConnection con = mock(TopicConnection.class);
+		final TopicSession session = mock(TopicSession.class);
 
-		JmsTransactionManager tm = new JmsTransactionManager(cf);
-		tm.setLazyResourceRetrieval(true);
+		given(cf.createTopicConnection()).willReturn(con);
+		given(con.createTopicSession(true, Session.AUTO_ACKNOWLEDGE)).willReturn(session);
+
+		JmsTransactionManager tm = new JmsTransactionManager102(cf, true);
 		TransactionStatus ts = tm.getTransaction(new DefaultTransactionDefinition());
+		JmsTemplate jt = new JmsTemplate102(cf, true);
+		jt.execute(new SessionCallback() {
+			@Override
+			public Object doInJms(Session sess) {
+				assertTrue(sess == session);
+				return null;
+			}
+		});
 		tm.commit(ts);
-	}
 
+		verify(session).commit();
+		verify(session).close();
+		verify(con).close();
+	}
 }

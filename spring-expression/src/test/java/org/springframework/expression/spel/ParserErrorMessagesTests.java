@@ -23,7 +23,7 @@ import org.junit.Test;
  *
  * @author Andy Clement
  */
-public class ParserErrorMessagesTests extends AbstractExpressionTests {
+public class ParserErrorMessagesTests extends ExpressionTestCase {
 
 	@Test
 	public void testBrokenExpression01() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package org.springframework.web.bind.support;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.web.context.request.WebRequest;
 
 /**
  * Default implementation of the {@link SessionAttributeStore} interface,
- * storing the attributes in the WebRequest session (i.e. HttpSession).
+ * storing the attributes in the WebRequest session (i.e. HttpSession
+ * or PortletSession).
  *
  * @author Juergen Hoeller
  * @since 2.5
@@ -41,12 +41,11 @@ public class DefaultSessionAttributeStore implements SessionAttributeStore {
 	 * <p>Default is to use no prefix, storing the session attributes with the
 	 * same name as in the model.
 	 */
-	public void setAttributeNamePrefix(@Nullable String attributeNamePrefix) {
+	public void setAttributeNamePrefix(String attributeNamePrefix) {
 		this.attributeNamePrefix = (attributeNamePrefix != null ? attributeNamePrefix : "");
 	}
 
 
-	@Override
 	public void storeAttribute(WebRequest request, String attributeName, Object attributeValue) {
 		Assert.notNull(request, "WebRequest must not be null");
 		Assert.notNull(attributeName, "Attribute name must not be null");
@@ -55,8 +54,6 @@ public class DefaultSessionAttributeStore implements SessionAttributeStore {
 		request.setAttribute(storeAttributeName, attributeValue, WebRequest.SCOPE_SESSION);
 	}
 
-	@Override
-	@Nullable
 	public Object retrieveAttribute(WebRequest request, String attributeName) {
 		Assert.notNull(request, "WebRequest must not be null");
 		Assert.notNull(attributeName, "Attribute name must not be null");
@@ -64,7 +61,6 @@ public class DefaultSessionAttributeStore implements SessionAttributeStore {
 		return request.getAttribute(storeAttributeName, WebRequest.SCOPE_SESSION);
 	}
 
-	@Override
 	public void cleanupAttribute(WebRequest request, String attributeName) {
 		Assert.notNull(request, "WebRequest must not be null");
 		Assert.notNull(attributeName, "Attribute name must not be null");

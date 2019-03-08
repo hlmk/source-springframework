@@ -34,7 +34,6 @@ public class Fruit {
 		return stringscount;
 	}
 
-	@Override
 	public String toString() {
 		return "A" + (colorName != null && colorName.startsWith("o") ? "n " : " ") + colorName + " " + name;
 	}

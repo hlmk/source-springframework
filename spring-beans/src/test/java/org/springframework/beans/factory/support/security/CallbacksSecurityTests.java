@@ -28,6 +28,7 @@ import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.util.PropertyPermission;
 import java.util.Set;
+
 import javax.security.auth.AuthPermission;
 import javax.security.auth.Subject;
 
@@ -261,7 +262,6 @@ public class CallbacksSecurityTests {
 			return this.name;
 		}
 
-		@Override
 		public boolean equals(Object obj) {
 			if (obj == this) {
 				return true;
@@ -273,7 +273,6 @@ public class CallbacksSecurityTests {
 			return this.name.equals(p.name);
 		}
 
-		@Override
 		public int hashCode() {
 			return this.name.hashCode();
 		}
@@ -324,8 +323,7 @@ public class CallbacksSecurityTests {
 		try {
 			acc.checkPermission(new PropertyPermission("*", "read"));
 			fail("Acc should not have any permissions");
-		}
-		catch (SecurityException se) {
+		} catch (SecurityException se) {
 			// expected
 		}
 
@@ -343,8 +341,7 @@ public class CallbacksSecurityTests {
 				}
 			}, acc);
 			fail("expected security exception");
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 		}
 
 		final Class<ConstructorBean> cl = ConstructorBean.class;
@@ -358,8 +355,7 @@ public class CallbacksSecurityTests {
 						}
 					}, acc);
 			fail("expected security exception");
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 		}
 	}
 
@@ -368,8 +364,7 @@ public class CallbacksSecurityTests {
 		try {
 			beanFactory.getBean("spring-init");
 			fail("expected security exception");
-		}
-		catch (BeanCreationException ex) {
+		} catch (BeanCreationException ex) {
 			assertTrue(ex.getCause() instanceof SecurityException);
 		}
 	}
@@ -379,8 +374,7 @@ public class CallbacksSecurityTests {
 		try {
 			beanFactory.getBean("custom-init");
 			fail("expected security exception");
-		}
-		catch (BeanCreationException ex) {
+		} catch (BeanCreationException ex) {
 			assertTrue(ex.getCause() instanceof SecurityException);
 		}
 	}
@@ -404,8 +398,7 @@ public class CallbacksSecurityTests {
 		try {
 			beanFactory.getBean("spring-factory");
 			fail("expected security exception");
-		}
-		catch (BeanCreationException ex) {
+		} catch (BeanCreationException ex) {
 			assertTrue(ex.getCause() instanceof SecurityException);
 		}
 
@@ -422,8 +415,7 @@ public class CallbacksSecurityTests {
 		try {
 			beanFactory.getBean("custom-static-factory-method");
 			fail("expected security exception");
-		}
-		catch (BeanCreationException ex) {
+		} catch (BeanCreationException ex) {
 			assertTrue(ex.getMostSpecificCause() instanceof SecurityException);
 		}
 	}
@@ -433,8 +425,7 @@ public class CallbacksSecurityTests {
 		try {
 			beanFactory.getBean("custom-factory-method");
 			fail("expected security exception");
-		}
-		catch (BeanCreationException ex) {
+		} catch (BeanCreationException ex) {
 			assertTrue(ex.getMostSpecificCause() instanceof SecurityException);
 		}
 	}
@@ -444,8 +435,7 @@ public class CallbacksSecurityTests {
 		try {
 			beanFactory.getBean("privileged-static-factory-method");
 			fail("expected security exception");
-		}
-		catch (BeanCreationException ex) {
+		} catch (BeanCreationException ex) {
 			assertTrue(ex.getMostSpecificCause() instanceof SecurityException);
 		}
 	}
@@ -455,8 +445,7 @@ public class CallbacksSecurityTests {
 		try {
 			beanFactory.getBean("constructor");
 			fail("expected security exception");
-		}
-		catch (BeanCreationException ex) {
+		} catch (BeanCreationException ex) {
 			// expected
 			assertTrue(ex.getMostSpecificCause() instanceof SecurityException);
 		}
@@ -482,8 +471,7 @@ public class CallbacksSecurityTests {
 		try {
 			beanFactory.getBean("property-injection");
 			fail("expected security exception");
-		}
-		catch (BeanCreationException ex) {
+		} catch (BeanCreationException ex) {
 			assertTrue(ex.getMessage().contains("security"));
 		}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,6 @@
 
 package org.springframework.aop.aspectj.annotation;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
-
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.AjType;
 import org.aspectj.lang.reflect.AjTypeSystem;
@@ -35,35 +31,21 @@ import org.springframework.aop.support.ComposablePointcut;
  * Metadata for an AspectJ aspect class, with an additional Spring AOP pointcut
  * for the per clause.
  *
- * <p>Uses AspectJ 5 AJType reflection API, enabling us to work with different
- * AspectJ instantiation models such as "singleton", "pertarget" and "perthis".
+ * <p>Uses AspectJ 5 AJType reflection API, so is only supported on Java 5.
+ * Enables us to work with different AspectJ instantiation models such as
+ * "singleton", "pertarget" and "perthis".
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 2.0
  * @see org.springframework.aop.aspectj.AspectJExpressionPointcut
  */
-@SuppressWarnings("serial")
-public class AspectMetadata implements Serializable {
-
-	/**
-	 * The name of this aspect as defined to Spring (the bean name) -
-	 * allows us to determine if two pieces of advice come from the
-	 * same aspect and hence their relative precedence.
-	 */
-	private final String aspectName;
-
-	/**
-	 * The aspect class, stored separately for re-resolution of the
-	 * corresponding AjType on deserialization.
-	 */
-	private final Class<?> aspectClass;
+public class AspectMetadata {
 
 	/**
 	 * AspectJ reflection information (AspectJ 5 / Java 5 specific).
-	 * Re-resolved on deserialization since it isn't serializable itself.
 	 */
-	private transient AjType<?> ajType;
+	private final AjType ajType;
 
 	/**
 	 * Spring AOP pointcut corresponding to the per clause of the
@@ -71,6 +53,13 @@ public class AspectMetadata implements Serializable {
 	 * case of a singleton, otherwise an AspectJExpressionPointcut.
 	 */
 	private final Pointcut perClausePointcut;
+
+	/**
+	 * The name of this aspect as defined to Spring (the bean name) -
+	 * allows us to determine if two pieces of advice come from the
+	 * same aspect and hence their relative precedence.
+	 */
+	private String aspectName;
 
 
 	/**
@@ -82,9 +71,9 @@ public class AspectMetadata implements Serializable {
 		this.aspectName = aspectName;
 
 		Class<?> currClass = aspectClass;
-		AjType<?> ajType = null;
-		while (currClass != Object.class) {
-			AjType<?> ajTypeToCheck = AjTypeSystem.getAjType(currClass);
+		AjType ajType = null;
+		while (!currClass.equals(Object.class)) {
+			AjType ajTypeToCheck = AjTypeSystem.getAjType(currClass);
 			if (ajTypeToCheck.isAspect()) {
 				ajType = ajTypeToCheck;
 				break;
@@ -94,29 +83,26 @@ public class AspectMetadata implements Serializable {
 		if (ajType == null) {
 			throw new IllegalArgumentException("Class '" + aspectClass.getName() + "' is not an @AspectJ aspect");
 		}
-		if (ajType.getDeclarePrecedence().length > 0) {
+		this.ajType = ajType;
+		if (this.ajType.getDeclarePrecedence().length > 0) {
 			throw new IllegalArgumentException("DeclarePrecendence not presently supported in Spring AOP");
 		}
-		this.aspectClass = ajType.getJavaClass();
-		this.ajType = ajType;
 
 		switch (this.ajType.getPerClause().getKind()) {
-			case SINGLETON:
+			case SINGLETON :
 				this.perClausePointcut = Pointcut.TRUE;
 				return;
-			case PERTARGET:
-			case PERTHIS:
+			case PERTARGET : case PERTHIS :
 				AspectJExpressionPointcut ajexp = new AspectJExpressionPointcut();
-				ajexp.setLocation(aspectClass.getName());
+				ajexp.setLocation("@Aspect annotation on " + aspectClass.getName());
 				ajexp.setExpression(findPerClause(aspectClass));
-				ajexp.setPointcutDeclarationScope(aspectClass);
 				this.perClausePointcut = ajexp;
 				return;
-			case PERTYPEWITHIN:
+			case PERTYPEWITHIN :
 				// Works with a type pattern
 				this.perClausePointcut = new ComposablePointcut(new TypePatternClassFilter(findPerClause(aspectClass)));
 				return;
-			default:
+			default :
 				throw new AopConfigException(
 						"PerClause " + ajType.getPerClause().getKind() + " not supported by Spring AOP for " + aspectClass);
 		}
@@ -126,8 +112,10 @@ public class AspectMetadata implements Serializable {
 	 * Extract contents from String of form {@code pertarget(contents)}.
 	 */
 	private String findPerClause(Class<?> aspectClass) {
+		// TODO when AspectJ provides this, we can remove this hack. Hence we don't
+		// bother to make it elegant. Or efficient. Or robust :-)
 		String str = aspectClass.getAnnotation(Aspect.class).value();
-		str = str.substring(str.indexOf('(') + 1);
+		str = str.substring(str.indexOf("(") + 1);
 		str = str.substring(0, str.length() - 1);
 		return str;
 	}
@@ -136,19 +124,19 @@ public class AspectMetadata implements Serializable {
 	/**
 	 * Return AspectJ reflection information.
 	 */
-	public AjType<?> getAjType() {
+	public AjType getAjType() {
 		return this.ajType;
 	}
 
 	/**
 	 * Return the aspect class.
 	 */
-	public Class<?> getAspectClass() {
-		return this.aspectClass;
+	public Class getAspectClass() {
+		return this.ajType.getJavaClass();
 	}
 
 	/**
-	 * Return the aspect name.
+	 * Return the aspect class.
 	 */
 	public String getAspectName() {
 		return this.aspectName;
@@ -183,12 +171,6 @@ public class AspectMetadata implements Serializable {
 	 */
 	public boolean isLazilyInstantiated() {
 		return (isPerThisOrPerTarget() || isPerTypeWithin());
-	}
-
-
-	private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
-		inputStream.defaultReadObject();
-		this.ajType = AjTypeSystem.getAjType(this.aspectClass);
 	}
 
 }

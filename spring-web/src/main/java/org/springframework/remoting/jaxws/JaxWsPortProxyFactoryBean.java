@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import javax.xml.ws.BindingProvider;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /**
  * {@link org.springframework.beans.factory.FactoryBean} for a specific port of a
@@ -33,9 +31,9 @@ import org.springframework.util.Assert;
  * @see #setServiceInterface
  * @see LocalJaxWsServiceFactoryBean
  */
-public class JaxWsPortProxyFactoryBean extends JaxWsPortClientInterceptor implements FactoryBean<Object> {
+public class JaxWsPortProxyFactoryBean extends JaxWsPortClientInterceptor
+		implements FactoryBean<Object> {
 
-	@Nullable
 	private Object serviceProxy;
 
 
@@ -43,30 +41,23 @@ public class JaxWsPortProxyFactoryBean extends JaxWsPortClientInterceptor implem
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
 
-		Class<?> ifc = getServiceInterface();
-		Assert.notNull(ifc, "Property 'serviceInterface' is required");
-
 		// Build a proxy that also exposes the JAX-WS BindingProvider interface.
 		ProxyFactory pf = new ProxyFactory();
-		pf.addInterface(ifc);
+		pf.addInterface(getServiceInterface());
 		pf.addInterface(BindingProvider.class);
 		pf.addAdvice(this);
 		this.serviceProxy = pf.getProxy(getBeanClassLoader());
 	}
 
 
-	@Override
-	@Nullable
 	public Object getObject() {
 		return this.serviceProxy;
 	}
 
-	@Override
 	public Class<?> getObjectType() {
 		return getServiceInterface();
 	}
 
-	@Override
 	public boolean isSingleton() {
 		return true;
 	}

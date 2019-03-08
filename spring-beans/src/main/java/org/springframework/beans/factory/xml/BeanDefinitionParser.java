@@ -19,7 +19,6 @@ package org.springframework.beans.factory.xml;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.lang.Nullable;
 
 /**
  * Interface used by the {@link DefaultBeanDefinitionDocumentReader} to handle custom,
@@ -52,7 +51,6 @@ public interface BeanDefinitionParser {
 	 * provides access to a {@link org.springframework.beans.factory.support.BeanDefinitionRegistry}
 	 * @return the primary {@link BeanDefinition}
 	 */
-	@Nullable
 	BeanDefinition parse(Element element, ParserContext parserContext);
 
 }

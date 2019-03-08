@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,41 +24,38 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
 
+import junit.framework.TestCase;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.jdbc.support.SQLStateSQLExceptionTranslator;
 import org.springframework.tests.sample.beans.TestBean;
 
-import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.*;
 
 /**
  * @author Juergen Hoeller
- * @author Sam Brannen
  * @since 02.08.2004
  */
-public class RowMapperTests {
+public class RowMapperTests extends TestCase {
 
-	private final Connection connection = mock(Connection.class);
+	private Connection connection;
+	private Statement statement;
+	private PreparedStatement preparedStatement;
+	private ResultSet resultSet;
 
-	private final Statement statement = mock(Statement.class);
-
-	private final PreparedStatement preparedStatement = mock(PreparedStatement.class);
-
-	private final ResultSet resultSet = mock(ResultSet.class);
-
-	private final JdbcTemplate template = new JdbcTemplate();
-
-	private final RowMapper<TestBean> testRowMapper =
-			(rs, rowNum) -> new TestBean(rs.getString(1), rs.getInt(2));
+	private JdbcTemplate template;
 
 	private List<TestBean> result;
 
 	@Before
 	public void setUp() throws SQLException {
+		connection = mock(Connection.class);
+		statement = mock(Statement.class);
+		preparedStatement = mock(PreparedStatement.class);
+		resultSet = mock(ResultSet.class);
 		given(connection.createStatement()).willReturn(statement);
 		given(connection.prepareStatement(anyString())).willReturn(preparedStatement);
 		given(statement.executeQuery(anyString())).willReturn(resultSet);
@@ -66,7 +63,7 @@ public class RowMapperTests {
 		given(resultSet.next()).willReturn(true, true, false);
 		given(resultSet.getString(1)).willReturn("tb1", "tb2");
 		given(resultSet.getInt(2)).willReturn(1, 2);
-
+		template = new JdbcTemplate();
 		template.setDataSource(new SingleConnectionDataSource(connection, false));
 		template.setExceptionTranslator(new SQLStateSQLExceptionTranslator());
 		template.afterPropertiesSet();
@@ -75,57 +72,75 @@ public class RowMapperTests {
 	@After
 	public void verifyClosed() throws Exception {
 		verify(resultSet).close();
-		// verify(connection).close();
+		verify(connection).close();
 	}
 
 	@After
 	public void verifyResults() {
-		assertNotNull(result);
+		assertTrue(result != null);
 		assertEquals(2, result.size());
-		TestBean testBean1 = result.get(0);
-		TestBean testBean2 = result.get(1);
-		assertEquals("tb1", testBean1.getName());
-		assertEquals("tb2", testBean2.getName());
-		assertEquals(1, testBean1.getAge());
-		assertEquals(2, testBean2.getAge());
+		assertEquals("tb1", result.get(0).getName());
+		assertEquals("tb2", result.get(1).getName());
+		assertEquals(1, result.get(0).getAge());
+		assertEquals(2, result.get(1).getAge());
 	}
 
 	@Test
-	public void staticQueryWithRowMapper() throws SQLException {
-		result = template.query("some SQL", testRowMapper);
+	public void testStaticQueryWithRowMapper() throws SQLException {
+		result = template.query("some SQL", new TestRowMapper());
 		verify(statement).close();
 	}
 
 	@Test
-	public void preparedStatementCreatorWithRowMapper() throws SQLException {
-		result = template.query(con -> preparedStatement, testRowMapper);
+	public void testPreparedStatementCreatorWithRowMapper() throws SQLException {
+		result = template.query(new PreparedStatementCreator() {
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con)
+					throws SQLException {
+				return preparedStatement;
+			}
+		}, new TestRowMapper());
 		verify(preparedStatement).close();
 	}
 
 	@Test
-	public void preparedStatementSetterWithRowMapper() throws SQLException {
-		result = template.query("some SQL", ps -> ps.setString(1, "test"), testRowMapper);
+	public void testPreparedStatementSetterWithRowMapper() throws SQLException {
+		result = template.query("some SQL", new PreparedStatementSetter() {
+			@Override
+			public void setValues(PreparedStatement ps) throws SQLException {
+				ps.setString(1, "test");
+			}
+		}, new TestRowMapper());
 		verify(preparedStatement).setString(1, "test");
 		verify(preparedStatement).close();
 	}
 
 	@Test
-	public void queryWithArgsAndRowMapper() throws SQLException {
-		result = template.query("some SQL", new Object[] { "test1", "test2" }, testRowMapper);
+	public void testQueryWithArgsAndRowMapper() throws SQLException {
+		result = template.query("some SQL",
+				new Object[] { "test1", "test2" },
+				new TestRowMapper());
 		preparedStatement.setString(1, "test1");
 		preparedStatement.setString(2, "test2");
 		preparedStatement.close();
 	}
 
 	@Test
-	public void queryWithArgsAndTypesAndRowMapper() throws SQLException {
+	public void testQueryWithArgsAndTypesAndRowMapper() throws SQLException {
 		result = template.query("some SQL",
 				new Object[] { "test1", "test2" },
 				new int[] { Types.VARCHAR, Types.VARCHAR },
-				testRowMapper);
+				new TestRowMapper());
 		verify(preparedStatement).setString(1, "test1");
 		verify(preparedStatement).setString(2, "test2");
 		verify(preparedStatement).close();
+	}
+
+	private static class TestRowMapper implements RowMapper<TestBean> {
+		@Override
+		public TestBean mapRow(ResultSet rs, int rowNum) throws SQLException {
+			return new TestBean(rs.getString(1), rs.getInt(2));
+		}
 	}
 
 }

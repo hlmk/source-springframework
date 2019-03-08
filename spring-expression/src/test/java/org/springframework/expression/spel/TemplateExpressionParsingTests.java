@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
  * @author Andy Clement
  * @author Juergen Hoeller
  */
-public class TemplateExpressionParsingTests extends AbstractExpressionTests {
+public class TemplateExpressionParsingTests extends ExpressionTestCase {
 
 	public static final ParserContext DEFAULT_TEMPLATE_PARSER_CONTEXT = new ParserContext() {
 		@Override
@@ -195,7 +195,7 @@ public class TemplateExpressionParsingTests extends AbstractExpressionTests {
 			fail("Should have failed");
 		}
 		catch (ParseException pe) {
-			assertEquals("No ending suffix '}' for expression starting at character 41: ${listOfNumbersUpToTen.$[#this>5] world", pe.getSimpleMessage());
+			assertEquals("No ending suffix '}' for expression starting at character 41: ${listOfNumbersUpToTen.$[#this>5] world", pe.getMessage());
 		}
 
 		try {
@@ -203,7 +203,7 @@ public class TemplateExpressionParsingTests extends AbstractExpressionTests {
 			fail("Should have failed");
 		}
 		catch (ParseException pe) {
-			assertEquals("Found closing '}' at position 74 but most recent opening is '[' at position 30", pe.getSimpleMessage());
+			assertEquals("Found closing '}' at position 74 but most recent opening is '[' at position 30", pe.getMessage());
 		}
 	}
 
@@ -213,21 +213,23 @@ public class TemplateExpressionParsingTests extends AbstractExpressionTests {
 		// Just wanting to use the prefix or suffix within the template:
 		Expression ex = parser.parseExpression("hello ${3+4} world",DEFAULT_TEMPLATE_PARSER_CONTEXT);
 		String s = ex.getValue(TestScenarioCreator.getTestEvaluationContext(),String.class);
-		assertEquals("hello 7 world", s);
+		assertEquals("hello 7 world",s);
 
 		ex = parser.parseExpression("hello ${3+4} wo${'${'}rld",DEFAULT_TEMPLATE_PARSER_CONTEXT);
 		s = ex.getValue(TestScenarioCreator.getTestEvaluationContext(),String.class);
-		assertEquals("hello 7 wo${rld", s);
+		assertEquals("hello 7 wo${rld",s);
 
 		ex = parser.parseExpression("hello ${3+4} wo}rld",DEFAULT_TEMPLATE_PARSER_CONTEXT);
 		s = ex.getValue(TestScenarioCreator.getTestEvaluationContext(),String.class);
-		assertEquals("hello 7 wo}rld", s);
+		assertEquals("hello 7 wo}rld",s);
 	}
 
 	@Test
 	public void testParsingNormalExpressionThroughTemplateParser() throws Exception {
 		Expression expr = parser.parseExpression("1+2+3");
-		assertEquals(6, expr.getValue());
+		assertEquals(6,expr.getValue());
+		expr = parser.parseExpression("1+2+3",null);
+		assertEquals(6,expr.getValue());
 	}
 
 	@Test
@@ -237,22 +239,22 @@ public class TemplateExpressionParsingTests extends AbstractExpressionTests {
 			fail("Should have failed");
 		}
 		catch (ParseException pe) {
-			assertEquals("No ending suffix '}' for expression starting at character 6: ${'world'", pe.getSimpleMessage());
-			assertEquals("hello ${'world'", pe.getExpressionString());
+			assertEquals("No ending suffix '}' for expression starting at character 6: ${'world'", pe.getMessage());
+			assertEquals("hello ${'world'",pe.getExpressionString());
 		}
 		try {
 			parser.parseExpression("hello ${'wibble'${'world'}", DEFAULT_TEMPLATE_PARSER_CONTEXT);
 			fail("Should have failed");
 		}
 		catch (ParseException pe) {
-			assertEquals("No ending suffix '}' for expression starting at character 6: ${'wibble'${'world'}", pe.getSimpleMessage());
+			assertEquals("No ending suffix '}' for expression starting at character 6: ${'wibble'${'world'}", pe.getMessage());
 		}
 		try {
 			parser.parseExpression("hello ${} world", DEFAULT_TEMPLATE_PARSER_CONTEXT);
 			fail("Should have failed");
 		}
 		catch (ParseException pe) {
-			assertEquals("No expression defined within delimiter '${}' at character 6", pe.getSimpleMessage());
+			assertEquals("No expression defined within delimiter '${}' at character 6", pe.getMessage());
 		}
 	}
 

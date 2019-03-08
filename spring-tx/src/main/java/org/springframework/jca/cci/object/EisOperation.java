@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2005 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import javax.resource.cci.InteractionSpec;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.jca.cci.core.CciTemplate;
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 
 /**
  * Base class for EIS operation objects that work with the CCI API.
@@ -40,7 +38,6 @@ public abstract class EisOperation implements InitializingBean {
 
 	private CciTemplate cciTemplate = new CciTemplate();
 
-	@Nullable
 	private InteractionSpec interactionSpec;
 
 
@@ -50,7 +47,9 @@ public abstract class EisOperation implements InitializingBean {
 	 * @see #setConnectionFactory
 	 */
 	public void setCciTemplate(CciTemplate cciTemplate) {
-		Assert.notNull(cciTemplate, "CciTemplate must not be null");
+		if (cciTemplate == null) {
+			throw new IllegalArgumentException("cciTemplate must not be null");
+		}
 		this.cciTemplate = cciTemplate;
 	}
 
@@ -71,25 +70,23 @@ public abstract class EisOperation implements InitializingBean {
 	/**
 	 * Set the CCI InteractionSpec for this operation.
 	 */
-	public void setInteractionSpec(@Nullable InteractionSpec interactionSpec) {
+	public void setInteractionSpec(InteractionSpec interactionSpec) {
 		this.interactionSpec = interactionSpec;
 	}
 
 	/**
 	 * Return the CCI InteractionSpec for this operation.
 	 */
-	@Nullable
 	public InteractionSpec getInteractionSpec() {
 		return this.interactionSpec;
 	}
 
 
-	@Override
 	public void afterPropertiesSet() {
 		this.cciTemplate.afterPropertiesSet();
 
 		if (this.interactionSpec == null) {
-			throw new IllegalArgumentException("InteractionSpec is required");
+			throw new IllegalArgumentException("interactionSpec is required");
 		}
 	}
 

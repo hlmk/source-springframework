@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,13 +39,11 @@ public class JtaTransactionObject implements SmartTransactionObject {
 
 	private final UserTransaction userTransaction;
 
-	boolean resetTransactionTimeout = false;
-
 
 	/**
 	 * Create a new JtaTransactionObject for the given JTA UserTransaction.
 	 * @param userTransaction the JTA UserTransaction for the current transaction
-	 * (either a shared object or retrieved through a fresh per-transaction lookup)
+	 * (either a shared object or retrieved through a fresh per-transaction lookuip)
 	 */
 	public JtaTransactionObject(UserTransaction userTransaction) {
 		this.userTransaction = userTransaction;
@@ -62,8 +60,10 @@ public class JtaTransactionObject implements SmartTransactionObject {
 	/**
 	 * This implementation checks the UserTransaction's rollback-only flag.
 	 */
-	@Override
 	public boolean isRollbackOnly() {
+		if (this.userTransaction == null) {
+			return false;
+		}
 		try {
 			int jtaStatus = this.userTransaction.getStatus();
 			return (jtaStatus == Status.STATUS_MARKED_ROLLBACK || jtaStatus == Status.STATUS_ROLLEDBACK);
@@ -78,7 +78,6 @@ public class JtaTransactionObject implements SmartTransactionObject {
 	 * assuming that they will flush all affected ORM sessions.
 	 * @see org.springframework.transaction.support.TransactionSynchronization#flush()
 	 */
-	@Override
 	public void flush() {
 		TransactionSynchronizationUtils.triggerFlush();
 	}

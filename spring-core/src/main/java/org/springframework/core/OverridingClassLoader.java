@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,15 @@ package org.springframework.core;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.FileCopyUtils;
 
 /**
- * {@code ClassLoader} that does <i>not</i> always delegate to the parent loader
- * as normal class loaders do. This enables, for example, instrumentation to be
- * forced in the overriding ClassLoader, or a "throwaway" class loading behavior
- * where selected application classes are temporarily loaded in the overriding
- * {@code ClassLoader} for introspection purposes before eventually loading an
- * instrumented version of the class in the given parent {@code ClassLoader}.
+ * {@code ClassLoader} that does <i>not</i> always delegate to the
+ * parent loader, as normal class loaders do. This enables, for example,
+ * instrumentation to be forced in the overriding ClassLoader, or a
+ * "throwaway" class loading behavior, where selected classes are
+ * temporarily loaded in the overriding ClassLoader, in order to load
+ * an instrumented version of the class in the parent ClassLoader later on.
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -36,38 +35,19 @@ import org.springframework.util.FileCopyUtils;
  */
 public class OverridingClassLoader extends DecoratingClassLoader {
 
-	/** Packages that are excluded by default. */
-	public static final String[] DEFAULT_EXCLUDED_PACKAGES = new String[]
-			{"java.", "javax.", "sun.", "oracle.", "javassist.", "org.aspectj.", "net.sf.cglib."};
+	/** Packages that are excluded by default */
+	public static final String[] DEFAULT_EXCLUDED_PACKAGES =
+			new String[] {"java.", "javax.", "sun.", "oracle."};
 
 	private static final String CLASS_FILE_SUFFIX = ".class";
 
-	static {
-		ClassLoader.registerAsParallelCapable();
-	}
-
-
-	@Nullable
-	private final ClassLoader overrideDelegate;
-
 
 	/**
-	 * Create a new OverridingClassLoader for the given ClassLoader.
+	 * Create a new OverridingClassLoader for the given class loader.
 	 * @param parent the ClassLoader to build an overriding ClassLoader for
 	 */
-	public OverridingClassLoader(@Nullable ClassLoader parent) {
-		this(parent, null);
-	}
-
-	/**
-	 * Create a new OverridingClassLoader for the given ClassLoader.
-	 * @param parent the ClassLoader to build an overriding ClassLoader for
-	 * @param overrideDelegate the ClassLoader to delegate to for overriding
-	 * @since 4.3
-	 */
-	public OverridingClassLoader(@Nullable ClassLoader parent, @Nullable ClassLoader overrideDelegate) {
+	public OverridingClassLoader(ClassLoader parent) {
 		super(parent);
-		this.overrideDelegate = overrideDelegate;
 		for (String packageName : DEFAULT_EXCLUDED_PACKAGES) {
 			excludePackage(packageName);
 		}
@@ -75,25 +55,20 @@ public class OverridingClassLoader extends DecoratingClassLoader {
 
 
 	@Override
-	public Class<?> loadClass(String name) throws ClassNotFoundException {
-		if (this.overrideDelegate != null && isEligibleForOverriding(name)) {
-			return this.overrideDelegate.loadClass(name);
-		}
-		return super.loadClass(name);
-	}
-
-	@Override
-	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+	protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+		Class result = null;
 		if (isEligibleForOverriding(name)) {
-			Class<?> result = loadClassForOverriding(name);
-			if (result != null) {
-				if (resolve) {
-					resolveClass(result);
-				}
-				return result;
-			}
+			result = loadClassForOverriding(name);
 		}
-		return super.loadClass(name, resolve);
+		if (result != null) {
+			if (resolve) {
+				resolveClass(result);
+			}
+			return result;
+		}
+		else {
+			return super.loadClass(name, resolve);
+		}
 	}
 
 	/**
@@ -115,9 +90,8 @@ public class OverridingClassLoader extends DecoratingClassLoader {
 	 * @return the Class object, or {@code null} if no class defined for that name
 	 * @throws ClassNotFoundException if the class for the given name couldn't be loaded
 	 */
-	@Nullable
-	protected Class<?> loadClassForOverriding(String name) throws ClassNotFoundException {
-		Class<?> result = findLoadedClass(name);
+	protected Class loadClassForOverriding(String name) throws ClassNotFoundException {
+		Class result = findLoadedClass(name);
 		if (result == null) {
 			byte[] bytes = loadBytesForClass(name);
 			if (bytes != null) {
@@ -137,7 +111,6 @@ public class OverridingClassLoader extends DecoratingClassLoader {
 	 * or {@code null} if no class defined for that name
 	 * @throws ClassNotFoundException if the class for the given name couldn't be loaded
 	 */
-	@Nullable
 	protected byte[] loadBytesForClass(String name) throws ClassNotFoundException {
 		InputStream is = openStreamForClass(name);
 		if (is == null) {
@@ -161,7 +134,6 @@ public class OverridingClassLoader extends DecoratingClassLoader {
 	 * @param name the name of the class
 	 * @return the InputStream containing the byte code for the specified class
 	 */
-	@Nullable
 	protected InputStream openStreamForClass(String name) {
 		String internalName = name.replace('.', '/') + CLASS_FILE_SUFFIX;
 		return getParent().getResourceAsStream(internalName);

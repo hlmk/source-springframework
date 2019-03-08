@@ -82,12 +82,6 @@ public class GenericSqlQueryTests {
 		doTestCustomerQuery(query, true);
 	}
 
-	@Test
-	public void testCustomerQueryWithRowMapperInstance() throws SQLException {
-		SqlQuery<?> query = (SqlQuery<?>) beanFactory.getBean("queryWithRowMapperBean");
-		doTestCustomerQuery(query, true);
-	}
-
 	private void doTestCustomerQuery(SqlQuery<?> query, boolean namedParameters) throws SQLException {
 		given(resultSet.next()).willReturn(true);
 		given(resultSet.getInt("id")).willReturn(1);
@@ -98,7 +92,7 @@ public class GenericSqlQueryTests {
 
 		List<?> queryResults;
 		if (namedParameters) {
-			Map<String, Object> params = new HashMap<>(2);
+			Map<String, Object> params = new HashMap<String, Object>(2);
 			params.put("id", 1);
 			params.put("country", "UK");
 			queryResults = query.executeByNamedParam(params);

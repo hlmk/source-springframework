@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,24 +32,24 @@ import static org.junit.Assert.*;
 public class StringUtilsTests {
 
 	@Test
-	public void testHasTextBlank() {
+	public void testHasTextBlank() throws Exception {
 		String blank = "          ";
 		assertEquals(false, StringUtils.hasText(blank));
 	}
 
 	@Test
-	public void testHasTextNullEmpty() {
+	public void testHasTextNullEmpty() throws Exception {
 		assertEquals(false, StringUtils.hasText(null));
 		assertEquals(false, StringUtils.hasText(""));
 	}
 
 	@Test
-	public void testHasTextValid() {
+	public void testHasTextValid() throws Exception {
 		assertEquals(true, StringUtils.hasText("t"));
 	}
 
 	@Test
-	public void testContainsWhitespace() {
+	public void testContainsWhitespace() throws Exception {
 		assertFalse(StringUtils.containsWhitespace(null));
 		assertFalse(StringUtils.containsWhitespace(""));
 		assertFalse(StringUtils.containsWhitespace("a"));
@@ -62,7 +62,7 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	public void testTrimWhitespace() {
+	public void testTrimWhitespace() throws Exception {
 		assertEquals(null, StringUtils.trimWhitespace(null));
 		assertEquals("", StringUtils.trimWhitespace(""));
 		assertEquals("", StringUtils.trimWhitespace(" "));
@@ -75,7 +75,7 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	public void testTrimAllWhitespace() {
+	public void testTrimAllWhitespace() throws Exception {
 		assertEquals("", StringUtils.trimAllWhitespace(""));
 		assertEquals("", StringUtils.trimAllWhitespace(" "));
 		assertEquals("", StringUtils.trimAllWhitespace("\t"));
@@ -87,7 +87,7 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	public void testTrimLeadingWhitespace() {
+	public void testTrimLeadingWhitespace() throws Exception {
 		assertEquals(null, StringUtils.trimLeadingWhitespace(null));
 		assertEquals("", StringUtils.trimLeadingWhitespace(""));
 		assertEquals("", StringUtils.trimLeadingWhitespace(" "));
@@ -100,7 +100,7 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	public void testTrimTrailingWhitespace() {
+	public void testTrimTrailingWhitespace() throws Exception {
 		assertEquals(null, StringUtils.trimTrailingWhitespace(null));
 		assertEquals("", StringUtils.trimTrailingWhitespace(""));
 		assertEquals("", StringUtils.trimTrailingWhitespace(" "));
@@ -113,7 +113,7 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	public void testTrimLeadingCharacter() {
+	public void testTrimLeadingCharacter() throws Exception {
 		assertEquals(null, StringUtils.trimLeadingCharacter(null, ' '));
 		assertEquals("", StringUtils.trimLeadingCharacter("", ' '));
 		assertEquals("", StringUtils.trimLeadingCharacter(" ", ' '));
@@ -126,7 +126,7 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	public void testTrimTrailingCharacter() {
+	public void testTrimTrailingCharacter() throws Exception {
 		assertEquals(null, StringUtils.trimTrailingCharacter(null, ' '));
 		assertEquals("", StringUtils.trimTrailingCharacter("", ' '));
 		assertEquals("", StringUtils.trimTrailingCharacter(" ", ' '));
@@ -136,60 +136,6 @@ public class StringUtilsTests {
 		assertEquals(" a", StringUtils.trimTrailingCharacter(" a ", ' '));
 		assertEquals(" a b", StringUtils.trimTrailingCharacter(" a b ", ' '));
 		assertEquals(" a b  c", StringUtils.trimTrailingCharacter(" a b  c ", ' '));
-	}
-
-	@Test
-	public void testStartsWithIgnoreCase() {
-		String prefix = "fOo";
-		assertTrue(StringUtils.startsWithIgnoreCase("foo", prefix));
-		assertTrue(StringUtils.startsWithIgnoreCase("Foo", prefix));
-		assertTrue(StringUtils.startsWithIgnoreCase("foobar", prefix));
-		assertTrue(StringUtils.startsWithIgnoreCase("foobarbar", prefix));
-		assertTrue(StringUtils.startsWithIgnoreCase("Foobar", prefix));
-		assertTrue(StringUtils.startsWithIgnoreCase("FoobarBar", prefix));
-		assertTrue(StringUtils.startsWithIgnoreCase("foObar", prefix));
-		assertTrue(StringUtils.startsWithIgnoreCase("FOObar", prefix));
-		assertTrue(StringUtils.startsWithIgnoreCase("fOobar", prefix));
-		assertFalse(StringUtils.startsWithIgnoreCase(null, prefix));
-		assertFalse(StringUtils.startsWithIgnoreCase("fOobar", null));
-		assertFalse(StringUtils.startsWithIgnoreCase("b", prefix));
-		assertFalse(StringUtils.startsWithIgnoreCase("barfoo", prefix));
-		assertFalse(StringUtils.startsWithIgnoreCase("barfoobar", prefix));
-	}
-
-	@Test
-	public void testEndsWithIgnoreCase() {
-		String suffix = "fOo";
-		assertTrue(StringUtils.endsWithIgnoreCase("foo", suffix));
-		assertTrue(StringUtils.endsWithIgnoreCase("Foo", suffix));
-		assertTrue(StringUtils.endsWithIgnoreCase("barfoo", suffix));
-		assertTrue(StringUtils.endsWithIgnoreCase("barbarfoo", suffix));
-		assertTrue(StringUtils.endsWithIgnoreCase("barFoo", suffix));
-		assertTrue(StringUtils.endsWithIgnoreCase("barBarFoo", suffix));
-		assertTrue(StringUtils.endsWithIgnoreCase("barfoO", suffix));
-		assertTrue(StringUtils.endsWithIgnoreCase("barFOO", suffix));
-		assertTrue(StringUtils.endsWithIgnoreCase("barfOo", suffix));
-		assertFalse(StringUtils.endsWithIgnoreCase(null, suffix));
-		assertFalse(StringUtils.endsWithIgnoreCase("barfOo", null));
-		assertFalse(StringUtils.endsWithIgnoreCase("b", suffix));
-		assertFalse(StringUtils.endsWithIgnoreCase("foobar", suffix));
-		assertFalse(StringUtils.endsWithIgnoreCase("barfoobar", suffix));
-	}
-
-	@Test
-	public void testSubstringMatch() {
-		assertTrue(StringUtils.substringMatch("foo", 0, "foo"));
-		assertTrue(StringUtils.substringMatch("foo", 1, "oo"));
-		assertTrue(StringUtils.substringMatch("foo", 2, "o"));
-		assertFalse(StringUtils.substringMatch("foo", 0, "fOo"));
-		assertFalse(StringUtils.substringMatch("foo", 1, "fOo"));
-		assertFalse(StringUtils.substringMatch("foo", 2, "fOo"));
-		assertFalse(StringUtils.substringMatch("foo", 3, "fOo"));
-		assertFalse(StringUtils.substringMatch("foo", 1, "Oo"));
-		assertFalse(StringUtils.substringMatch("foo", 2, "Oo"));
-		assertFalse(StringUtils.substringMatch("foo", 3, "Oo"));
-		assertFalse(StringUtils.substringMatch("foo", 2, "O"));
-		assertFalse(StringUtils.substringMatch("foo", 3, "O"));
 	}
 
 	@Test
@@ -220,7 +166,7 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	public void testReplace() {
+	public void testReplace() throws Exception {
 		String inString = "a6AazAaa77abaa";
 		String oldPattern = "aa";
 		String newPattern = "foo";
@@ -231,19 +177,19 @@ public class StringUtilsTests {
 
 		// Non match: no change
 		s = StringUtils.replace(inString, "qwoeiruqopwieurpoqwieur", newPattern);
-		assertSame("Replace non-matched is returned as-is", inString, s);
+		assertTrue("Replace non matched is equal", s.equals(inString));
 
 		// Null new pattern: should ignore
 		s = StringUtils.replace(inString, oldPattern, null);
-		assertSame("Replace non-matched is returned as-is", inString, s);
+		assertTrue("Replace non matched is equal", s.equals(inString));
 
 		// Null old pattern: should ignore
 		s = StringUtils.replace(inString, null, newPattern);
-		assertSame("Replace non-matched is returned as-is", inString, s);
+		assertTrue("Replace non matched is equal", s.equals(inString));
 	}
 
 	@Test
-	public void testDelete() {
+	public void testDelete() throws Exception {
 		String inString = "The quick brown fox jumped over the lazy dog";
 
 		String noThe = StringUtils.delete(inString, "the");
@@ -270,7 +216,7 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	public void testDeleteAny() {
+	public void testDeleteAny() throws Exception {
 		String inString = "Able was I ere I saw Elba";
 
 		String res = StringUtils.deleteAny(inString, "I");
@@ -305,7 +251,7 @@ public class StringUtilsTests {
 	public void testQuoteIfString() {
 		assertEquals("'myString'", StringUtils.quoteIfString("myString"));
 		assertEquals("''", StringUtils.quoteIfString(""));
-		assertEquals(Integer.valueOf(5), StringUtils.quoteIfString(5));
+		assertEquals(new Integer(5), StringUtils.quoteIfString(5));
 		assertNull(StringUtils.quoteIfString(null));
 	}
 
@@ -355,6 +301,7 @@ public class StringUtilsTests {
 
 	@Test
 	public void testStripFilenameExtension() {
+		assertEquals(null, StringUtils.stripFilenameExtension(null));
 		assertEquals("", StringUtils.stripFilenameExtension(""));
 		assertEquals("myfile", StringUtils.stripFilenameExtension("myfile"));
 		assertEquals("myfile", StringUtils.stripFilenameExtension("myfile."));
@@ -378,59 +325,53 @@ public class StringUtilsTests {
 		assertEquals("../mypath/myfile", StringUtils.cleanPath("mypath/../../mypath/myfile"));
 		assertEquals("/../mypath/myfile", StringUtils.cleanPath("/../mypath/myfile"));
 		assertEquals("/mypath/myfile", StringUtils.cleanPath("/a/:b/../../mypath/myfile"));
-		assertEquals("/", StringUtils.cleanPath("/"));
-		assertEquals("/", StringUtils.cleanPath("/mypath/../"));
-		assertEquals("", StringUtils.cleanPath("mypath/.."));
-		assertEquals("", StringUtils.cleanPath("mypath/../."));
-		assertEquals("./", StringUtils.cleanPath("mypath/../"));
-		assertEquals("./", StringUtils.cleanPath("././"));
-		assertEquals("./", StringUtils.cleanPath("./"));
-		assertEquals("../", StringUtils.cleanPath("../"));
-		assertEquals("../", StringUtils.cleanPath("./../"));
-		assertEquals("../", StringUtils.cleanPath(".././"));
-		assertEquals("file:/", StringUtils.cleanPath("file:/"));
-		assertEquals("file:/", StringUtils.cleanPath("file:/mypath/../"));
-		assertEquals("file:", StringUtils.cleanPath("file:mypath/.."));
-		assertEquals("file:", StringUtils.cleanPath("file:mypath/../."));
-		assertEquals("file:./", StringUtils.cleanPath("file:mypath/../"));
-		assertEquals("file:./", StringUtils.cleanPath("file:././"));
-		assertEquals("file:./", StringUtils.cleanPath("file:./"));
-		assertEquals("file:../", StringUtils.cleanPath("file:../"));
-		assertEquals("file:../", StringUtils.cleanPath("file:./../"));
-		assertEquals("file:../", StringUtils.cleanPath("file:.././"));
-		assertEquals("file:///c:/path/the%20file.txt", StringUtils.cleanPath("file:///c:/some/../path/the%20file.txt"));
+		assertEquals("file:///c:/path/to/the%20file.txt", StringUtils.cleanPath("file:///c:/some/../path/to/the%20file.txt"));
 	}
 
 	@Test
 	public void testPathEquals() {
 		assertTrue("Must be true for the same strings",
-				StringUtils.pathEquals("/dummy1/dummy2/dummy3", "/dummy1/dummy2/dummy3"));
+				StringUtils.pathEquals("/dummy1/dummy2/dummy3",
+						"/dummy1/dummy2/dummy3"));
 		assertTrue("Must be true for the same win strings",
-				StringUtils.pathEquals("C:\\dummy1\\dummy2\\dummy3", "C:\\dummy1\\dummy2\\dummy3"));
+				StringUtils.pathEquals("C:\\dummy1\\dummy2\\dummy3",
+						"C:\\dummy1\\dummy2\\dummy3"));
 		assertTrue("Must be true for one top path on 1",
-				StringUtils.pathEquals("/dummy1/bin/../dummy2/dummy3", "/dummy1/dummy2/dummy3"));
+				StringUtils.pathEquals("/dummy1/bin/../dummy2/dummy3",
+						"/dummy1/dummy2/dummy3"));
 		assertTrue("Must be true for one win top path on 2",
-				StringUtils.pathEquals("C:\\dummy1\\dummy2\\dummy3", "C:\\dummy1\\bin\\..\\dummy2\\dummy3"));
+				StringUtils.pathEquals("C:\\dummy1\\dummy2\\dummy3",
+						"C:\\dummy1\\bin\\..\\dummy2\\dummy3"));
 		assertTrue("Must be true for two top paths on 1",
-				StringUtils.pathEquals("/dummy1/bin/../dummy2/bin/../dummy3", "/dummy1/dummy2/dummy3"));
+				StringUtils.pathEquals("/dummy1/bin/../dummy2/bin/../dummy3",
+						"/dummy1/dummy2/dummy3"));
 		assertTrue("Must be true for two win top paths on 2",
-				StringUtils.pathEquals("C:\\dummy1\\dummy2\\dummy3", "C:\\dummy1\\bin\\..\\dummy2\\bin\\..\\dummy3"));
+				StringUtils.pathEquals("C:\\dummy1\\dummy2\\dummy3",
+						"C:\\dummy1\\bin\\..\\dummy2\\bin\\..\\dummy3"));
 		assertTrue("Must be true for double top paths on 1",
-				StringUtils.pathEquals("/dummy1/bin/tmp/../../dummy2/dummy3", "/dummy1/dummy2/dummy3"));
+				StringUtils.pathEquals("/dummy1/bin/tmp/../../dummy2/dummy3",
+						"/dummy1/dummy2/dummy3"));
 		assertTrue("Must be true for double top paths on 2 with similarity",
-				StringUtils.pathEquals("/dummy1/dummy2/dummy3", "/dummy1/dum/dum/../../dummy2/dummy3"));
+				StringUtils.pathEquals("/dummy1/dummy2/dummy3",
+						"/dummy1/dum/dum/../../dummy2/dummy3"));
 		assertTrue("Must be true for current paths",
-				StringUtils.pathEquals("./dummy1/dummy2/dummy3", "dummy1/dum/./dum/../../dummy2/dummy3"));
+				StringUtils.pathEquals("./dummy1/dummy2/dummy3",
+						"dummy1/dum/./dum/../../dummy2/dummy3"));
 		assertFalse("Must be false for relative/absolute paths",
-				StringUtils.pathEquals("./dummy1/dummy2/dummy3", "/dummy1/dum/./dum/../../dummy2/dummy3"));
+				StringUtils.pathEquals("./dummy1/dummy2/dummy3",
+						"/dummy1/dum/./dum/../../dummy2/dummy3"));
 		assertFalse("Must be false for different strings",
-				StringUtils.pathEquals("/dummy1/dummy2/dummy3", "/dummy1/dummy4/dummy3"));
+				StringUtils.pathEquals("/dummy1/dummy2/dummy3",
+						"/dummy1/dummy4/dummy3"));
 		assertFalse("Must be false for one false path on 1",
-				StringUtils.pathEquals("/dummy1/bin/tmp/../dummy2/dummy3", "/dummy1/dummy2/dummy3"));
+				StringUtils.pathEquals("/dummy1/bin/tmp/../dummy2/dummy3",
+						"/dummy1/dummy2/dummy3"));
 		assertFalse("Must be false for one false win top path on 2",
-				StringUtils.pathEquals("C:\\dummy1\\dummy2\\dummy3", "C:\\dummy1\\bin\\tmp\\..\\dummy2\\dummy3"));
+				StringUtils.pathEquals("C:\\dummy1\\dummy2\\dummy3",
+						"C:\\dummy1\\bin\\tmp\\..\\dummy2\\dummy3"));
 		assertFalse("Must be false for top path on 1 + difference",
-				StringUtils.pathEquals("/dummy1/bin/../dummy2/dummy3", "/dummy1/dummy2/dummy4"));
+				StringUtils.pathEquals("/dummy1/bin/../dummy2/dummy3",
+						"/dummy1/dummy2/dummy4"));
 	}
 
 	@Test
@@ -449,7 +390,6 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	@Deprecated
 	public void testMergeStringArrays() {
 		String[] input1 = new String[] {"myString2"};
 		String[] input2 = new String[] {"myString1", "myString2"};
@@ -479,8 +419,8 @@ public class StringUtilsTests {
 	public void testRemoveDuplicateStrings() {
 		String[] input = new String[] {"myString2", "myString1", "myString2"};
 		input = StringUtils.removeDuplicateStrings(input);
-		assertEquals("myString2", input[0]);
-		assertEquals("myString1", input[1]);
+		assertEquals("myString1", input[0]);
+		assertEquals("myString2", input[1]);
 	}
 
 	@Test
@@ -640,9 +580,26 @@ public class StringUtilsTests {
 		assertTrue("Output equals input", Arrays.equals(sa, components));
 	}
 
+	@Test
+	public void testEndsWithIgnoreCase() {
+		String suffix = "fOo";
+		assertTrue(StringUtils.endsWithIgnoreCase("foo", suffix));
+		assertTrue(StringUtils.endsWithIgnoreCase("Foo", suffix));
+		assertTrue(StringUtils.endsWithIgnoreCase("barfoo", suffix));
+		assertTrue(StringUtils.endsWithIgnoreCase("barbarfoo", suffix));
+		assertTrue(StringUtils.endsWithIgnoreCase("barFoo", suffix));
+		assertTrue(StringUtils.endsWithIgnoreCase("barBarFoo", suffix));
+		assertTrue(StringUtils.endsWithIgnoreCase("barfoO", suffix));
+		assertTrue(StringUtils.endsWithIgnoreCase("barFOO", suffix));
+		assertTrue(StringUtils.endsWithIgnoreCase("barfOo", suffix));
+		assertFalse(StringUtils.endsWithIgnoreCase(null, suffix));
+		assertFalse(StringUtils.endsWithIgnoreCase("barfOo", null));
+		assertFalse(StringUtils.endsWithIgnoreCase("b", suffix));
+	}
+
 
 	@Test
-	public void testParseLocaleStringSunnyDay() {
+	public void testParseLocaleStringSunnyDay() throws Exception {
 		Locale expectedLocale = Locale.UK;
 		Locale locale = StringUtils.parseLocaleString(expectedLocale.toString());
 		assertNotNull("When given a bona-fide Locale string, must not return null.", locale);
@@ -650,19 +607,19 @@ public class StringUtilsTests {
 	}
 
 	@Test
-	public void testParseLocaleStringWithMalformedLocaleString() {
+	public void testParseLocaleStringWithMalformedLocaleString() throws Exception {
 		Locale locale = StringUtils.parseLocaleString("_banjo_on_my_knee");
 		assertNotNull("When given a malformed Locale string, must not return null.", locale);
 	}
 
 	@Test
-	public void testParseLocaleStringWithEmptyLocaleStringYieldsNullLocale() {
+	public void testParseLocaleStringWithEmptyLocaleStringYieldsNullLocale() throws Exception {
 		Locale locale = StringUtils.parseLocaleString("");
 		assertNull("When given an empty Locale string, must return null.", locale);
 	}
 
 	@Test  // SPR-8637
-	public void testParseLocaleWithMultiSpecialCharactersInVariant() {
+	public void testParseLocaleWithMultiSpecialCharactersInVariant() throws Exception {
 		String variant = "proper-northern";
 		String localeString = "en_GB_" + variant;
 		Locale locale = StringUtils.parseLocaleString(localeString);
@@ -670,7 +627,7 @@ public class StringUtilsTests {
 	}
 
 	@Test  // SPR-3671
-	public void testParseLocaleWithMultiValuedVariant() {
+	public void testParseLocaleWithMultiValuedVariant() throws Exception {
 		String variant = "proper_northern";
 		String localeString = "en_GB_" + variant;
 		Locale locale = StringUtils.parseLocaleString(localeString);
@@ -678,7 +635,7 @@ public class StringUtilsTests {
 	}
 
 	@Test  // SPR-3671
-	public void testParseLocaleWithMultiValuedVariantUsingSpacesAsSeparators() {
+	public void testParseLocaleWithMultiValuedVariantUsingSpacesAsSeparators() throws Exception {
 		String variant = "proper northern";
 		String localeString = "en GB " + variant;
 		Locale locale = StringUtils.parseLocaleString(localeString);
@@ -686,7 +643,7 @@ public class StringUtilsTests {
 	}
 
 	@Test  // SPR-3671
-	public void testParseLocaleWithMultiValuedVariantUsingMixtureOfUnderscoresAndSpacesAsSeparators() {
+	public void testParseLocaleWithMultiValuedVariantUsingMixtureOfUnderscoresAndSpacesAsSeparators() throws Exception {
 		String variant = "proper northern";
 		String localeString = "en_GB_" + variant;
 		Locale locale = StringUtils.parseLocaleString(localeString);
@@ -694,7 +651,7 @@ public class StringUtilsTests {
 	}
 
 	@Test  // SPR-3671
-	public void testParseLocaleWithMultiValuedVariantUsingSpacesAsSeparatorsWithLotsOfLeadingWhitespace() {
+	public void testParseLocaleWithMultiValuedVariantUsingSpacesAsSeparatorsWithLotsOfLeadingWhitespace() throws Exception {
 		String variant = "proper northern";
 		String localeString = "en GB            " + variant;  // lots of whitespace
 		Locale locale = StringUtils.parseLocaleString(localeString);
@@ -702,7 +659,7 @@ public class StringUtilsTests {
 	}
 
 	@Test  // SPR-3671
-	public void testParseLocaleWithMultiValuedVariantUsingUnderscoresAsSeparatorsWithLotsOfLeadingWhitespace() {
+	public void testParseLocaleWithMultiValuedVariantUsingUnderscoresAsSeparatorsWithLotsOfLeadingWhitespace() throws Exception {
 		String variant = "proper_northern";
 		String localeString = "en_GB_____" + variant;  // lots of underscores
 		Locale locale = StringUtils.parseLocaleString(localeString);
@@ -734,35 +691,9 @@ public class StringUtilsTests {
 		assertEquals("Variant containing country code not extracted correctly", variant, locale.getVariant());
 	}
 
-	@Test  // SPR-14718, SPR-7598
+	@Test  // SPR-14718
 	public void testParseJava7Variant() {
-		assertEquals("sr__#LATN", StringUtils.parseLocaleString("sr__#LATN").toString());
-	}
-
-	@Test  // SPR-16651
-	public void testAvailableLocalesWithLocaleString() {
-		for (Locale locale : Locale.getAvailableLocales()) {
-			Locale parsedLocale = StringUtils.parseLocaleString(locale.toString());
-			if (parsedLocale == null) {
-				assertEquals("", locale.getLanguage());
-			}
-			else {
-				assertEquals(parsedLocale.toString(), locale.toString());
-			}
-		}
-	}
-
-	@Test  // SPR-16651
-	public void testAvailableLocalesWithLanguageTag() {
-		for (Locale locale : Locale.getAvailableLocales()) {
-			Locale parsedLocale = StringUtils.parseLocale(locale.toLanguageTag());
-			if (parsedLocale == null) {
-				assertEquals("", locale.getLanguage());
-			}
-			else {
-				assertEquals(parsedLocale.toLanguageTag(), locale.toLanguageTag());
-			}
-		}
+		assertEquals("sr_#LATN", StringUtils.parseLocaleString("sr_#LATN").toString());
 	}
 
 }

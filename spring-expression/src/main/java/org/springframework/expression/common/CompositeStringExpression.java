@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,17 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.EvaluationException;
 import org.springframework.expression.Expression;
-import org.springframework.expression.TypedValue;
-import org.springframework.lang.Nullable;
 
 /**
- * Represents a template expression broken into pieces. Each piece will be an Expression
- * but pure text parts to the template will be represented as LiteralExpression objects.
- * An example of a template expression might be:
+ * Represents a template expression broken into pieces. Each piece will be an Expression but pure text parts to the
+ * template will be represented as LiteralExpression objects. An example of a template expression might be:
  *
  * <pre class="code">
- * &quot;Hello ${getName()}&quot;
- * </pre>
+ * &quot;Hello ${getName()}&quot;</pre>
  *
- * which will be represented as a CompositeStringExpression of two parts. The first part
- * being a LiteralExpression representing 'Hello ' and the second part being a real
- * expression that will call {@code getName()} when invoked.
+ * which will be represented as a CompositeStringExpression of two parts. The first part being a
+ * LiteralExpression representing 'Hello ' and the second part being a real expression that will
+ * call {@code getName()} when invoked.
  *
  * @author Andy Clement
  * @author Juergen Hoeller
@@ -44,7 +40,7 @@ public class CompositeStringExpression implements Expression {
 
 	private final String expressionString;
 
-	/** The array of expressions that make up the composite expression. */
+	/** The array of expressions that make up the composite expression */
 	private final Expression[] expressions;
 
 
@@ -54,16 +50,10 @@ public class CompositeStringExpression implements Expression {
 	}
 
 
-	@Override
 	public final String getExpressionString() {
 		return this.expressionString;
 	}
 
-	public final Expression[] getExpressions() {
-		return this.expressions;
-	}
-
-	@Override
 	public String getValue() throws EvaluationException {
 		StringBuilder sb = new StringBuilder();
 		for (Expression expression : this.expressions) {
@@ -75,14 +65,6 @@ public class CompositeStringExpression implements Expression {
 		return sb.toString();
 	}
 
-	@Override
-	@Nullable
-	public <T> T getValue(@Nullable Class<T> expectedResultType) throws EvaluationException {
-		Object value = getValue();
-		return ExpressionUtils.convertTypedValue(null, new TypedValue(value), expectedResultType);
-	}
-
-	@Override
 	public String getValue(Object rootObject) throws EvaluationException {
 		StringBuilder sb = new StringBuilder();
 		for (Expression expression : this.expressions) {
@@ -94,14 +76,6 @@ public class CompositeStringExpression implements Expression {
 		return sb.toString();
 	}
 
-	@Override
-	@Nullable
-	public <T> T getValue(Object rootObject, @Nullable Class<T> desiredResultType) throws EvaluationException {
-		Object value = getValue(rootObject);
-		return ExpressionUtils.convertTypedValue(null, new TypedValue(value), desiredResultType);
-	}
-
-	@Override
 	public String getValue(EvaluationContext context) throws EvaluationException {
 		StringBuilder sb = new StringBuilder();
 		for (Expression expression : this.expressions) {
@@ -113,16 +87,6 @@ public class CompositeStringExpression implements Expression {
 		return sb.toString();
 	}
 
-	@Override
-	@Nullable
-	public <T> T getValue(EvaluationContext context, @Nullable Class<T> expectedResultType)
-			throws EvaluationException {
-
-		Object value = getValue(context);
-		return ExpressionUtils.convertTypedValue(context, new TypedValue(value), expectedResultType);
-	}
-
-	@Override
 	public String getValue(EvaluationContext context, Object rootObject) throws EvaluationException {
 		StringBuilder sb = new StringBuilder();
 		for (Expression expression : this.expressions) {
@@ -134,84 +98,85 @@ public class CompositeStringExpression implements Expression {
 		return sb.toString();
 	}
 
-	@Override
-	@Nullable
-	public <T> T getValue(EvaluationContext context, Object rootObject, @Nullable Class<T> desiredResultType)
-			throws EvaluationException {
-
-		Object value = getValue(context,rootObject);
-		return ExpressionUtils.convertTypedValue(context, new TypedValue(value), desiredResultType);
-	}
-
-	@Override
-	public Class<?> getValueType() {
+	public Class getValueType(EvaluationContext context) {
 		return String.class;
 	}
 
-	@Override
-	public Class<?> getValueType(EvaluationContext context) {
+	public Class getValueType() {
 		return String.class;
 	}
 
-	@Override
-	public Class<?> getValueType(Object rootObject) throws EvaluationException {
-		return String.class;
-	}
-
-	@Override
-	public Class<?> getValueType(EvaluationContext context, Object rootObject) throws EvaluationException {
-		return String.class;
-	}
-
-	@Override
-	public TypeDescriptor getValueTypeDescriptor() {
-		return TypeDescriptor.valueOf(String.class);
-	}
-
-	@Override
-	public TypeDescriptor getValueTypeDescriptor(Object rootObject) throws EvaluationException {
-		return TypeDescriptor.valueOf(String.class);
-	}
-
-	@Override
 	public TypeDescriptor getValueTypeDescriptor(EvaluationContext context) {
 		return TypeDescriptor.valueOf(String.class);
 	}
 
-	@Override
-	public TypeDescriptor getValueTypeDescriptor(EvaluationContext context, Object rootObject)
-			throws EvaluationException {
-
+	public TypeDescriptor getValueTypeDescriptor() {
 		return TypeDescriptor.valueOf(String.class);
 	}
 
-	@Override
-	public boolean isWritable(Object rootObject) throws EvaluationException {
-		return false;
+	public void setValue(EvaluationContext context, Object value) throws EvaluationException {
+		throw new EvaluationException(this.expressionString, "Cannot call setValue on a composite expression");
 	}
 
-	@Override
+	public <T> T getValue(EvaluationContext context, Class<T> expectedResultType) throws EvaluationException {
+		Object value = getValue(context);
+		return ExpressionUtils.convert(context, value, expectedResultType);
+	}
+
+	public <T> T getValue(Class<T> expectedResultType) throws EvaluationException {
+		Object value = getValue();
+		return ExpressionUtils.convert(null, value, expectedResultType);
+	}
+
 	public boolean isWritable(EvaluationContext context) {
 		return false;
 	}
 
-	@Override
+	public Expression[] getExpressions() {
+		return expressions;
+	}
+
+
+	public <T> T getValue(Object rootObject, Class<T> desiredResultType) throws EvaluationException {
+		Object value = getValue(rootObject);
+		return ExpressionUtils.convert(null, value, desiredResultType);
+	}
+
+	public <T> T getValue(EvaluationContext context, Object rootObject, Class<T> desiredResultType)
+			throws EvaluationException {
+		Object value = getValue(context,rootObject);
+		return ExpressionUtils.convert(context, value, desiredResultType);
+	}
+
+	public Class getValueType(Object rootObject) throws EvaluationException {
+		return String.class;
+	}
+
+	public Class getValueType(EvaluationContext context, Object rootObject) throws EvaluationException {
+		return String.class;
+	}
+
+	public TypeDescriptor getValueTypeDescriptor(Object rootObject) throws EvaluationException {
+		return TypeDescriptor.valueOf(String.class);
+	}
+
+	public TypeDescriptor getValueTypeDescriptor(EvaluationContext context, Object rootObject) throws EvaluationException {
+		return TypeDescriptor.valueOf(String.class);
+	}
+
 	public boolean isWritable(EvaluationContext context, Object rootObject) throws EvaluationException {
 		return false;
 	}
 
-	@Override
-	public void setValue(Object rootObject, @Nullable Object value) throws EvaluationException {
+	public void setValue(EvaluationContext context, Object rootObject, Object value) throws EvaluationException {
 		throw new EvaluationException(this.expressionString, "Cannot call setValue on a composite expression");
 	}
 
-	@Override
-	public void setValue(EvaluationContext context, @Nullable Object value) throws EvaluationException {
-		throw new EvaluationException(this.expressionString, "Cannot call setValue on a composite expression");
+	public boolean isWritable(Object rootObject) throws EvaluationException {
+		return false;
 	}
 
-	@Override
-	public void setValue(EvaluationContext context, Object rootObject, @Nullable Object value) throws EvaluationException {
+	public void setValue(Object rootObject, Object value) throws EvaluationException {
 		throw new EvaluationException(this.expressionString, "Cannot call setValue on a composite expression");
 	}
 

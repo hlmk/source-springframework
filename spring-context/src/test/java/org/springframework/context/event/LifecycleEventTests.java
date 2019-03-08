@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.springframework.context.event;
 
-import org.junit.Test;
+import junit.framework.TestCase;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -24,16 +24,13 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.StaticApplicationContext;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Mark Fisher
  * @author Juergen Hoeller
  */
-public class LifecycleEventTests {
+public class LifecycleEventTests extends TestCase {
 
-	@Test
-	public void contextStartedEvent() {
+	public void testContextStartedEvent() {
 		StaticApplicationContext context = new StaticApplicationContext();
 		context.registerSingleton("lifecycle", LifecycleTestBean.class);
 		context.registerSingleton("listener", LifecycleListener.class);
@@ -48,8 +45,7 @@ public class LifecycleEventTests {
 		assertSame(context, listener.getApplicationContext());
 	}
 
-	@Test
-	public void contextStoppedEvent() {
+	public void testContextStoppedEvent() {
 		StaticApplicationContext context = new StaticApplicationContext();
 		context.registerSingleton("lifecycle", LifecycleTestBean.class);
 		context.registerSingleton("listener", LifecycleListener.class);

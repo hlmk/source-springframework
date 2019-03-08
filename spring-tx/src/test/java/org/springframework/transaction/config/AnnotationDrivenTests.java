@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,11 @@ package org.springframework.transaction.config;
 
 import java.io.Serializable;
 
+import junit.framework.TestCase;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.junit.Test;
 
 import org.springframework.aop.support.AopUtils;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -31,32 +30,20 @@ import org.springframework.tests.transaction.CallCountingTransactionManager;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.SerializationTestUtils;
 
-import static org.junit.Assert.*;
-
 /**
  * @author Rob Harrop
  * @author Juergen Hoeller
  */
-public class AnnotationDrivenTests {
+public class AnnotationDrivenTests extends TestCase {
 
-	@Test
-	public void withProxyTargetClass() throws Exception {
+	public void testWithProxyTargetClass() throws Exception {
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("annotationDrivenProxyTargetClassTests.xml", getClass());
 		doTestWithMultipleTransactionManagers(context);
 	}
 
-	@Test
-	public void withConfigurationClass() throws Exception {
-		ApplicationContext parent = new AnnotationConfigApplicationContext(TransactionManagerConfiguration.class);
-		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[] {"annotationDrivenConfigurationClassTests.xml"}, getClass(), parent);
-		doTestWithMultipleTransactionManagers(context);
-	}
-
-	@Test
-	public void withAnnotatedTransactionManagers() throws Exception {
+	public void testWithConfigurationClass() throws Exception {
 		AnnotationConfigApplicationContext parent = new AnnotationConfigApplicationContext();
-		parent.registerBeanDefinition("transactionManager1", new RootBeanDefinition(SynchTransactionManager.class));
-		parent.registerBeanDefinition("transactionManager2", new RootBeanDefinition(NoSynchTransactionManager.class));
+		parent.register(TransactionManagerConfiguration.class);
 		parent.refresh();
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[] {"annotationDrivenConfigurationClassTests.xml"}, getClass(), parent);
 		doTestWithMultipleTransactionManagers(context);
@@ -81,9 +68,7 @@ public class AnnotationDrivenTests {
 		assertEquals(2, tm2.commits);
 	}
 
-	@Test
-	@SuppressWarnings("resource")
-	public void serializableWithPreviousUsage() throws Exception {
+	public void testSerializableWithPreviousUsage() throws Exception {
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("annotationDrivenProxyTargetClassTests.xml", getClass());
 		TransactionalService service = context.getBean("service", TransactionalService.class);
 		service.setSomething("someName");
@@ -91,9 +76,7 @@ public class AnnotationDrivenTests {
 		service.setSomething("someName");
 	}
 
-	@Test
-	@SuppressWarnings("resource")
-	public void serializableWithoutPreviousUsage() throws Exception {
+	public void testSerializableWithoutPreviousUsage() throws Exception {
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("annotationDrivenProxyTargetClassTests.xml", getClass());
 		TransactionalService service = context.getBean("service", TransactionalService.class);
 		service = (TransactionalService) SerializationTestUtils.serializeAndDeserialize(service);
