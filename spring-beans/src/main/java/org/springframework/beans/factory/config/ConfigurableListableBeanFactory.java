@@ -35,6 +35,9 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
  * @author Juergen Hoeller
  * @since 03.11.2003
  * @see org.springframework.context.support.AbstractApplicationContext#getBeanFactory()
+ *
+ * 作用： BeanFactory 配置清单，指定忽略类型及接口等。
+ *
  */
 public interface ConfigurableListableBeanFactory
 		extends ListableBeanFactory, AutowireCapableBeanFactory, ConfigurableBeanFactory {

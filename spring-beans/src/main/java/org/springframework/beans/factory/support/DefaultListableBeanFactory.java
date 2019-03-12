@@ -85,6 +85,16 @@ import org.springframework.util.StringUtils;
  * have a look at {@link StaticListableBeanFactory}, which manages existing
  * bean instances rather than creating new ones based on bean definitions.
  *
+ *
+ * 谷歌译文：
+ * {@link org.springframework.beans.factory.ListableBeanFactory}和{@link BeanDefinitionRegistry}接口的默认实现：基于bean定义对象的完整bean工厂。
+ * <p>典型用法是在访问bean之前首先注册所有bean定义（可能从bean定义文件中读取）。因此，Bean定义查找在本地bean定义表中是一种廉价的操作，对预构建的bean定义元数据对象进行操作。
+ * <p>可以用作独立的bean工厂，也可以用作自定义bean工厂的超类。请注意，特定bean定义格式的读者通常是单独实现的，而不是作为bean工厂子类实现的：请参阅示例{@link PropertiesBeanDefinitionReader}和{@link org.springframework.beans.factory.xml.XmlBeanDefinitionReader}
+ * <p>有关{@link org.springframework.beans.factory.ListableBeanFactory}接口的替代实现，请查看{@link StaticListableBeanFactory}，它管理现有的bean实例，而不是基于bean定义创建新的实例。
+ *
+ *
+ *
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Sam Brannen
@@ -95,6 +105,9 @@ import org.springframework.util.StringUtils;
  * @see StaticListableBeanFactory
  * @see PropertiesBeanDefinitionReader
  * @see org.springframework.beans.factory.xml.XmlBeanDefinitionReader
+ *
+ * 作用：主要是对 Bean 注册后的处理。
+ *
  */
 @SuppressWarnings("serial")
 public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory

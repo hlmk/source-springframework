@@ -41,6 +41,18 @@ import org.springframework.core.io.Resource;
  * an {@link XmlBeanDefinitionReader}.</b> The latter allows for reading from multiple XML
  * resources and is highly configurable in its actual XML parsing behavior.
  *
+ * 谷歌译文：
+ * {@link DefaultListableBeanFactory}的便捷扩展，它从XML文档中读取bean定义。代表到{@link XmlBeanDefinitionReader}下面;实际上相当于使用带有DefaultListableBeanFactory的XmlBeanDefinitionReader。
+ * <p>所需XML文档的结构，元素和属性名称在此类中是硬编码的。 （当然，如果有必要，可以运行转换来生成这种格式）。 “beans”不需要是XML文档的根元素：此类将解析XML文件中的所有bean定义元素。
+ * <p>此类使用{@link DefaultListableBeanFactory}超类注册每个bean定义，并依赖于后者对{@link BeanFactory}接口的实现。它支持单例，原型和对这些bean中的任何一种的引用。有关选项和配置样式的详细信息，请参阅{@code“spring-beans-3.x.xsd”}（或历史上，{@ code“spring-beans-2.0.dtd”}）。
+ * <p> <b>对于高级需求，请考虑将{@link DefaultListableBeanFactory}与{@link XmlBeanDefinitionReader}一起使用。</ b>后者允许从多个XML资源中读取，并且在其实际的XML解析行为中具有高度可配置性。
+ *
+ *
+ * XmlBeanFactory 继承自 DefaultListableBeanFactory，而 DefaultListableBeanFactory 是整个 bean 加载的核心部分，是 spring 注册及加载 bean 的默认实现，
+ * 而对于 XmlBeanFacotry 与 DefaultListableBeanFactory 不同的地方其实是 XmlBeanFactory 中使用了自定义的 XML 读取器 XmlBeanDefinitionReader, 实现了个性化的 BeanDefinitionReader 读取，
+ * DefaultListableBeanFactory 继承了 AbstractAutowireCapableBeanFactory 并实现了 ConfigurableListableBeanFacotry 以及 BeanDefinitionRegistry 接口，
+ *
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @author Chris Beams
@@ -62,6 +74,12 @@ public class XmlBeanFactory extends DefaultListableBeanFactory {
 	 * which must be parsable using DOM.
 	 * @param resource XML resource to load bean definitions from
 	 * @throws BeansException in case of loading or parsing errors
+	 *
+	 * 使用给定资源创建一个新的XmlBeanFactory，
+	 * 必须使用DOM进行解析。
+	 * @param 资源用于加载bean定义的XML资源
+	 * @throws BeansException在加载或解析错误的情况下
+	 *
 	 */
 	public XmlBeanFactory(Resource resource) throws BeansException {
 		this(resource, null);
@@ -73,6 +91,13 @@ public class XmlBeanFactory extends DefaultListableBeanFactory {
 	 * @param resource XML resource to load bean definitions from
 	 * @param parentBeanFactory parent bean factory
 	 * @throws BeansException in case of loading or parsing errors
+	 *
+	 * 使用给定的输入流创建一个新的XmlBeanFactory，
+	 * 必须使用DOM进行解析。
+	 * @param 资源用于加载bean定义的XML资源
+	 * @param parentBeanFactory父bean工厂
+	 * @throws BeansException在加载或解析错误的情况下
+	 *
 	 */
 	public XmlBeanFactory(Resource resource, BeanFactory parentBeanFactory) throws BeansException {
 		super(parentBeanFactory);

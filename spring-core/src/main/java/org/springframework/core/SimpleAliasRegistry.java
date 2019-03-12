@@ -32,6 +32,13 @@ import org.springframework.util.StringValueResolver;
  * {@link org.springframework.beans.factory.support.BeanDefinitionRegistry}
  * implementations.
  *
+ * 谷歌译文：
+ * 简单实现{@link AliasRegistry}接口。 用作{@link org.springframework.beans.factory.support.BeanDefinitionRegistry}实现的基类。
+ *
+ * 作用：
+ * 主要使用 map 作为 alias 的缓存，并对接口 AliasRegistry进行实现。
+ *
+ *
  * @author Juergen Hoeller
  * @since 2.5.2
  */

@@ -52,6 +52,9 @@ import org.springframework.beans.BeansException;
  * @since 16 April 2001
  * @see HierarchicalBeanFactory
  * @see BeanFactoryUtils
+ *
+ * 作用：根据各种条件获取 bean 的配置清单。
+ *
  */
 public interface ListableBeanFactory extends BeanFactory {
 
